@@ -25,39 +25,29 @@
 package com.gimp;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.coords.WorldPoint;
+import lombok.Getter;
 
-import java.util.*;
+import java.util.Map;
 
 @Slf4j
-public class GIMPLocationManager
+public class GIMPLocation extends Location
 {
-	@Getter(AccessLevel.PACKAGE)
-	public Map<String, WorldPoint> gimpLocations;
+	String nameField = "name";
 
-	public GIMPLocationManager(ArrayList<String> gimpNames)
+	@Getter(AccessLevel.PACKAGE)
+	String name;
+
+	public GIMPLocation(String nameArg, int xArg, int yArg, int planeArg)
 	{
-		gimpLocations = new HashMap<>();
-		for (String name : gimpNames)
-		{
-			gimpLocations.put(name, null);
-		}
+		super(xArg, yArg, planeArg);
+		name = nameArg;
 	}
 
-	public void update(Map<String, Location> data)
+	public Map<String, Object> getLocation()
 	{
-		gimpLocations.clear();
-		for (String name : data.keySet())
-		{
-			Location coordinates = data.get(name);
-			WorldPoint playerLocation = new WorldPoint(
-				coordinates.getX(),
-				coordinates.getY(),
-				coordinates.getPlane()
-			);
-			gimpLocations.put(name, playerLocation);
-		}
+		Map<String, Object> location = super.getLocation();
+		location.put(nameField, name);
+		return location;
 	}
 }

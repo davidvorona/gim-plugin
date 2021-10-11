@@ -27,37 +27,42 @@ package com.gimp;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.coords.WorldPoint;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
-public class GIMPLocationManager
+public class Location
 {
-	@Getter(AccessLevel.PACKAGE)
-	public Map<String, WorldPoint> gimpLocations;
-
-	public GIMPLocationManager(ArrayList<String> gimpNames)
+	public enum Coordinate
 	{
-		gimpLocations = new HashMap<>();
-		for (String name : gimpNames)
-		{
-			gimpLocations.put(name, null);
-		}
+		plane,
+		x,
+		y
 	}
 
-	public void update(Map<String, Location> data)
+	@Getter(AccessLevel.PACKAGE)
+	int x;
+
+	@Getter(AccessLevel.PACKAGE)
+	int y;
+
+	@Getter(AccessLevel.PACKAGE)
+	int plane;
+
+	public Location(int xArg, int yArg, int planeArg)
 	{
-		gimpLocations.clear();
-		for (String name : data.keySet())
-		{
-			Location coordinates = data.get(name);
-			WorldPoint playerLocation = new WorldPoint(
-				coordinates.getX(),
-				coordinates.getY(),
-				coordinates.getPlane()
-			);
-			gimpLocations.put(name, playerLocation);
-		}
+		x = xArg;
+		y = yArg;
+		plane = planeArg;
+	}
+
+	public Map<String, Object> getLocation()
+	{
+		Map<String, Object> location = new HashMap<>();
+		location.put(Coordinate.x.toString(), x);
+		location.put(Coordinate.y.toString(), y);
+		location.put(Coordinate.plane.toString(), plane);
+		return location;
 	}
 }

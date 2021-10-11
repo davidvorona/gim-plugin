@@ -1,8 +1,33 @@
+/*
+ * Copyright (c) 2021, David Vorona <davidavorona@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.gimp;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
-
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -17,8 +42,11 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.api.coords.WorldPoint;
+
 import java.awt.image.BufferedImage;
 import java.util.*;
 
@@ -33,7 +61,7 @@ public class GIMPlugin extends Plugin
 	static
 	{
 		PLAYER_ICON = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-		final BufferedImage playerIcon = ImageUtil.loadImageResource(GIMPlugin.class, "waypoint.png");
+		final BufferedImage playerIcon = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
 		PLAYER_ICON.getGraphics().drawImage(playerIcon, 0, 0, null);
 	}
 
@@ -42,6 +70,12 @@ public class GIMPlugin extends Plugin
 	private LocationBroadcastManager locationBroadcastManager;
 
 	private Timer timer;
+
+	@Getter(AccessLevel.PACKAGE)
+	private WorldMapPoint playerWaypoint;
+
+	@Inject
+	WorldMapPointManager worldMapPointManager;
 
 	@Inject
 	private Client client;
@@ -95,7 +129,8 @@ public class GIMPlugin extends Plugin
 				}
 				List<ClanChannelMember> clanChannelMembers = gimClanChannel.getMembers();
 				ArrayList<String> gimpNames = new ArrayList<>();
-				for (ClanChannelMember member : clanChannelMembers) {
+				for (ClanChannelMember member : clanChannelMembers)
+				{
 					gimpNames.add(member.getName());
 				}
 				gimpLocationManager = new GIMPLocationManager(gimpNames);
@@ -113,8 +148,7 @@ public class GIMPlugin extends Plugin
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer != null)
 		{
-			locationBroadcastManager = new LocationBroadcastManager(localPlayer.getName());
-			WorldPoint playerLocation = localPlayer.getWorldLocation();
+			locationBroadcastManager = new LocationBroadcastManager();
 			timer = new Timer();
 			TimerTask locationPingTask = new TimerTask()
 			{
@@ -125,10 +159,16 @@ public class GIMPlugin extends Plugin
 					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
 					if (worldMapView != null)
 					{
-						Map<String, Map<GIMPLocationManager.Coordinate, Integer>> data = locationBroadcastManager.ping();
-						// Time to update location in GIMPLocationManager:
-						// need to figure out what fields are required for a WorldPoint,
-						// and pass more data to the server if necessary
+						Map<String, Location> locationData = locationBroadcastManager.ping();
+						gimpLocationManager.update(locationData);
+						Map<String, WorldPoint> gimpLocations = gimpLocationManager.getGimpLocations();
+						for (String name : gimpLocationManager.getGimpLocations().keySet())
+						{
+							WorldPoint playerLocation = gimpLocations.get(name);
+							playerWaypoint = new WorldMapPoint(playerLocation, PLAYER_ICON);
+							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+							worldMapPointManager.add(playerWaypoint);
+						}
 					}
 				}
 			};
@@ -137,10 +177,12 @@ public class GIMPlugin extends Plugin
 				@SneakyThrows
 				public void run()
 				{
-					Map<GIMPLocationManager.Coordinate, Integer> location = GIMPLocationManager.mapCoordinates(
-							playerLocation.getPlane(),
-							playerLocation.getX(),
-							playerLocation.getY()
+					WorldPoint playerLocation = localPlayer.getWorldLocation();
+					GIMPLocation location = new GIMPLocation(
+						localPlayer.getName(),
+						playerLocation.getX(),
+						playerLocation.getY(),
+						playerLocation.getPlane()
 					);
 					locationBroadcastManager.broadcast(location);
 				}
