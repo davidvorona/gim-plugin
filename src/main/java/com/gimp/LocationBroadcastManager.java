@@ -25,7 +25,6 @@
 package com.gimp;
 
 import lombok.extern.slf4j.Slf4j;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.*;
@@ -34,7 +33,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
-
 import com.google.gson.Gson;
 
 @Slf4j
@@ -49,21 +47,36 @@ public class LocationBroadcastManager
 		client = HttpClient.newHttpClient();
 	}
 
-	public static Map<String, Location> spoofPingData()
+	public static Map<String, GIMPLocation> spoofPingData()
 	{
-		Map<String, Location> data = new HashMap<>();
+		Map<String, GIMPLocation> data = new HashMap<>();
 		// x = 2951, y = 3450: Doric's Anvil
-		Location gimpLocation = new Location(2951, 3450, 0);
+		GIMPLocation gimpLocation = new GIMPLocation(2951, 3450, 0);
 		data.put("Manogram", gimpLocation);
 		return data;
 	}
 
 	/**
+	 * Get formatted JSON-ready object for broadcast POST.
+	 *
+	 * @param name     name of player
+	 * @param location location of player
+	 * @return map with keys/values name, x, y, plane
+	 */
+	public static Map<String, Object> getBroadcastData(String name, GIMPLocation location)
+	{
+		Map<String, Object> broadcastData = location.getLocation();
+		String NAME_FIELD = "name";
+		broadcastData.put(NAME_FIELD, name); // name, x, y, plane
+		return broadcastData;
+	}
+
+	/**
 	 * Pings server for location of fellow GIMPs
 	 *
-	 * @return String
+	 * @return map: name => location
 	 */
-	public Map<String, Location> ping() throws ExecutionException, InterruptedException, URISyntaxException
+	public Map<String, GIMPLocation> ping() throws ExecutionException, InterruptedException, URISyntaxException
 	{
 		HttpRequest request = HttpRequest.newBuilder()
 			.uri(new URI("https://postman-echo.com/get"))
@@ -85,11 +98,12 @@ public class LocationBroadcastManager
 	/**
 	 * Broadcasts local GIMP's current location to server
 	 *
+	 * @param name     local player's name
 	 * @param location map of player's location coordinates in x, y, plane
 	 */
-	public void broadcast(GIMPLocation location) throws URISyntaxException, ExecutionException, InterruptedException
+	public void broadcast(String name, GIMPLocation location) throws URISyntaxException, ExecutionException, InterruptedException
 	{
-		Map<String, Object> body = location.getLocation();
+		Map<String, Object> body = LocationBroadcastManager.getBroadcastData(name, location);
 		Gson gson = new Gson();
 		String bodyJson = gson.toJson(body);
 		HttpRequest request = HttpRequest.newBuilder()

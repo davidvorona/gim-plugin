@@ -25,29 +25,43 @@
 package com.gimp;
 
 import lombok.AccessLevel;
-import lombok.extern.slf4j.Slf4j;
 import lombok.Getter;
-
+import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-public class GIMPLocation extends Location
+public class GIMPLocation
 {
-	String nameField = "name";
+	public enum Coordinate
+	{
+		plane,
+		x,
+		y
+	}
 
 	@Getter(AccessLevel.PACKAGE)
-	String name;
+	int x;
 
-	public GIMPLocation(String nameArg, int xArg, int yArg, int planeArg)
+	@Getter(AccessLevel.PACKAGE)
+	int y;
+
+	@Getter(AccessLevel.PACKAGE)
+	int plane;
+
+	public GIMPLocation(int xArg, int yArg, int planeArg)
 	{
-		super(xArg, yArg, planeArg);
-		name = nameArg;
+		x = xArg;
+		y = yArg;
+		plane = planeArg;
 	}
 
 	public Map<String, Object> getLocation()
 	{
-		Map<String, Object> location = super.getLocation();
-		location.put(nameField, name);
+		Map<String, Object> location = new HashMap<>();
+		location.put(Coordinate.x.toString(), x);
+		location.put(Coordinate.y.toString(), y);
+		location.put(Coordinate.plane.toString(), plane);
 		return location;
 	}
 }

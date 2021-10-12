@@ -46,7 +46,6 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.api.coords.WorldPoint;
-
 import java.awt.image.BufferedImage;
 import java.util.*;
 
@@ -159,13 +158,13 @@ public class GIMPlugin extends Plugin
 					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
 					if (worldMapView != null)
 					{
-						Map<String, Location> locationData = locationBroadcastManager.ping();
+						Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
 						gimpLocationManager.update(locationData);
-						Map<String, WorldPoint> gimpLocations = gimpLocationManager.getGimpLocations();
-						for (String name : gimpLocationManager.getGimpLocations().keySet())
+						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getGimpWorldPoints();
+						for (String name : gimpWorldPoints.keySet())
 						{
-							WorldPoint playerLocation = gimpLocations.get(name);
-							playerWaypoint = new WorldMapPoint(playerLocation, PLAYER_ICON);
+							WorldPoint worldPoint = gimpWorldPoints.get(name);
+							playerWaypoint = new WorldMapPoint(worldPoint, PLAYER_ICON);
 							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
 							worldMapPointManager.add(playerWaypoint);
 						}
@@ -177,14 +176,13 @@ public class GIMPlugin extends Plugin
 				@SneakyThrows
 				public void run()
 				{
-					WorldPoint playerLocation = localPlayer.getWorldLocation();
+					WorldPoint worldPoint = localPlayer.getWorldLocation();
 					GIMPLocation location = new GIMPLocation(
-						localPlayer.getName(),
-						playerLocation.getX(),
-						playerLocation.getY(),
-						playerLocation.getPlane()
+						worldPoint.getX(),
+						worldPoint.getY(),
+						worldPoint.getPlane()
 					);
-					locationBroadcastManager.broadcast(location);
+					locationBroadcastManager.broadcast(localPlayer.getName(), location);
 				}
 			};
 			timer.schedule(locationPingTask, 0, 5000);

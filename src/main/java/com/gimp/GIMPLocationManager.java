@@ -28,14 +28,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.WorldPoint;
-
 import java.util.*;
 
 @Slf4j
 public class GIMPLocationManager
 {
 	@Getter(AccessLevel.PACKAGE)
-	public Map<String, WorldPoint> gimpLocations;
+	public Map<String, GIMPLocation> gimpLocations;
 
 	public GIMPLocationManager(ArrayList<String> gimpNames)
 	{
@@ -46,18 +45,40 @@ public class GIMPLocationManager
 		}
 	}
 
-	public void update(Map<String, Location> data)
+	/**
+	 * Save each location to gimpLocations Map.
+	 *
+	 * @param data map: name => location
+	 */
+	public void update(Map<String, GIMPLocation> data)
 	{
 		gimpLocations.clear();
 		for (String name : data.keySet())
 		{
-			Location coordinates = data.get(name);
-			WorldPoint playerLocation = new WorldPoint(
-				coordinates.getX(),
-				coordinates.getY(),
-				coordinates.getPlane()
-			);
-			gimpLocations.put(name, playerLocation);
+			GIMPLocation location = data.get(name);
+			gimpLocations.put(name, location);
 		}
+	}
+
+	/**
+	 * Get WorldPoint instances from locations.
+	 * TODO: Probably want to move this to its own class that handles world points.
+	 *
+	 * @return map: name => worldPoint
+	 */
+	public Map<String, WorldPoint> getGimpWorldPoints()
+	{
+		Map<String, WorldPoint> worldPoints = new HashMap<>();
+		for (String name : gimpLocations.keySet())
+		{
+			GIMPLocation location = gimpLocations.get(name);
+			WorldPoint worldPoint = new WorldPoint(
+				location.getX(),
+				location.getY(),
+				location.getPlane()
+			);
+			worldPoints.put(name, worldPoint);
+		}
+		return worldPoints;
 	}
 }
