@@ -51,8 +51,11 @@ public class LocationBroadcastManager
 	{
 		Map<String, GIMPLocation> data = new HashMap<>();
 		// x = 2951, y = 3450: Doric's Anvil
-		GIMPLocation gimpLocation = new GIMPLocation(2951, 3450, 0);
-		data.put("Manogram", gimpLocation);
+		// x = 3220, y = 3219: Lumbridge Castle
+		GIMPLocation gimpLocation1 = new GIMPLocation(2951, 3450, 0);
+		GIMPLocation gimpLocation2 = new GIMPLocation(3220, 3219, 0);
+		data.put("Manogram", gimpLocation1);
+		data.put("Diregram", gimpLocation2);
 		return data;
 	}
 

@@ -55,13 +55,28 @@ import java.util.*;
 )
 public class GIMPlugin extends Plugin
 {
-	private static final BufferedImage PLAYER_ICON;
+	private static final BufferedImage GIMP_ICON_1;
+	private static final BufferedImage GIMP_ICON_2;
+	private static final BufferedImage GIMP_ICON_3;
+	private static final BufferedImage GIMP_ICON_4;
 
 	static
 	{
-		PLAYER_ICON = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-		final BufferedImage playerIcon = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
-		PLAYER_ICON.getGraphics().drawImage(playerIcon, 0, 0, null);
+		GIMP_ICON_1 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
+		final BufferedImage gimpIcon1 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
+		GIMP_ICON_1.getGraphics().drawImage(gimpIcon1, 0, 0, null);
+
+		GIMP_ICON_2 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
+		final BufferedImage gimpIcon2 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
+		GIMP_ICON_2.getGraphics().drawImage(gimpIcon2, 0, 0, null);
+
+		GIMP_ICON_3 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
+		final BufferedImage gimpIcon3 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
+		GIMP_ICON_3.getGraphics().drawImage(gimpIcon3, 0, 0, null);
+
+		GIMP_ICON_4 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
+		final BufferedImage gimpIcon4 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
+		GIMP_ICON_4.getGraphics().drawImage(gimpIcon4, 0, 0, null);
 	}
 
 	private GIMPLocationManager gimpLocationManager;
@@ -160,13 +175,23 @@ public class GIMPlugin extends Plugin
 					{
 						Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
 						gimpLocationManager.update(locationData);
+						// TODO: move this logic to its own class for managing the actual map icons
 						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getGimpWorldPoints();
+						ArrayList<BufferedImage> gimpIcons = new ArrayList<BufferedImage>()
+						{{
+							add(GIMP_ICON_1);
+							add(GIMP_ICON_2);
+							add(GIMP_ICON_3);
+							add(GIMP_ICON_4);
+						}};
+						int i = 0;
 						for (String name : gimpWorldPoints.keySet())
 						{
 							WorldPoint worldPoint = gimpWorldPoints.get(name);
-							playerWaypoint = new WorldMapPoint(worldPoint, PLAYER_ICON);
+							playerWaypoint = new WorldMapPoint(worldPoint, gimpIcons.get(i));
 							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
 							worldMapPointManager.add(playerWaypoint);
+							i++;
 						}
 					}
 				}
