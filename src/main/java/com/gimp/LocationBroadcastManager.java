@@ -27,13 +27,11 @@ package com.gimp;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.*;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.ExecutionException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -88,6 +86,10 @@ public class LocationBroadcastManager
 			return false;
 		}
 		// validate IP
+		if (ip.contains("localhost"))
+		{
+			return true;
+		}
 		if (!ip.contains("."))
 		{
 			return false;
@@ -126,46 +128,54 @@ public class LocationBroadcastManager
 	 *
 	 * @return map: name => location
 	 */
-	public Map<String, GIMPLocation> ping() throws ExecutionException, InterruptedException, URISyntaxException
+	public Map<String, GIMPLocation> ping()
 	{
 		if (!validateIpAndPort())
 		{
 			log.warn("Invalid server port or IP, aborting request");
 			return new HashMap<>();
 		}
-		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI(getBaseUrl() + "/ping"))
-			.version(HttpClient.Version.HTTP_1_1)
-			.timeout(Duration.of(5, ChronoUnit.SECONDS))
-			.headers("Content-Type", "application/json;charset=UTF-8")
-			.GET()
-			.build();
-		HttpResponse<String> response = client
-			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-			.get();
-		String bodyJson = response.body();
-		int OK = 200;
-		if (response.statusCode() != OK)
+		try
 		{
-			log.error(bodyJson);
+			HttpRequest request = HttpRequest.newBuilder()
+				.uri(new URI(getBaseUrl() + "/ping"))
+				.version(HttpClient.Version.HTTP_1_1)
+				.timeout(Duration.of(5, ChronoUnit.SECONDS))
+				.headers("Content-Type", "application/json;charset=UTF-8")
+				.GET()
+				.build();
+			HttpResponse<String> response = client
+				.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+				.get();
+			String bodyJson = response.body();
+			int OK = 200;
+			if (response.statusCode() != OK)
+			{
+				log.error(bodyJson);
+				return new HashMap<>();
+			}
+			Gson gson = new Gson();
+			Map<String, Map<String, Integer>> body = gson.fromJson(bodyJson, new TypeToken<HashMap<String, Map<String, Integer>>>()
+			{
+			}.getType());
+			Map<String, GIMPLocation> data = new HashMap<>();
+			for (String name : body.keySet())
+			{
+				Map<String, Integer> coordinates = body.get(name);
+				GIMPLocation location = new GIMPLocation(
+					coordinates.get("x"),
+					coordinates.get("y"),
+					coordinates.get("plane")
+				);
+				data.put(name, location);
+			}
+			return data;
+		}
+		catch (Exception e)
+		{
+			log.error(e.toString());
 			return new HashMap<>();
 		}
-		Gson gson = new Gson();
-		Map<String, Map<String, Integer>> body = gson.fromJson(bodyJson, new TypeToken<HashMap<String, Map<String, Integer>>>()
-		{
-		}.getType());
-		Map<String, GIMPLocation> data = new HashMap<>();
-		for (String name : body.keySet())
-		{
-			Map<String, Integer> coordinates = body.get(name);
-			GIMPLocation location = new GIMPLocation(
-				coordinates.get("x"),
-				coordinates.get("y"),
-				coordinates.get("plane")
-			);
-			data.put(name, location);
-		}
-		return data;
 	}
 
 	/**
@@ -174,7 +184,7 @@ public class LocationBroadcastManager
 	 * @param name     local player's name
 	 * @param location map of player's location coordinates in x, y, plane
 	 */
-	public void broadcast(String name, GIMPLocation location) throws URISyntaxException, ExecutionException, InterruptedException
+	public void broadcast(String name, GIMPLocation location)
 	{
 		if (!validateIpAndPort())
 		{
@@ -184,20 +194,27 @@ public class LocationBroadcastManager
 		Map<String, Object> body = LocationBroadcastManager.getBroadcastData(name, location);
 		Gson gson = new Gson();
 		String bodyJson = gson.toJson(body);
-		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI(getBaseUrl() + "/broadcast"))
-			.version(HttpClient.Version.HTTP_1_1)
-			.timeout(Duration.of(5, ChronoUnit.SECONDS))
-			.headers("Content-Type", "application/json;charset=UTF-8")
-			.POST(HttpRequest.BodyPublishers.ofString(bodyJson))
-			.build();
-		response = client
-			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-			.get();
-		int OK = 200;
-		if (response.statusCode() != OK)
+		try
 		{
-			log.error(response.body());
+			HttpRequest request = HttpRequest.newBuilder()
+				.uri(new URI(getBaseUrl() + "/broadcast"))
+				.version(HttpClient.Version.HTTP_1_1)
+				.timeout(Duration.of(5, ChronoUnit.SECONDS))
+				.headers("Content-Type", "application/json;charset=UTF-8")
+				.POST(HttpRequest.BodyPublishers.ofString(bodyJson))
+				.build();
+			response = client
+				.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+				.get();
+			int OK = 200;
+			if (response.statusCode() != OK)
+			{
+				log.error(response.body());
+			}
+		}
+		catch (Exception e)
+		{
+			log.error(e.toString());
 		}
 	}
 }
