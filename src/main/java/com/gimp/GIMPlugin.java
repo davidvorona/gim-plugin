@@ -45,6 +45,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.RuneLite;
+import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.api.coords.WorldPoint;
 import java.awt.image.BufferedImage;
 import java.util.*;
@@ -224,5 +226,11 @@ public class GIMPlugin extends Plugin
 	GIMPConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(GIMPConfig.class);
+	}
+
+	public static void main(String[] args) throws Exception
+	{
+		ExternalPluginManager.loadBuiltin(GIMPlugin.class);
+		RuneLite.main(args);
 	}
 }

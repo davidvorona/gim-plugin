@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'application'
 }
 
 repositories {
@@ -13,7 +14,7 @@ repositories {
 def runeLiteVersion = '1.7.25'
 
 dependencies {
-	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+	compile group: 'net.runelite', name:'client', version: runeLiteVersion
 
 	compileOnly 'org.projectlombok:lombok:1.18.20'
 	annotationProcessor 'org.projectlombok:lombok:1.18.20'
@@ -25,8 +26,17 @@ dependencies {
 
 group = 'com.example'
 version = '1.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = '11'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+}
+
+// Allows us to use the plugin via the Gradle "run" task
+application {
+	mainClassName = 'com.gimp.GIMPlugin'
+}
+
+run {
+	enableAssertions = true
 }
