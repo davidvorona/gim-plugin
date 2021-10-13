@@ -25,30 +25,31 @@
 package com.gimp;
 
 import com.google.inject.Provides;
-import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
-import net.runelite.api.clan.ClanID;
 import net.runelite.api.clan.ClanChannelMember;
+import net.runelite.api.clan.ClanID;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-import net.runelite.client.util.ImageUtil;
-import net.runelite.client.RuneLite;
-import net.runelite.client.externalplugins.ExternalPluginManager;
-import net.runelite.api.coords.WorldPoint;
-import java.awt.image.BufferedImage;
+
+import javax.inject.Inject;
 import java.util.*;
 
 @Slf4j
@@ -57,30 +58,7 @@ import java.util.*;
 )
 public class GIMPlugin extends Plugin
 {
-	private static final BufferedImage GIMP_ICON_1;
-	private static final BufferedImage GIMP_ICON_2;
-	private static final BufferedImage GIMP_ICON_3;
-	private static final BufferedImage GIMP_ICON_4;
-
-	static
-	{
-		GIMP_ICON_1 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-		final BufferedImage gimpIcon1 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
-		GIMP_ICON_1.getGraphics().drawImage(gimpIcon1, 0, 0, null);
-
-		GIMP_ICON_2 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-		final BufferedImage gimpIcon2 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
-		GIMP_ICON_2.getGraphics().drawImage(gimpIcon2, 0, 0, null);
-
-		GIMP_ICON_3 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-		final BufferedImage gimpIcon3 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
-		GIMP_ICON_3.getGraphics().drawImage(gimpIcon3, 0, 0, null);
-
-		GIMP_ICON_4 = new BufferedImage(37, 37, BufferedImage.TYPE_INT_ARGB);
-		final BufferedImage gimpIcon4 = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
-		GIMP_ICON_4.getGraphics().drawImage(gimpIcon4, 0, 0, null);
-	}
-
+	private GIMIconProvider iconProvider = new GIMIconProvider();
 	private GIMPLocationManager gimpLocationManager;
 
 	@Inject
@@ -182,19 +160,12 @@ public class GIMPlugin extends Plugin
 							gimpLocationManager.update(locationData);
 							// TODO: move this logic to its own class for managing the actual map icons
 							Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
-							ArrayList<BufferedImage> gimpIcons = new ArrayList<BufferedImage>()
-							{{
-								add(GIMP_ICON_1);
-								add(GIMP_ICON_2);
-								add(GIMP_ICON_3);
-								add(GIMP_ICON_4);
-							}};
 							int i = 0;
 							for (String name : gimpWorldPoints.keySet())
 							{
 								WorldPoint worldPoint = gimpWorldPoints.get(name);
 								worldMapPointManager.removeIf(x -> x == playerWaypoint);
-								playerWaypoint = new WorldMapPoint(worldPoint, gimpIcons.get(i));
+								playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
 								playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
 								worldMapPointManager.add(playerWaypoint);
 								i++;
