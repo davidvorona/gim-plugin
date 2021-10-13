@@ -176,7 +176,7 @@ public class GIMPlugin extends Plugin
 						Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
 						gimpLocationManager.update(locationData);
 						// TODO: move this logic to its own class for managing the actual map icons
-						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getGimpWorldPoints();
+						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
 						ArrayList<BufferedImage> gimpIcons = new ArrayList<BufferedImage>()
 						{{
 							add(GIMP_ICON_1);
@@ -188,6 +188,7 @@ public class GIMPlugin extends Plugin
 						for (String name : gimpWorldPoints.keySet())
 						{
 							WorldPoint worldPoint = gimpWorldPoints.get(name);
+							worldMapPointManager.removeIf(x -> x == playerWaypoint);
 							playerWaypoint = new WorldMapPoint(worldPoint, gimpIcons.get(i));
 							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
 							worldMapPointManager.add(playerWaypoint);

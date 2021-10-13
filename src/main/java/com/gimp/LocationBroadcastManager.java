@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @Slf4j
 public class LocationBroadcastManager
@@ -82,20 +83,37 @@ public class LocationBroadcastManager
 	public Map<String, GIMPLocation> ping() throws ExecutionException, InterruptedException, URISyntaxException
 	{
 		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI("https://postman-echo.com/get"))
+			.uri(new URI("http://localhost:3000/ping"))
 			.timeout(Duration.of(5, ChronoUnit.SECONDS))
+			.headers("Content-Type", "application/json;charset=UTF-8")
 			.GET()
 			.build();
 		HttpResponse<String> response = client
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
 		String bodyJson = response.body();
-//        Gson gson = new Gson();
-//        Map<String, Object> body = gson.fromJson(bodyJson, HashMap.class);
-//        GIMPLocation.sanitizeLocationData(body);
-		log.info(bodyJson);
-		// spoof response
-		return LocationBroadcastManager.spoofPingData();
+		int OK = 200;
+		if (response.statusCode() != OK)
+		{
+			log.error(bodyJson);
+			return new HashMap<>();
+		}
+		Gson gson = new Gson();
+		Map<String, Map<String, Integer>> body = gson.fromJson(bodyJson, new TypeToken<HashMap<String, Map<String, Integer>>>()
+		{
+		}.getType());
+		Map<String, GIMPLocation> data = new HashMap<>();
+		for (String name : body.keySet())
+		{
+			Map<String, Integer> coordinates = body.get(name);
+			GIMPLocation location = new GIMPLocation(
+				coordinates.get("x"),
+				coordinates.get("y"),
+				coordinates.get("plane")
+			);
+			data.put(name, location);
+		}
+		return data;
 	}
 
 	/**
@@ -110,13 +128,18 @@ public class LocationBroadcastManager
 		Gson gson = new Gson();
 		String bodyJson = gson.toJson(body);
 		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI("https://postman-echo.com/post"))
+			.uri(new URI("http://localhost:3000/broadcast"))
 			.timeout(Duration.of(5, ChronoUnit.SECONDS))
+			.headers("Content-Type", "application/json;charset=UTF-8")
 			.POST(HttpRequest.BodyPublishers.ofString(bodyJson))
 			.build();
 		response = client
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
-		log.info(response.body());
+		int OK = 200;
+		if (response.statusCode() != OK)
+		{
+			log.error(response.body());
+		}
 	}
 }

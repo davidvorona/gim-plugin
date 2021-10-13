@@ -66,18 +66,21 @@ public class GIMPLocationManager
 	 *
 	 * @return map: name => worldPoint
 	 */
-	public Map<String, WorldPoint> getGimpWorldPoints()
+	public Map<String, WorldPoint> getOtherGimpWorldPoints(String localName)
 	{
 		Map<String, WorldPoint> worldPoints = new HashMap<>();
 		for (String name : gimpLocations.keySet())
 		{
-			GIMPLocation location = gimpLocations.get(name);
-			WorldPoint worldPoint = new WorldPoint(
-				location.getX(),
-				location.getY(),
-				location.getPlane()
-			);
-			worldPoints.put(name, worldPoint);
+			if (!name.equals(localName))
+			{
+				GIMPLocation location = gimpLocations.get(name);
+				WorldPoint worldPoint = new WorldPoint(
+					location.getX(),
+					location.getY(),
+					location.getPlane()
+				);
+				worldPoints.put(name, worldPoint);
+			}
 		}
 		return worldPoints;
 	}
