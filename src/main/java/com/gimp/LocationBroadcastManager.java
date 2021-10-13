@@ -133,10 +133,9 @@ public class LocationBroadcastManager
 			log.warn("Invalid server port or IP, aborting request");
 			return new HashMap<>();
 		}
-		log.info(getBaseUrl() + "/ping");
 		HttpRequest request = HttpRequest.newBuilder()
 			.uri(new URI(getBaseUrl() + "/ping"))
-			.version(HttpClient.Version.HTTP_1_1) // necessary for GET apparently
+			.version(HttpClient.Version.HTTP_1_1)
 			.timeout(Duration.of(5, ChronoUnit.SECONDS))
 			.headers("Content-Type", "application/json;charset=UTF-8")
 			.GET()
@@ -144,7 +143,6 @@ public class LocationBroadcastManager
 		HttpResponse<String> response = client
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
-		log.info(response.body());
 		String bodyJson = response.body();
 		int OK = 200;
 		if (response.statusCode() != OK)
@@ -188,7 +186,7 @@ public class LocationBroadcastManager
 		String bodyJson = gson.toJson(body);
 		HttpRequest request = HttpRequest.newBuilder()
 			.uri(new URI(getBaseUrl() + "/broadcast"))
-			.version(HttpClient.Version.HTTP_2)
+			.version(HttpClient.Version.HTTP_1_1)
 			.timeout(Duration.of(5, ChronoUnit.SECONDS))
 			.headers("Content-Type", "application/json;charset=UTF-8")
 			.POST(HttpRequest.BodyPublishers.ofString(bodyJson))
@@ -197,7 +195,6 @@ public class LocationBroadcastManager
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
 		int OK = 200;
-		log.info(response.body());
 		if (response.statusCode() != OK)
 		{
 			log.error(response.body());

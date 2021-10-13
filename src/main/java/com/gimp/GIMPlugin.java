@@ -102,8 +102,6 @@ public class GIMPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		log.info("GIMP started!");
-		log.info(config.serverIp());
-		log.info(config.serverPort());
 	}
 
 	@Override
