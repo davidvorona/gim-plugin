@@ -8,12 +8,22 @@ import net.runelite.client.config.ConfigItem;
 public interface GIMPConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+		keyName = "serverIp",
+		name = "Server IP",
+		description = "IP of the remote GIMP server"
 	)
-	default String greeting()
+	default String serverIp()
 	{
-		return "Hello";
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "serverPort",
+		name = "Server Port",
+		description = "Port of the remote GIMP server"
+	)
+	default String serverPort()
+	{
+		return "";
 	}
 }

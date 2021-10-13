@@ -24,6 +24,7 @@
  */
 package com.gimp;
 
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,6 +43,9 @@ public class LocationBroadcastManager
 	final HttpClient client;
 
 	public HttpResponse<String> response;
+
+	@Inject
+	private GIMPConfig config;
 
 	public LocationBroadcastManager()
 	{
@@ -75,6 +79,48 @@ public class LocationBroadcastManager
 		return broadcastData;
 	}
 
+	public boolean validateIpAndPort()
+	{
+		String ip = config.serverIp();
+		String port = config.serverPort();
+		if (ip == null || port == null)
+		{
+			return false;
+		}
+		// validate IP
+		if (!ip.contains("."))
+		{
+			return false;
+		}
+		String[] terms = ip.split("\\.");
+		for (String term : terms)
+		{
+			try
+			{
+				Integer.parseInt(term);
+			}
+			catch (NumberFormatException e)
+			{
+				return false;
+			}
+		}
+		// validate port
+		try
+		{
+			Integer.parseInt(port);
+		}
+		catch (NumberFormatException e)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	private String getBaseUrl()
+	{
+		return "http://" + config.serverIp() + ":" + config.serverPort();
+	}
+
 	/**
 	 * Pings server for location of fellow GIMPs
 	 *
@@ -82,8 +128,15 @@ public class LocationBroadcastManager
 	 */
 	public Map<String, GIMPLocation> ping() throws ExecutionException, InterruptedException, URISyntaxException
 	{
+		if (!validateIpAndPort())
+		{
+			log.warn("Invalid server port or IP, aborting request");
+			return new HashMap<>();
+		}
+		log.info(getBaseUrl() + "/ping");
 		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI("http://localhost:3000/ping"))
+			.uri(new URI(getBaseUrl() + "/ping"))
+			.version(HttpClient.Version.HTTP_1_1) // necessary for GET apparently
 			.timeout(Duration.of(5, ChronoUnit.SECONDS))
 			.headers("Content-Type", "application/json;charset=UTF-8")
 			.GET()
@@ -91,6 +144,7 @@ public class LocationBroadcastManager
 		HttpResponse<String> response = client
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
+		log.info(response.body());
 		String bodyJson = response.body();
 		int OK = 200;
 		if (response.statusCode() != OK)
@@ -124,11 +178,17 @@ public class LocationBroadcastManager
 	 */
 	public void broadcast(String name, GIMPLocation location) throws URISyntaxException, ExecutionException, InterruptedException
 	{
+		if (!validateIpAndPort())
+		{
+			log.warn("Invalid server port or IP, aborting request");
+			return;
+		}
 		Map<String, Object> body = LocationBroadcastManager.getBroadcastData(name, location);
 		Gson gson = new Gson();
 		String bodyJson = gson.toJson(body);
 		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI("http://localhost:3000/broadcast"))
+			.uri(new URI(getBaseUrl() + "/broadcast"))
+			.version(HttpClient.Version.HTTP_2)
 			.timeout(Duration.of(5, ChronoUnit.SECONDS))
 			.headers("Content-Type", "application/json;charset=UTF-8")
 			.POST(HttpRequest.BodyPublishers.ofString(bodyJson))
@@ -137,6 +197,7 @@ public class LocationBroadcastManager
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
 		int OK = 200;
+		log.info(response.body());
 		if (response.statusCode() != OK)
 		{
 			log.error(response.body());

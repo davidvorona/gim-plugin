@@ -81,6 +81,7 @@ public class GIMPlugin extends Plugin
 
 	private GIMPLocationManager gimpLocationManager;
 
+	@Inject
 	private LocationBroadcastManager locationBroadcastManager;
 
 	private Timer timer;
@@ -101,6 +102,8 @@ public class GIMPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		log.info("GIMP started!");
+		log.info(config.serverIp());
+		log.info(config.serverPort());
 	}
 
 	@Override
@@ -162,37 +165,40 @@ public class GIMPlugin extends Plugin
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer != null)
 		{
-			locationBroadcastManager = new LocationBroadcastManager();
 			timer = new Timer();
 			TimerTask locationPingTask = new TimerTask()
 			{
 				@SneakyThrows
 				public void run()
 				{
-					// only ping if world map is open
-					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-					if (worldMapView != null)
+					// only ping if valid server address
+					if (locationBroadcastManager.validateIpAndPort())
 					{
-						Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
-						gimpLocationManager.update(locationData);
-						// TODO: move this logic to its own class for managing the actual map icons
-						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
-						ArrayList<BufferedImage> gimpIcons = new ArrayList<BufferedImage>()
-						{{
-							add(GIMP_ICON_1);
-							add(GIMP_ICON_2);
-							add(GIMP_ICON_3);
-							add(GIMP_ICON_4);
-						}};
-						int i = 0;
-						for (String name : gimpWorldPoints.keySet())
+						// only ping if world map is open
+						final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+						if (worldMapView != null)
 						{
-							WorldPoint worldPoint = gimpWorldPoints.get(name);
-							worldMapPointManager.removeIf(x -> x == playerWaypoint);
-							playerWaypoint = new WorldMapPoint(worldPoint, gimpIcons.get(i));
-							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
-							worldMapPointManager.add(playerWaypoint);
-							i++;
+							Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
+							gimpLocationManager.update(locationData);
+							// TODO: move this logic to its own class for managing the actual map icons
+							Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
+							ArrayList<BufferedImage> gimpIcons = new ArrayList<BufferedImage>()
+							{{
+								add(GIMP_ICON_1);
+								add(GIMP_ICON_2);
+								add(GIMP_ICON_3);
+								add(GIMP_ICON_4);
+							}};
+							int i = 0;
+							for (String name : gimpWorldPoints.keySet())
+							{
+								WorldPoint worldPoint = gimpWorldPoints.get(name);
+								worldMapPointManager.removeIf(x -> x == playerWaypoint);
+								playerWaypoint = new WorldMapPoint(worldPoint, gimpIcons.get(i));
+								playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+								worldMapPointManager.add(playerWaypoint);
+								i++;
+							}
 						}
 					}
 				}
