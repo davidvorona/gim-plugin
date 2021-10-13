@@ -26,4 +26,14 @@ public interface GIMPConfig extends Config
 	{
 		return "";
 	}
+
+	@ConfigItem(
+		keyName = "ghostMode",
+		name = "Ghost Mode",
+		description = "Hides your location from your fellow GIMPs"
+	)
+	default boolean ghostMode()
+	{
+		return false;
+	}
 }
