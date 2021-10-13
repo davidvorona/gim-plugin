@@ -89,7 +89,7 @@ public class GIMPlugin extends Plugin
 	private Timer timer;
 
 	@Getter(AccessLevel.PACKAGE)
-	private WorldMapPoint playerWaypoint;
+	final private List<WorldMapPoint> playerWaypoints = new ArrayList<>();
 
 	@Inject
 	WorldMapPointManager worldMapPointManager;
@@ -190,13 +190,29 @@ public class GIMPlugin extends Plugin
 								add(GIMP_ICON_4);
 							}};
 							int i = 0;
-							for (String name : gimpWorldPoints.keySet())
+							int gimpCount = gimpWorldPoints.size();
+							List<String> gimpNames = new ArrayList<>();
+							for (Object name : gimpWorldPoints.keySet())
 							{
-								WorldPoint worldPoint = gimpWorldPoints.get(name);
-								worldMapPointManager.removeIf(x -> x == playerWaypoint);
-								playerWaypoint = new WorldMapPoint(worldPoint, gimpIcons.get(i));
-								playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
-								worldMapPointManager.add(playerWaypoint);
+								gimpNames.add(String.valueOf(name));
+							}
+							for (BufferedImage icon : gimpIcons)
+							{
+								if (i < playerWaypoints.size())
+								{
+									WorldMapPoint outdatedWaypoint = playerWaypoints.get(i);
+									worldMapPointManager.removeIf(x -> x == outdatedWaypoint);
+									playerWaypoints.remove(i);
+								}
+								if (i < gimpCount)
+								{
+									String gimpName = gimpNames.get(i);
+									WorldPoint worldPoint = gimpWorldPoints.get(gimpName);
+									WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, icon);
+									playerWaypoints.add(playerWaypoint);
+									playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+									worldMapPointManager.add(playerWaypoint);
+								}
 								i++;
 							}
 						}
