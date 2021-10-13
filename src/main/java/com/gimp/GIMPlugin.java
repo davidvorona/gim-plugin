@@ -58,7 +58,8 @@ import java.util.*;
 )
 public class GIMPlugin extends Plugin
 {
-	private GIMIconProvider iconProvider = new GIMIconProvider();
+	final private GIMIconProvider iconProvider = new GIMIconProvider();
+
 	private GIMPLocationManager gimpLocationManager;
 
 	@Inject
@@ -67,7 +68,7 @@ public class GIMPlugin extends Plugin
 	private Timer timer;
 
 	@Getter(AccessLevel.PACKAGE)
-	private WorldMapPoint playerWaypoint;
+	final private List<WorldMapPoint> playerWaypoints = new ArrayList<>();
 
 	@Inject
 	WorldMapPointManager worldMapPointManager;
@@ -160,15 +161,17 @@ public class GIMPlugin extends Plugin
 							gimpLocationManager.update(locationData);
 							// TODO: move this logic to its own class for managing the actual map icons
 							Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
-							int i = 0;
+							for (WorldMapPoint playerWaypoint : playerWaypoints)
+							{
+								worldMapPointManager.removeIf(x -> x == playerWaypoint);
+							}
 							for (String name : gimpWorldPoints.keySet())
 							{
 								WorldPoint worldPoint = gimpWorldPoints.get(name);
-								worldMapPointManager.removeIf(x -> x == playerWaypoint);
-								playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
+								WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
+								playerWaypoints.add(playerWaypoint);
 								playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
 								worldMapPointManager.add(playerWaypoint);
-								i++;
 							}
 						}
 					}
