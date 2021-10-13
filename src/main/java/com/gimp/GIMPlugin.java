@@ -182,13 +182,16 @@ public class GIMPlugin extends Plugin
 				@SneakyThrows
 				public void run()
 				{
-					WorldPoint worldPoint = localPlayer.getWorldLocation();
-					GIMPLocation location = new GIMPLocation(
-						worldPoint.getX(),
-						worldPoint.getY(),
-						worldPoint.getPlane()
-					);
-					locationBroadcastManager.broadcast(localPlayer.getName(), location);
+					if (!config.ghostMode())
+					{
+						WorldPoint worldPoint = localPlayer.getWorldLocation();
+						GIMPLocation location = new GIMPLocation(
+							worldPoint.getX(),
+							worldPoint.getY(),
+							worldPoint.getPlane()
+						);
+						locationBroadcastManager.broadcast(localPlayer.getName(), location);
+					}
 				}
 			};
 			timer.schedule(locationPingTask, 0, 5000);
