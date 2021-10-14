@@ -1,32 +1,29 @@
 plugins {
-	id 'java'
-	id 'application'
+    id 'java'
+    id 'application'
 }
 
 repositories {
-	mavenLocal()
-	maven {
-		url = 'https://repo.runelite.net'
-	}
-	mavenCentral()
+    mavenLocal()
+    maven {
+        url = 'https://repo.runelite.net'
+    }
+    mavenCentral()
 }
 
 def runeLiteVersion = '1.7.25'
 
 dependencies {
-	compile group: 'net.runelite', name:'client', version: runeLiteVersion
+    compile group: 'net.runelite', name: 'client', version: runeLiteVersion
 
-	compileOnly 'org.projectlombok:lombok:1.18.20'
-	annotationProcessor 'org.projectlombok:lombok:1.18.20'
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
-	testImplementation 'junit:junit:4.12'
-	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
-	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+    testImplementation 'junit:junit:4.12'
+    testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
+    testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
 
-    implementation('io.socket:socket.io-client:2.0.1') {
-        // excluding org.json which is provided by Android
-        exclude group: 'org.json', module: 'json'
-    }
+    implementation 'io.socket:socket.io-client:2.0.1'
 }
 
 group = 'com.example'
@@ -34,14 +31,14 @@ version = '1.0-SNAPSHOT'
 sourceCompatibility = '11'
 
 tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+    options.encoding = 'UTF-8'
 }
 
 // Allows us to use the plugin via the Gradle "run" task
 application {
-	mainClassName = 'com.gimp.GIMPlugin'
+    mainClassName = 'com.gimp.GIMPlugin'
 }
 
 run {
-	enableAssertions = true
+    enableAssertions = true
 }

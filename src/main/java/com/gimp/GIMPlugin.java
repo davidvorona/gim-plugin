@@ -87,7 +87,6 @@ public class GIMPlugin extends Plugin
 		log.info("GIMP started!");
 		socketClient = new GIMPSocketClient();
 		socketClient.connect(config.serverIp(), Integer.parseInt(config.serverPort()));
-		socketClient.send("ping");
 	}
 
 	@Override
