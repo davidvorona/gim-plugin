@@ -62,6 +62,8 @@ public class GIMPlugin extends Plugin
 
 	private GIMPLocationManager gimpLocationManager;
 
+	private GIMPSocketClient socketClient;
+
 	@Inject
 	private LocationBroadcastManager locationBroadcastManager;
 
@@ -83,6 +85,9 @@ public class GIMPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		log.info("GIMP started!");
+		socketClient = new GIMPSocketClient();
+		socketClient.connect(config.serverIp(), Integer.parseInt(config.serverPort()));
+		socketClient.send("ping");
 	}
 
 	@Override
