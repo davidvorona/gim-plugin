@@ -24,6 +24,8 @@
  */
 package com.gimp;
 
+import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import java.net.URI;
@@ -171,7 +173,7 @@ public class LocationBroadcastManager
 			}
 			return data;
 		}
-		catch (Exception e)
+		catch (URISyntaxException | ExecutionException | InterruptedException e)
 		{
 			log.error(e.toString());
 			return new HashMap<>();
@@ -212,7 +214,7 @@ public class LocationBroadcastManager
 				log.error(response.body());
 			}
 		}
-		catch (Exception e)
+		catch (URISyntaxException | ExecutionException | InterruptedException e)
 		{
 			log.error(e.toString());
 		}
