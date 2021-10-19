@@ -1,24 +1,30 @@
 package com.gimp;
 
+import io.socket.client.Ack;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import io.socket.engineio.client.transports.Polling;
 import io.socket.engineio.client.transports.WebSocket;
 import java.net.*;
 import io.socket.client.IO;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 
 @Slf4j
-public class GIMPSocketClient
+public class GIMPSocketClient extends GIMPRequestClient
 {
 	@Getter(AccessLevel.PACKAGE)
-	private Socket socket;
+	public Socket client;
 
-	public void connect(String ip, int port)
+	public void connect()
 	{
-		URI uri = URI.create("http://" + ip + ":" + port);
+		URI uri = URI.create(getBaseUrl());
 		IO.Options options = IO.Options.builder()
 			// IO factory options
 			.setForceNew(false)
@@ -43,42 +49,53 @@ public class GIMPSocketClient
 			// Socket options
 			.setAuth(null)
 			.build();
-		socket = IO.socket(uri, options);
-		socket.connect();
+		client = IO.socket(uri, options);
+		client.connect();
 
-		socket.on(Socket.EVENT_CONNECT, new Emitter.Listener()
+		client.on(Socket.EVENT_CONNECT, new Emitter.Listener()
 		{
 			@Override
 			public void call(Object... args)
 			{
-				log.info(socket.id() + " connected");
-				// TODO: below should work, why doesn't it?
-				socket.emit("ping");
+				log.info(client.id() + " connected");
 			}
 		});
 
-		socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener()
+		client.on(Socket.EVENT_DISCONNECT, new Emitter.Listener()
 		{
 			@Override
 			public void call(Object... args)
 			{
-				log.info(socket.id() + " disconnected"); // null
-			}
-		});
-
-		String EVENT_PONG = "pong";
-		socket.on(EVENT_PONG, new Emitter.Listener()
-		{
-			@Override
-			public void call(Object... args)
-			{
-				log.info("pong");
+				log.info(client.id() + " disconnected"); // null
 			}
 		});
 	}
 
-	public void send(String msg, String data)
+	public boolean isConnected()
 	{
-		socket.emit(msg, data);
+		return client.connected();
+	}
+
+	public String ping() throws ExecutionException, InterruptedException, TimeoutException
+	{
+		String EVENT_PING = "ping";
+		CompletableFuture<String> socketResponse = new CompletableFuture<>();
+		client.emit(EVENT_PING, new Ack()
+		{
+			@Override
+			public void call(Object... args)
+			{
+				JSONObject data = (JSONObject) args[0];
+				log.info(data.toString());
+				socketResponse.complete(data.toString());
+			}
+		});
+		return socketResponse.get(5, TimeUnit.SECONDS);
+	}
+
+	public void broadcast(String data)
+	{
+		String EVENT_BROADCAST = "broadcast";
+		client.emit(EVENT_BROADCAST, data);
 	}
 }

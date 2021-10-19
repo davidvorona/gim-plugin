@@ -24,35 +24,101 @@
  */
 package com.gimp;
 
-import java.net.URISyntaxException;
-import java.util.concurrent.ExecutionException;
-import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-import java.net.URI;
-import java.net.http.*;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
-import java.util.HashMap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
 
+
+// TODO: will need button in config that reconnects sockets if possible--
+// or, we need to store last IP:PORT, check if it has changed at the beginning
+// of each interval, and reconnect if necessary...
 @Slf4j
 public class LocationBroadcastManager
 {
-	final HttpClient client;
-
-	public HttpResponse<String> response;
+	@Inject
+	private GIMPHttpClient httpClient;
 
 	@Inject
-	private GIMPConfig config;
+	private GIMPSocketClient socketClient;
 
 	public LocationBroadcastManager()
 	{
-		client = HttpClient.newHttpClient();
+		httpClient = new GIMPHttpClient();
+		socketClient = new GIMPSocketClient();
 	}
 
-	public static Map<String, GIMPLocation> spoofPingData()
+	public void connectSocketClient()
+	{
+		socketClient.connect();
+	}
+
+	private GIMPRequestClient getRequestClient()
+	{
+		if (socketClient.isConnected())
+		{
+			log.info("Using socket...");
+			return socketClient;
+		}
+		else
+		{
+			log.info("Using HTTP...");
+			return httpClient;
+		}
+	}
+
+	/**
+	 * Get JSON string of broadcast data.
+	 *
+	 * @param name     name of player
+	 * @param location location of player
+	 * @return JSON string of keys/values name, x, y, plane
+	 */
+	static String stringifyBroadcastData(String name, GIMPLocation location)
+	{
+		Map<String, Object> broadcastData = location.getLocation();
+		String NAME_FIELD = "name";
+		broadcastData.put(NAME_FIELD, name); // name, x, y, plane
+		Gson gson = new Gson();
+		return gson.toJson(broadcastData);
+	}
+
+	/**
+	 * Parses JSON string of ping data and adds to map.
+	 *
+	 * @param dataJson JSON string of ping data
+	 * @return map: name => location
+	 */
+	static Map<String, GIMPLocation> parsePingData(String dataJson)
+	{
+		Gson gson = new Gson();
+		Map<String, Map<String, Integer>> body = gson.fromJson(dataJson, new TypeToken<HashMap<String, Map<String, Integer>>>()
+		{
+		}.getType());
+		Map<String, GIMPLocation> data = new HashMap<>();
+		for (String name : body.keySet())
+		{
+			Map<String, Integer> coordinates = body.get(name);
+			GIMPLocation location = new GIMPLocation(
+				coordinates.get("x"),
+				coordinates.get("y"),
+				coordinates.get("plane")
+			);
+			data.put(name, location);
+		}
+		return data;
+	}
+
+	/**
+	 * Spoofs data returned from ping request.
+	 *
+	 * @return map: name => location
+	 */
+	static Map<String, GIMPLocation> spoofPingData()
 	{
 		Map<String, GIMPLocation> data = new HashMap<>();
 		// x = 2951, y = 3450: Doric's Anvil
@@ -64,159 +130,33 @@ public class LocationBroadcastManager
 		return data;
 	}
 
-	/**
-	 * Get formatted JSON-ready object for broadcast POST.
-	 *
-	 * @param name     name of player
-	 * @param location location of player
-	 * @return map with keys/values name, x, y, plane
-	 */
-	public static Map<String, Object> getBroadcastData(String name, GIMPLocation location)
-	{
-		Map<String, Object> broadcastData = location.getLocation();
-		String NAME_FIELD = "name";
-		broadcastData.put(NAME_FIELD, name); // name, x, y, plane
-		return broadcastData;
-	}
-
-	public boolean validateIpAndPort()
-	{
-		String ip = config.serverIp();
-		String port = config.serverPort();
-		if (ip == null || port == null)
-		{
-			return false;
-		}
-		// validate IP
-		if (ip.contains("localhost"))
-		{
-			return true;
-		}
-		if (!ip.contains("."))
-		{
-			return false;
-		}
-		String[] terms = ip.split("\\.");
-		for (String term : terms)
-		{
-			try
-			{
-				Integer.parseInt(term);
-			}
-			catch (NumberFormatException e)
-			{
-				return false;
-			}
-		}
-		// validate port
-		try
-		{
-			Integer.parseInt(port);
-		}
-		catch (NumberFormatException e)
-		{
-			return false;
-		}
-		return true;
-	}
-
-	private String getBaseUrl()
-	{
-		return "http://" + config.serverIp() + ":" + config.serverPort();
-	}
-
-	/**
-	 * Pings server for location of fellow GIMPs
-	 *
-	 * @return map: name => location
-	 */
-	public Map<String, GIMPLocation> ping()
-	{
-		if (!validateIpAndPort())
-		{
-			log.warn("Invalid server port or IP, aborting request");
-			return new HashMap<>();
-		}
-		try
-		{
-			HttpRequest request = HttpRequest.newBuilder()
-				.uri(new URI(getBaseUrl() + "/ping"))
-				.version(HttpClient.Version.HTTP_1_1)
-				.timeout(Duration.of(5, ChronoUnit.SECONDS))
-				.headers("Content-Type", "application/json;charset=UTF-8")
-				.GET()
-				.build();
-			HttpResponse<String> response = client
-				.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-				.get();
-			String bodyJson = response.body();
-			int OK = 200;
-			if (response.statusCode() != OK)
-			{
-				log.error(bodyJson);
-				return new HashMap<>();
-			}
-			Gson gson = new Gson();
-			Map<String, Map<String, Integer>> body = gson.fromJson(bodyJson, new TypeToken<HashMap<String, Map<String, Integer>>>()
-			{
-			}.getType());
-			Map<String, GIMPLocation> data = new HashMap<>();
-			for (String name : body.keySet())
-			{
-				Map<String, Integer> coordinates = body.get(name);
-				GIMPLocation location = new GIMPLocation(
-					coordinates.get("x"),
-					coordinates.get("y"),
-					coordinates.get("plane")
-				);
-				data.put(name, location);
-			}
-			return data;
-		}
-		catch (URISyntaxException | ExecutionException | InterruptedException e)
-		{
-			log.error(e.toString());
-			return new HashMap<>();
-		}
-	}
-
-	/**
-	 * Broadcasts local GIMP's current location to server
-	 *
-	 * @param name     local player's name
-	 * @param location map of player's location coordinates in x, y, plane
-	 */
 	public void broadcast(String name, GIMPLocation location)
 	{
-		if (!validateIpAndPort())
-		{
-			log.warn("Invalid server port or IP, aborting request");
-			return;
-		}
-		Map<String, Object> body = LocationBroadcastManager.getBroadcastData(name, location);
-		Gson gson = new Gson();
-		String bodyJson = gson.toJson(body);
 		try
 		{
-			HttpRequest request = HttpRequest.newBuilder()
-				.uri(new URI(getBaseUrl() + "/broadcast"))
-				.version(HttpClient.Version.HTTP_1_1)
-				.timeout(Duration.of(5, ChronoUnit.SECONDS))
-				.headers("Content-Type", "application/json;charset=UTF-8")
-				.POST(HttpRequest.BodyPublishers.ofString(bodyJson))
-				.build();
-			response = client
-				.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-				.get();
-			int OK = 200;
-			if (response.statusCode() != OK)
-			{
-				log.error(response.body());
-			}
+			GIMPRequestClient requestClient = getRequestClient();
+			String dataJson = LocationBroadcastManager.stringifyBroadcastData(name, location);
+			requestClient.broadcast(dataJson);
 		}
-		catch (URISyntaxException | ExecutionException | InterruptedException e)
+		catch (Exception e)
 		{
 			log.error(e.toString());
+		}
+	}
+
+	public Map<String, GIMPLocation> ping()
+	{
+		try
+		{
+			GIMPRequestClient requestClient = getRequestClient();
+			String dataJson = requestClient.ping();
+			return LocationBroadcastManager.parsePingData(dataJson);
+		}
+		catch (Exception e)
+		{
+			log.error(e.toString());
+			// TODO: how to handle this?
+			return new HashMap<>();
 		}
 	}
 }
