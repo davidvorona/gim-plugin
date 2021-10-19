@@ -62,8 +62,6 @@ public class GIMPlugin extends Plugin
 
 	private GIMPLocationManager gimpLocationManager;
 
-	private GIMPSocketClient socketClient;
-
 	@Inject
 	private LocationBroadcastManager locationBroadcastManager;
 
@@ -85,8 +83,6 @@ public class GIMPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		log.info("GIMP started!");
-		socketClient = new GIMPSocketClient();
-		socketClient.connect(config.serverIp(), Integer.parseInt(config.serverPort()));
 	}
 
 	@Override
@@ -146,6 +142,7 @@ public class GIMPlugin extends Plugin
 	private void startBroadcast()
 	{
 		Player localPlayer = client.getLocalPlayer();
+		locationBroadcastManager.connectSocketClient();
 		if (localPlayer != null)
 		{
 			timer = new Timer();
@@ -154,29 +151,25 @@ public class GIMPlugin extends Plugin
 				@SneakyThrows
 				public void run()
 				{
-					// only ping if valid server address
-					if (locationBroadcastManager.validateIpAndPort())
+					// only ping if world map is open
+					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+					if (worldMapView != null)
 					{
-						// only ping if world map is open
-						final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-						if (worldMapView != null)
+						Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
+						gimpLocationManager.update(locationData);
+						// TODO: move this logic to its own class for managing the actual map icons
+						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
+						for (WorldMapPoint playerWaypoint : playerWaypoints)
 						{
-							Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
-							gimpLocationManager.update(locationData);
-							// TODO: move this logic to its own class for managing the actual map icons
-							Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
-							for (WorldMapPoint playerWaypoint : playerWaypoints)
-							{
-								worldMapPointManager.removeIf(x -> x == playerWaypoint);
-							}
-							for (String name : gimpWorldPoints.keySet())
-							{
-								WorldPoint worldPoint = gimpWorldPoints.get(name);
-								WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
-								playerWaypoints.add(playerWaypoint);
-								playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
-								worldMapPointManager.add(playerWaypoint);
-							}
+							worldMapPointManager.removeIf(x -> x == playerWaypoint);
+						}
+						for (String name : gimpWorldPoints.keySet())
+						{
+							WorldPoint worldPoint = gimpWorldPoints.get(name);
+							WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
+							playerWaypoints.add(playerWaypoint);
+							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+							worldMapPointManager.add(playerWaypoint);
 						}
 					}
 				}

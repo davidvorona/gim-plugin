@@ -34,7 +34,7 @@ import java.util.*;
 public class GIMPLocationManager
 {
 	@Getter(AccessLevel.PACKAGE)
-	public Map<String, GIMPLocation> gimpLocations;
+	final private Map<String, GIMPLocation> gimpLocations;
 
 	public GIMPLocationManager(ArrayList<String> gimpNames)
 	{
