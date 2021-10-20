@@ -86,7 +86,6 @@ public class GIMPSocketClient extends GIMPRequestClient
 			public void call(Object... args)
 			{
 				JSONObject data = (JSONObject) args[0];
-				log.info(data.toString());
 				socketResponse.complete(data.toString());
 			}
 		});
