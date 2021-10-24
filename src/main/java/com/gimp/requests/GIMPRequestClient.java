@@ -30,22 +30,26 @@ public abstract class GIMPRequestClient
 	{
 		String ip = config.serverIp();
 		String port = config.serverPort();
+		// If no IP or port, it is invalid
 		if (ip == null || port == null)
 		{
 			return false;
 		}
-		// validate IP
+		// Validate IP
 		if (!ip.equals("localhost"))
 		{
+			// IP must contain a "."
 			if (!ip.contains("."))
 			{
 				return false;
 			}
+			// Split IP into the terms between each period
 			String[] terms = ip.split("\\.");
 			for (String term : terms)
 			{
 				try
 				{
+					// Term must coerce to a valid integer
 					Integer.parseInt(term);
 				}
 				catch (NumberFormatException e)
@@ -54,9 +58,10 @@ public abstract class GIMPRequestClient
 				}
 			}
 		}
-		// validate port
+		// Validate port
 		try
 		{
+			// Port must coerce to valid integer
 			Integer.parseInt(port);
 		}
 		catch (NumberFormatException e)

@@ -65,6 +65,12 @@ public class GIMPLocationManager
 		}
 	}
 
+	/**
+	 * Gets a WorldPoint instance for each GIMPLocation not including
+	 * the local player and updates their points on the world map.
+	 *
+	 * @param localPlayer client's local player instance
+	 */
 	public void updateMapPoints(Player localPlayer)
 	{
 		Map<String, WorldPoint> gimpWorldPoints = getOtherGimpWorldPoints(localPlayer.getName());
@@ -83,8 +89,8 @@ public class GIMPLocationManager
 	}
 
 	/**
-	 * Gets the WorldPoint of the local player and returns a GIMP
-	 * location with coordinates x, y, and plane.
+	 * Gets the WorldPoint of the local player and returns a GIMPLocation
+	 * with coordinates x, y, and plane.
 	 *
 	 * @param localPlayer client's local player instance
 	 * @return GIMPLocation of local player
@@ -100,7 +106,7 @@ public class GIMPLocationManager
 	}
 
 	/**
-	 * Gets WorldPoint instances from locations, excluding local player.
+	 * Gets WorldPoint instances from locations, excluding the local player.
 	 *
 	 * @return map: name => worldPoint
 	 */

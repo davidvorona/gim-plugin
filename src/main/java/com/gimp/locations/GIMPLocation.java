@@ -58,7 +58,7 @@ public class GIMPLocation
 	}
 
 	/**
-	 * Maps member coordinates x, y, and plane to Map.
+	 * Maps member coordinates x, y, and plane to HashMap.
 	 *
 	 * @return map: coordinateName => coordinateValue
 	 */

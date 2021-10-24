@@ -12,8 +12,8 @@ public class GIMPTaskManager
 	private Timer timer;
 
 	/**
-	 * Schedules a task to run after the delay and then
-	 * schedules it again after calculating the next delay.
+	 * Schedules a task to run after the delay and then schedules
+	 * it again after calculating the next delay.
 	 *
 	 * @param task  task to run after a delay and then reschedule
 	 * @param delay initial duration in milliseconds by which to delay task

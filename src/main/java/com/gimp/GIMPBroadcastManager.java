@@ -43,7 +43,7 @@ public class GIMPBroadcastManager
 	private GIMPSocketClient socketClient;
 
 	/**
-	 * Get JSON string of broadcast data.
+	 * Get JSON string of the broadcast data.
 	 *
 	 * @param name     name of player
 	 * @param location location of player
@@ -59,10 +59,10 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Parses JSON string of ping data and adds to Map.
+	 * Parses JSON string of the ping data and adds to a Map.
 	 *
 	 * @param dataJson JSON string of ping data
-	 * @return map: name => location
+	 * @return map: name => GIMPLocation
 	 */
 	static Map<String, GIMPLocation> parsePingData(String dataJson)
 	{
@@ -85,9 +85,9 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Spoofs data returned from ping request.
+	 * Spoofs data returned from the ping request.
 	 *
-	 * @return map: name => location
+	 * @return map: name => GIMPLocation
 	 */
 	static Map<String, GIMPLocation> spoofPingData()
 	{
@@ -112,7 +112,7 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Connects socket client to server.
+	 * Connects socket client to the server.
 	 */
 	public void connectSocketClient()
 	{
@@ -120,10 +120,10 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Gets broadcast client, using socket client if it's
-	 * connected and falling back on HTTP client.
+	 * Gets broadcast client, using the socket client if it's
+	 * connected and falling back on the HTTP client.
 	 *
-	 * @return a socket or HTTP client
+	 * @return a SocketClient or HTTPClient
 	 */
 	private GIMPRequestClient getRequestClient()
 	{
@@ -138,10 +138,10 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Sends broadcast request to server via HTTP or socket.
+	 * Sends broadcast request to the server via HTTP or socket.
 	 *
 	 * @param name     username of local player
-	 * @param location location of local player
+	 * @param location GIMPLocation of local player
 	 */
 	public void broadcast(String name, GIMPLocation location)
 	{
@@ -158,9 +158,9 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Sends ping request to server via HTTP or socket.
+	 * Sends ping request to the server via HTTP or socket.
 	 *
-	 * @return map: name => location
+	 * @return map: name => GIMPLocation
 	 */
 	public Map<String, GIMPLocation> ping()
 	{

@@ -127,14 +127,14 @@ public class GIMPlugin extends Plugin
 		}
 	}
 
-	// TODO:	Send ping request if GIMP joins
+	// TODO: Send ping request if GIMP joins
 	public void onClanMemberJoined(ClanMemberJoined clanMemberJoined)
 	{
 		log.debug(clanMemberJoined.getClanChannel().getName()
 			+ ": " + clanMemberJoined.getClanMember().getName() + " joined");
 	}
 
-	// TODO:	Remove GIMPLocation from location manager if member leaves - how to deal
+	// TODO: 	Remove GIMPLocation from location manager if member leaves - how to deal
 	// 			with server still having location of offline member?
 	public void onClanMemberLeft(ClanMemberLeft clanMemberLeft)
 	{
