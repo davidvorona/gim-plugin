@@ -85,10 +85,14 @@ public class GIMPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		// If game state changes to the login screen, reset any ongoing tasks
-		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN)
+		// If game state changes to the login screen or hopping, stop the broadcast
+		GameState gameState = gameStateChanged.getGameState();
+		if (
+			gameState == GameState.LOGIN_SCREEN
+			|| gameState == GameState.HOPPING
+		)
 		{
-			gimpTaskManager.resetTasks();
+			stopBroadcast();
 		}
 	}
 
@@ -104,25 +108,11 @@ public class GIMPlugin extends Plugin
 			{
 				String changedClanChannelName = changedClanChannel.getName();
 				String gimClanChannelName = gimClanChannel.getName();
-				// ClanChannelChanged event does not register joining a Group Ironman clan
-				// but checking for it here seems to work
 				if (gimClanChannelName.equals(changedClanChannelName))
 				{
-					// Never reaches this code
 					log.debug("GIM clan joined: " + gimClanChannelName);
+					startBroadcast();
 				}
-				else
-				{
-					log.debug("GIM clan already joined: " + gimClanChannelName);
-				}
-				// TL;DR: When clan channel is joined, if one of joined or already joined channels is
-				// GIM channel, then start broadcasting (TODO: refactor this when GIM API is improved)
-				startBroadcast();
-			}
-			else
-			{
-				// Reset tasks here to ensure we don't start multiple broadcasts
-				gimpTaskManager.resetTasks();
 			}
 		}
 	}
@@ -144,6 +134,7 @@ public class GIMPlugin extends Plugin
 
 	private void startBroadcast()
 	{
+		log.debug("Starting broadcast...");
 		gimpBroadcastManager.connectSocketClient();
 		// Sanity check
 		Player localPlayer = client.getLocalPlayer();
@@ -216,6 +207,12 @@ public class GIMPlugin extends Plugin
 			gimpTaskManager.schedule(pingTask, FIVE_SECONDS / 2);
 			gimpTaskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
 		}
+	}
+
+	private void stopBroadcast()
+	{
+		log.debug("Stopping broadcast...");
+		gimpTaskManager.resetTasks();
 	}
 
 	@Provides
