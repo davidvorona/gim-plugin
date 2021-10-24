@@ -89,7 +89,7 @@ public class GIMPlugin extends Plugin
 		GameState gameState = gameStateChanged.getGameState();
 		if (
 			gameState == GameState.LOGIN_SCREEN
-			|| gameState == GameState.HOPPING
+				|| gameState == GameState.HOPPING
 		)
 		{
 			stopBroadcast();
