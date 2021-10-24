@@ -62,7 +62,7 @@ public class GIMPSocketClient extends GIMPRequestClient
 			@Override
 			public void call(Object... args)
 			{
-				log.info(client.id() + " connected");
+				log.debug(client.id() + " connected");
 			}
 		});
 
@@ -71,7 +71,7 @@ public class GIMPSocketClient extends GIMPRequestClient
 			@Override
 			public void call(Object... args)
 			{
-				log.info(client.id() + " disconnected"); // null
+				log.debug("Socket disconnected");
 			}
 		});
 
@@ -127,7 +127,9 @@ public class GIMPSocketClient extends GIMPRequestClient
 				socketResponse.complete(data.toString());
 			}
 		});
-		return socketResponse.get(5, TimeUnit.SECONDS);
+		String data = socketResponse.get(5, TimeUnit.SECONDS);
+		log.debug(data);
+		return data;
 	}
 
 	/**
@@ -135,8 +137,11 @@ public class GIMPSocketClient extends GIMPRequestClient
 	 * as the data parameter and expects an acknowledgement from the server.
 	 *
 	 * @param dataJson emit data in JSON
+	 * @throws ExecutionException   for unexpected socket error
+	 * @throws InterruptedException if acknowledgement is interrupted
+	 * @throws TimeoutException     if acknowledgement times out
 	 */
-	public void broadcast(String dataJson)
+	public void broadcast(String dataJson) throws ExecutionException, InterruptedException, TimeoutException
 	{
 		String EVENT_BROADCAST = "broadcast";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
@@ -149,5 +154,7 @@ public class GIMPSocketClient extends GIMPRequestClient
 				socketResponse.complete(data.toString());
 			}
 		});
+		String data = socketResponse.get(5, TimeUnit.SECONDS);
+		log.debug(data);
 	}
 }

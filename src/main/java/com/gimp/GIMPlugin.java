@@ -93,8 +93,8 @@ public class GIMPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		// If game state changes to the login screen, stop any ongoing tasks
-		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN && gimpTaskManager != null)
+		// If game state changes to the login screen, reset any ongoing tasks
+		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN)
 		{
 			gimpTaskManager.resetTasks();
 		}
