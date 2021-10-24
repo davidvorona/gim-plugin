@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gimp;
+package com.gimp.locations;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -46,7 +46,7 @@ public class GIMPLocationManager
 	}
 
 	/**
-	 * Save each location to gimpLocations Map.
+	 * Saves each location to gimpLocations Map.
 	 *
 	 * @param data map: name => location
 	 */
@@ -61,7 +61,7 @@ public class GIMPLocationManager
 	}
 
 	/**
-	 * Get WorldPoint instances from locations.
+	 * Gets WorldPoint instances from locations.
 	 * TODO: Probably want to move this to its own class that handles world points.
 	 *
 	 * @return map: name => worldPoint

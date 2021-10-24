@@ -10,13 +10,13 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GIMIconProvider
+public class GIMPIconProvider
 {
 	final static Font FONT = FontManager.getRunescapeBoldFont();
 
-	private Map<String, BufferedImage> icons;
+	final private Map<String, BufferedImage> icons;
 
-	public GIMIconProvider()
+	public GIMPIconProvider()
 	{
 		icons = new HashMap<>(5);
 	}

@@ -1,8 +1,6 @@
-package com.gimp;
+package com.gimp.requests;
 
-import java.net.URISyntaxException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import com.gimp.GIMPConfig;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,11 +10,22 @@ public abstract class GIMPRequestClient
 	@Inject
 	public GIMPConfig config;
 
+	/**
+	 * Gets the base URL from the IP and port injected from the plugin config.
+	 *
+	 * @return server base URL
+	 */
 	public String getBaseUrl()
 	{
 		return "http://" + config.serverIp() + ":" + config.serverPort();
 	}
 
+	/**
+	 * Validates the IP and port provided by the plugin config, using
+	 * basic string validation. The IP and port are validated independently.
+	 *
+	 * @return whether IP and port are valid
+	 */
 	public boolean validateIpAndPort()
 	{
 		String ip = config.serverIp();
@@ -62,12 +71,12 @@ public abstract class GIMPRequestClient
 	 *
 	 * @return response data in JSON
 	 */
-	abstract String ping() throws ExecutionException, InterruptedException, TimeoutException, URISyntaxException;
+	abstract public String ping() throws Exception;
 
 	/**
 	 * Broadcasts local GIMP's current location to server
 	 *
 	 * @param dataJson request data in JSON
 	 */
-	abstract void broadcast(String dataJson) throws ExecutionException, InterruptedException, URISyntaxException;
+	abstract public void broadcast(String dataJson) throws Exception;
 }

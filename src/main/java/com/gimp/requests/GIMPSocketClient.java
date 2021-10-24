@@ -1,4 +1,4 @@
-package com.gimp;
+package com.gimp.requests;
 
 import io.socket.client.Ack;
 import io.socket.client.Socket;
@@ -22,6 +22,11 @@ public class GIMPSocketClient extends GIMPRequestClient
 	@Getter(AccessLevel.PACKAGE)
 	public Socket client;
 
+	/**
+	 * Connects the socket to the server at the base URL, using default config
+	 * for the connection. On connection, sets up socket listeners for socket
+	 * lifecycle events, e.g. connect, disconnect, connect_error.
+	 */
 	public void connect()
 	{
 		URI uri = URI.create(getBaseUrl());
@@ -69,13 +74,46 @@ public class GIMPSocketClient extends GIMPRequestClient
 				log.info(client.id() + " disconnected"); // null
 			}
 		});
+
+		client.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener()
+		{
+			@Override
+			public void call(Object... args)
+			{
+				log.warn("Failed to connect to socket server, closing");
+				client.close();
+			}
+		});
 	}
 
+	/**
+	 * Disconnects the client from the socket server.
+	 */
+	public void disconnect()
+	{
+		client.disconnect();
+	}
+
+	/**
+	 * Checks if the client is connected to a socket server.
+	 *
+	 * @return whether socket is connected
+	 */
 	public boolean isConnected()
 	{
 		return client.connected();
 	}
 
+	/**
+	 * Sends a socket message to the ping listener. Excepts an acknowledgement
+	 * from the server, and returns the JSON data in that acknowledgement. Times
+	 * out after seconds.
+	 *
+	 * @return acknowledgement data in JSON
+	 * @throws ExecutionException   for unexpected socket error
+	 * @throws InterruptedException if acknowledgement is interrupted
+	 * @throws TimeoutException     if acknowledgement times out
+	 */
 	public String ping() throws ExecutionException, InterruptedException, TimeoutException
 	{
 		String EVENT_PING = "ping";
@@ -92,9 +130,24 @@ public class GIMPSocketClient extends GIMPRequestClient
 		return socketResponse.get(5, TimeUnit.SECONDS);
 	}
 
-	public void broadcast(String data)
+	/**
+	 * Sends a socket message to the broadcast listener. Passes the JSON data
+	 * as the data parameter and expects an acknowledgement from the server.
+	 *
+	 * @param dataJson emit data in JSON
+	 */
+	public void broadcast(String dataJson)
 	{
 		String EVENT_BROADCAST = "broadcast";
-		client.emit(EVENT_BROADCAST, data);
+		CompletableFuture<String> socketResponse = new CompletableFuture<>();
+		client.emit(EVENT_BROADCAST, dataJson, new Ack()
+		{
+			@Override
+			public void call(Object... args)
+			{
+				JSONObject data = (JSONObject) args[0];
+				socketResponse.complete(data.toString());
+			}
+		});
 	}
 }
