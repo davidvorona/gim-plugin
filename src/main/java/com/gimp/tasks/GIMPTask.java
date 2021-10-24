@@ -13,7 +13,6 @@ public class GIMPTask implements GIMPTaskRunner
 
 	public GIMPTask(long defaultPeriod)
 	{
-		super();
 		period = defaultPeriod;
 	}
 

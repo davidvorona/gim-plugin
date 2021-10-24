@@ -59,7 +59,7 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Parses JSON string of ping data and adds to map.
+	 * Parses JSON string of ping data and adds to Map.
 	 *
 	 * @param dataJson JSON string of ping data
 	 * @return map: name => location
@@ -112,7 +112,7 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Connects the socket client to the server.
+	 * Connects socket client to server.
 	 */
 	public void connectSocketClient()
 	{
@@ -120,8 +120,8 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Gets the broadcast client, using the socket client if
-	 * it's connected and falling back on the HTTP client.
+	 * Gets broadcast client, using socket client if it's
+	 * connected and falling back on HTTP client.
 	 *
 	 * @return a socket or HTTP client
 	 */
@@ -138,7 +138,7 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Sends a broadcast request to the server via HTTP or socket.
+	 * Sends broadcast request to server via HTTP or socket.
 	 *
 	 * @param name     username of local player
 	 * @param location location of local player
@@ -158,7 +158,7 @@ public class GIMPBroadcastManager
 	}
 
 	/**
-	 * Sends a ping request to the server via HTTP or socket.
+	 * Sends ping request to server via HTTP or socket.
 	 *
 	 * @return map: name => location
 	 */

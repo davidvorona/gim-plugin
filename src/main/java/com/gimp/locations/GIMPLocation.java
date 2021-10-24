@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;
 import java.util.Map;
+import net.runelite.api.coords.WorldPoint;
 
 @Slf4j
 public class GIMPLocation
@@ -56,6 +57,11 @@ public class GIMPLocation
 		plane = planeArg;
 	}
 
+	/**
+	 * Maps member coordinates x, y, and plane to Map.
+	 *
+	 * @return map: coordinateName => coordinateValue
+	 */
 	public Map<String, Object> getLocation()
 	{
 		Map<String, Object> location = new HashMap<>();
@@ -63,5 +69,15 @@ public class GIMPLocation
 		location.put(Coordinate.y.toString(), y);
 		location.put(Coordinate.plane.toString(), plane);
 		return location;
+	}
+
+	/**
+	 * Gets WorldPoint instance from member coordinates.
+	 *
+	 * @return WorldPoint from coordinates
+	 */
+	public WorldPoint getWorldPoint()
+	{
+		return new WorldPoint(x, y, plane);
 	}
 }

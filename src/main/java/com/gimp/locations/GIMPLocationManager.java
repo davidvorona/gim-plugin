@@ -24,33 +24,38 @@
  */
 package com.gimp.locations;
 
+import com.gimp.GIMPIconProvider;
+import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
 import java.util.*;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 
 @Slf4j
 public class GIMPLocationManager
 {
-	@Getter(AccessLevel.PACKAGE)
-	final private Map<String, GIMPLocation> gimpLocations;
+	@Inject
+	private GIMPIconProvider iconProvider;
 
-	public GIMPLocationManager(ArrayList<String> gimpNames)
-	{
-		gimpLocations = new HashMap<>();
-		for (String name : gimpNames)
-		{
-			gimpLocations.put(name, null);
-		}
-	}
+	@Inject
+	private WorldMapPointManager worldMapPointManager;
+
+	@Getter(AccessLevel.PACKAGE)
+	final private Map<String, GIMPLocation> gimpLocations = new HashMap<>();
+
+	@Getter(AccessLevel.PACKAGE)
+	final private List<WorldMapPoint> playerWaypoints = new ArrayList<>();
 
 	/**
 	 * Saves each location to gimpLocations Map.
 	 *
-	 * @param data map: name => location
+	 * @param data map: name => GIMPLocation
 	 */
-	public void update(Map<String, GIMPLocation> data)
+	public void updateLocations(Map<String, GIMPLocation> data)
 	{
 		gimpLocations.clear();
 		for (String name : data.keySet())
@@ -60,9 +65,42 @@ public class GIMPLocationManager
 		}
 	}
 
+	public void updateMapPoints(Player localPlayer)
+	{
+		Map<String, WorldPoint> gimpWorldPoints = getOtherGimpWorldPoints(localPlayer.getName());
+		for (WorldMapPoint playerWaypoint : playerWaypoints)
+		{
+			worldMapPointManager.removeIf(x -> x == playerWaypoint);
+		}
+		for (String name : gimpWorldPoints.keySet())
+		{
+			WorldPoint worldPoint = gimpWorldPoints.get(name);
+			WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
+			playerWaypoints.add(playerWaypoint);
+			playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+			worldMapPointManager.add(playerWaypoint);
+		}
+	}
+
 	/**
-	 * Gets WorldPoint instances from locations.
-	 * TODO: Probably want to move this to its own class that handles world points.
+	 * Gets the WorldPoint of the local player and returns a GIMP
+	 * location with coordinates x, y, and plane.
+	 *
+	 * @param localPlayer client's local player instance
+	 * @return GIMPLocation of local player
+	 */
+	public GIMPLocation getCurrentLocation(Player localPlayer)
+	{
+		WorldPoint worldPoint = localPlayer.getWorldLocation();
+		return new GIMPLocation(
+			worldPoint.getX(),
+			worldPoint.getY(),
+			worldPoint.getPlane()
+		);
+	}
+
+	/**
+	 * Gets WorldPoint instances from locations, excluding local player.
 	 *
 	 * @return map: name => worldPoint
 	 */
@@ -74,12 +112,7 @@ public class GIMPLocationManager
 			if (!name.equals(localName))
 			{
 				GIMPLocation location = gimpLocations.get(name);
-				WorldPoint worldPoint = new WorldPoint(
-					location.getX(),
-					location.getY(),
-					location.getPlane()
-				);
-				worldPoints.put(name, worldPoint);
+				worldPoints.put(name, location.getWorldPoint());
 			}
 		}
 		return worldPoints;
