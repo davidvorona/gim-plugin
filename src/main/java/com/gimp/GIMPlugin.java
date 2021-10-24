@@ -24,10 +24,9 @@
  */
 package com.gimp;
 
+import com.gimp.locations.*;
+import com.gimp.tasks.*;
 import com.google.inject.Provides;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -58,20 +57,20 @@ import java.util.*;
 )
 public class GIMPlugin extends Plugin
 {
-	final private GIMIconProvider iconProvider = new GIMIconProvider();
+	final private GIMPIconProvider iconProvider = new GIMPIconProvider();
 
 	private GIMPLocationManager gimpLocationManager;
 
-	@Inject
-	private LocationBroadcastManager locationBroadcastManager;
-
-	private Timer timer;
-
-	@Getter(AccessLevel.PACKAGE)
 	final private List<WorldMapPoint> playerWaypoints = new ArrayList<>();
 
 	@Inject
-	WorldMapPointManager worldMapPointManager;
+	private WorldMapPointManager worldMapPointManager;
+
+	@Inject
+	private GIMPTaskManager gimpTaskManager;
+
+	@Inject
+	private GIMPBroadcastManager gimpBroadcastManager;
 
 	@Inject
 	private Client client;
@@ -80,26 +79,28 @@ public class GIMPlugin extends Plugin
 	private GIMPConfig config;
 
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
-		log.info("GIMP started!");
+		log.debug("GIMP started!");
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void shutDown()
 	{
-		log.info("GIMP stopped!");
+		log.debug("GIMP stopped!");
 	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN && timer != null)
+		// If game state changes to the login screen, stop any ongoing tasks
+		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN && gimpTaskManager != null)
 		{
-			timer.cancel();
+			gimpTaskManager.resetTasks();
 		}
 	}
 
+	// TODO: There must be a more reliable way of detecting joining a GIM clan channel
 	@Subscribe
 	public void onClanChannelChanged(ClanChannelChanged clanChannelChanged)
 	{
@@ -117,11 +118,11 @@ public class GIMPlugin extends Plugin
 				if (gimClanChannelName.equals(changedClanChannelName))
 				{
 					// Never reaches this code
-					log.info("GIM clan joined: " + gimClanChannelName);
+					log.debug("GIM clan joined: " + gimClanChannelName);
 				}
 				else
 				{
-					log.info("GIM clan already joined: " + gimClanChannelName);
+					log.debug("GIM clan already joined: " + gimClanChannelName);
 				}
 				List<ClanChannelMember> clanChannelMembers = gimClanChannel.getMembers();
 				ArrayList<String> gimpNames = new ArrayList<>();
@@ -132,51 +133,31 @@ public class GIMPlugin extends Plugin
 				gimpLocationManager = new GIMPLocationManager(gimpNames);
 				startBroadcast();
 			}
-			else if (timer != null)
-			{
-				timer.cancel();
-			}
 		}
 	}
 
 	private void startBroadcast()
 	{
+		gimpBroadcastManager.connectSocketClient();
+		// Sanity check
 		Player localPlayer = client.getLocalPlayer();
-		locationBroadcastManager.connectSocketClient();
 		if (localPlayer != null)
 		{
-			timer = new Timer();
-			TimerTask locationPingTask = new TimerTask()
+			long FIVE_SECONDS = 5000;
+			GIMPTask socketConnectTask = new GIMPTask(FIVE_SECONDS * 2)
 			{
-				@SneakyThrows
+				@Override
 				public void run()
 				{
-					// only ping if world map is open
-					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-					if (worldMapView != null)
+					if (!gimpBroadcastManager.isSocketConnected())
 					{
-						Map<String, GIMPLocation> locationData = locationBroadcastManager.ping();
-						gimpLocationManager.update(locationData);
-						// TODO: move this logic to its own class for managing the actual map icons
-						Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
-						for (WorldMapPoint playerWaypoint : playerWaypoints)
-						{
-							worldMapPointManager.removeIf(x -> x == playerWaypoint);
-						}
-						for (String name : gimpWorldPoints.keySet())
-						{
-							WorldPoint worldPoint = gimpWorldPoints.get(name);
-							WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
-							playerWaypoints.add(playerWaypoint);
-							playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
-							worldMapPointManager.add(playerWaypoint);
-						}
+						gimpBroadcastManager.connectSocketClient();
 					}
 				}
 			};
-			TimerTask locationBroadcastTask = new TimerTask()
+			GIMPTask broadcastTask = new GIMPTask(FIVE_SECONDS)
 			{
-				@SneakyThrows
+				@Override
 				public void run()
 				{
 					if (!config.ghostMode())
@@ -187,12 +168,62 @@ public class GIMPlugin extends Plugin
 							worldPoint.getY(),
 							worldPoint.getPlane()
 						);
-						locationBroadcastManager.broadcast(localPlayer.getName(), location);
+						gimpBroadcastManager.broadcast(localPlayer.getName(), location);
 					}
 				}
+
+				@Override
+				public long delay()
+				{
+					if (gimpBroadcastManager.isSocketConnected())
+					{
+						return FIVE_SECONDS / 2;
+					}
+					return period;
+				}
 			};
-			timer.schedule(locationPingTask, 0, 5000);
-			timer.schedule(locationBroadcastTask, 2500, 5000);
+			GIMPTask pingTask = new GIMPTask(FIVE_SECONDS)
+			{
+				@Override
+				public void run()
+				{
+					Map<String, GIMPLocation> locationData = gimpBroadcastManager.ping();
+					gimpLocationManager.update(locationData);
+					// TODO: move this logic to its own class for managing the actual map icons
+					Map<String, WorldPoint> gimpWorldPoints = gimpLocationManager.getOtherGimpWorldPoints(localPlayer.getName());
+					for (WorldMapPoint playerWaypoint : playerWaypoints)
+					{
+						worldMapPointManager.removeIf(x -> x == playerWaypoint);
+					}
+					for (String name : gimpWorldPoints.keySet())
+					{
+						WorldPoint worldPoint = gimpWorldPoints.get(name);
+						WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
+						playerWaypoints.add(playerWaypoint);
+						playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+						worldMapPointManager.add(playerWaypoint);
+					}
+				}
+
+				@Override
+				public long delay()
+				{
+					// Only ping every 10 seconds if world map closed
+					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+					if (worldMapView == null)
+					{
+						return FIVE_SECONDS * 2;
+					}
+					if (gimpBroadcastManager.isSocketConnected())
+					{
+						return FIVE_SECONDS / 2;
+					}
+					return period;
+				}
+			};
+			gimpTaskManager.schedule(broadcastTask, 0);
+			gimpTaskManager.schedule(pingTask, FIVE_SECONDS / 2);
+			gimpTaskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
 		}
 	}
 

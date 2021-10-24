@@ -24,52 +24,23 @@
  */
 package com.gimp;
 
+import com.gimp.locations.GIMPLocation;
+import com.gimp.requests.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
-
-// TODO: will need button in config that reconnects sockets if possible--
-// or, we need to store last IP:PORT, check if it has changed at the beginning
-// of each interval, and reconnect if necessary...
 @Slf4j
-public class LocationBroadcastManager
+public class GIMPBroadcastManager
 {
 	@Inject
 	private GIMPHttpClient httpClient;
 
 	@Inject
 	private GIMPSocketClient socketClient;
-
-	public LocationBroadcastManager()
-	{
-		httpClient = new GIMPHttpClient();
-		socketClient = new GIMPSocketClient();
-	}
-
-	public void connectSocketClient()
-	{
-		socketClient.connect();
-	}
-
-	private GIMPRequestClient getRequestClient()
-	{
-		if (socketClient.isConnected())
-		{
-			log.info("Using socket...");
-			return socketClient;
-		}
-		else
-		{
-			log.info("Using HTTP...");
-			return httpClient;
-		}
-	}
 
 	/**
 	 * Get JSON string of broadcast data.
@@ -130,12 +101,54 @@ public class LocationBroadcastManager
 		return data;
 	}
 
+	/**
+	 * Checks if socket client is connected.
+	 *
+	 * @return whether socket is connected
+	 */
+	public boolean isSocketConnected()
+	{
+		return socketClient.isConnected();
+	}
+
+	/**
+	 * Connects the socket client to the server.
+	 */
+	public void connectSocketClient()
+	{
+		socketClient.connect();
+	}
+
+	/**
+	 * Gets the broadcast client, using the socket client if
+	 * it's connected and falling back on the HTTP client.
+	 *
+	 * @return a socket or HTTP client
+	 */
+	private GIMPRequestClient getRequestClient()
+	{
+		if (socketClient.isConnected())
+		{
+			return socketClient;
+		}
+		else
+		{
+			return httpClient;
+		}
+	}
+
+	/**
+	 * Sends a broadcast request to the server via HTTP or socket.
+	 *
+	 * @param name     username of local player
+	 * @param location location of local player
+	 */
 	public void broadcast(String name, GIMPLocation location)
 	{
 		try
 		{
 			GIMPRequestClient requestClient = getRequestClient();
-			String dataJson = LocationBroadcastManager.stringifyBroadcastData(name, location);
+			String dataJson = GIMPBroadcastManager.stringifyBroadcastData(name, location);
 			requestClient.broadcast(dataJson);
 		}
 		catch (Exception e)
@@ -144,18 +157,22 @@ public class LocationBroadcastManager
 		}
 	}
 
+	/**
+	 * Sends a ping request to the server via HTTP or socket.
+	 *
+	 * @return map: name => location
+	 */
 	public Map<String, GIMPLocation> ping()
 	{
 		try
 		{
 			GIMPRequestClient requestClient = getRequestClient();
 			String dataJson = requestClient.ping();
-			return LocationBroadcastManager.parsePingData(dataJson);
+			return GIMPBroadcastManager.parsePingData(dataJson);
 		}
 		catch (Exception e)
 		{
 			log.error(e.toString());
-			// TODO: how to handle this?
 			return new HashMap<>();
 		}
 	}

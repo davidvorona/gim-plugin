@@ -1,4 +1,4 @@
-package com.gimp;
+package com.gimp.requests;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -23,7 +23,36 @@ public class GIMPHttpClient extends GIMPRequestClient
 		client = HttpClient.newHttpClient();
 	}
 
-	public String ping() throws ExecutionException, InterruptedException, URISyntaxException
+	/**
+	 * Logs the HTTP response, specifying the status code if it's not 200.
+	 *
+	 * @param response HTTP response instance
+	 */
+	private void logHttpResponse(HttpResponse<String> response)
+	{
+		String bodyJson = response.body();
+		int OK = 200;
+		if (response.statusCode() == OK)
+		{
+			log.debug(bodyJson);
+		}
+		else
+		{
+			log.error(response.statusCode() + ": " + bodyJson);
+		}
+	}
+
+	/**
+	 * Makes an HTTP GET request to the ping endpoint at the URL injected
+	 * from the plugin config. The JSON response body is returned. Times
+	 * out after 5 seconds.
+	 *
+	 * @return response data in JSON
+	 * @throws URISyntaxException   if base URL is invalid
+	 * @throws ExecutionException   for unexpected HTTP request error
+	 * @throws InterruptedException if HTTP request is interrupted
+	 */
+	public String ping() throws URISyntaxException, ExecutionException, InterruptedException
 	{
 		HttpRequest request = HttpRequest.newBuilder()
 			.uri(new URI(getBaseUrl() + "/ping"))
@@ -35,16 +64,20 @@ public class GIMPHttpClient extends GIMPRequestClient
 		HttpResponse<String> response = client
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
-		String bodyJson = response.body();
-		int OK = 200;
-		if (response.statusCode() != OK)
-		{
-			log.error(bodyJson);
-			return "";
-		}
-		return bodyJson;
+		logHttpResponse(response);
+		return response.body();
 	}
 
+	/**
+	 * Makes an HTTP POST request to the broadcast endpoint at the
+	 * URL injected from the plugin config. The JSON data is sent
+	 * in the request body. Times out after 5 seconds.
+	 *
+	 * @param dataJson request data in JSON
+	 * @throws URISyntaxException   if base URL is invalid
+	 * @throws ExecutionException   for unexpected HTTP request error
+	 * @throws InterruptedException if HTTP request is interrupted
+	 */
 	public void broadcast(String dataJson) throws URISyntaxException, ExecutionException, InterruptedException
 	{
 
@@ -58,10 +91,6 @@ public class GIMPHttpClient extends GIMPRequestClient
 		HttpResponse<String> response = client
 			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 			.get();
-		int OK = 200;
-		if (response.statusCode() != OK)
-		{
-			log.error(response.body());
-		}
+		logHttpResponse(response);
 	}
 }
