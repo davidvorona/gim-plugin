@@ -104,15 +104,11 @@ public class GIMPlugin extends Plugin
 		if (changedClanChannel != null && localPlayer != null)
 		{
 			ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
-			if (gimClanChannel != null)
+			if (changedClanChannel == gimClanChannel)
 			{
-				String changedClanChannelName = changedClanChannel.getName();
 				String gimClanChannelName = gimClanChannel.getName();
-				if (gimClanChannelName.equals(changedClanChannelName))
-				{
-					log.debug("GIM clan joined: " + gimClanChannelName);
-					startBroadcast();
-				}
+				log.debug("GIM clan joined: " + gimClanChannelName);
+				startBroadcast();
 			}
 		}
 	}
@@ -213,6 +209,8 @@ public class GIMPlugin extends Plugin
 	{
 		log.debug("Stopping broadcast...");
 		gimpTaskManager.resetTasks();
+		gimpLocationManager.purgeLocations();
+		gimpLocationManager.clearMapPoints();
 	}
 
 	@Provides

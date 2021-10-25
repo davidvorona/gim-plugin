@@ -57,12 +57,20 @@ public class GIMPLocationManager
 	 */
 	public void updateLocations(Map<String, GIMPLocation> data)
 	{
-		gimpLocations.clear();
+		purgeLocations();
 		for (String name : data.keySet())
 		{
 			GIMPLocation location = data.get(name);
 			gimpLocations.put(name, location);
 		}
+	}
+
+	/**
+	 * Clears the gimpLocations Map.
+	 */
+	public void purgeLocations()
+	{
+		gimpLocations.clear();
 	}
 
 	/**
@@ -73,11 +81,8 @@ public class GIMPLocationManager
 	 */
 	public void updateMapPoints(Player localPlayer)
 	{
+		clearMapPoints();
 		Map<String, WorldPoint> gimpWorldPoints = getOtherGimpWorldPoints(localPlayer.getName());
-		for (WorldMapPoint playerWaypoint : playerWaypoints)
-		{
-			worldMapPointManager.removeIf(x -> x == playerWaypoint);
-		}
 		for (String name : gimpWorldPoints.keySet())
 		{
 			WorldPoint worldPoint = gimpWorldPoints.get(name);
@@ -92,6 +97,17 @@ public class GIMPLocationManager
 			// Name is necessary for jumpOnClick behavior
 			playerWaypoint.setName(name);
 			worldMapPointManager.add(playerWaypoint);
+		}
+	}
+
+	/**
+	 * Removes all GIMP map points from the map.
+	 */
+	public void clearMapPoints()
+	{
+		for (WorldMapPoint playerWaypoint : playerWaypoints)
+		{
+			worldMapPointManager.removeIf(x -> x == playerWaypoint);
 		}
 	}
 
