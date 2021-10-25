@@ -83,7 +83,14 @@ public class GIMPLocationManager
 			WorldPoint worldPoint = gimpWorldPoints.get(name);
 			WorldMapPoint playerWaypoint = new WorldMapPoint(worldPoint, iconProvider.getIcon(name));
 			playerWaypoints.add(playerWaypoint);
+			// Configure world map point
 			playerWaypoint.setTarget(playerWaypoint.getWorldPoint());
+			// Snaps to edge if outside of current map frame
+			playerWaypoint.setSnapToEdge(true);
+			// Jumps to location if clicked on
+			playerWaypoint.setJumpOnClick(true);
+			// Name is necessary for jumpOnClick behavior
+			playerWaypoint.setName(name);
 			worldMapPointManager.add(playerWaypoint);
 		}
 	}
