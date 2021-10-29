@@ -113,6 +113,8 @@ public class GIMPlugin extends Plugin
 		}
 	}
 
+	// Currently, clanMemberJoined/Left events do not register members of GIM clans
+
 	// TODO: Send ping request if GIMP joins
 	public void onClanMemberJoined(ClanMemberJoined clanMemberJoined)
 	{
@@ -121,11 +123,11 @@ public class GIMPlugin extends Plugin
 	}
 
 	// TODO: 	Remove GIMPLocation from location manager if member leaves - how to deal
-	// 			with server still having location of offline member?
+	//  		with server still having location of offline member?
 	public void onClanMemberLeft(ClanMemberLeft clanMemberLeft)
 	{
 		log.debug(clanMemberLeft.getClanChannel().getName()
-			+ ": " + clanMemberLeft.getClanMember().getName() + " joined");
+			+ ": " + clanMemberLeft.getClanMember().getName() + " left");
 	}
 
 	private void startBroadcast()
