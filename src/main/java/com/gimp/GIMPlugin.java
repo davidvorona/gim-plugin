@@ -202,6 +202,7 @@ public class GIMPlugin extends Plugin
 		return configManager.getConfig(GIMPConfig.class);
 	}
 
+	// Support testing via Gradle "run" task
 	public static void main(String[] args) throws Exception
 	{
 		ExternalPluginManager.loadBuiltin(GIMPlugin.class);
