@@ -34,8 +34,6 @@ import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.events.ClanChannelChanged;
-import net.runelite.api.events.ClanMemberJoined;
-import net.runelite.api.events.ClanMemberLeft;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
@@ -111,23 +109,6 @@ public class GIMPlugin extends Plugin
 				startBroadcast();
 			}
 		}
-	}
-
-	// Currently, clanMemberJoined/Left events do not register members of GIM clans
-
-	// TODO: Send ping request if GIMP joins
-	public void onClanMemberJoined(ClanMemberJoined clanMemberJoined)
-	{
-		log.debug(clanMemberJoined.getClanChannel().getName()
-			+ ": " + clanMemberJoined.getClanMember().getName() + " joined");
-	}
-
-	// TODO: 	Remove GIMPLocation from location manager if member leaves - how to deal
-	//  		with server still having location of offline member?
-	public void onClanMemberLeft(ClanMemberLeft clanMemberLeft)
-	{
-		log.debug(clanMemberLeft.getClanChannel().getName()
-			+ ": " + clanMemberLeft.getClanMember().getName() + " left");
 	}
 
 	private void startBroadcast()
