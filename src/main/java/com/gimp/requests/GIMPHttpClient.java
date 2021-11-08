@@ -24,14 +24,14 @@
  */
 package com.gimp.requests;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.concurrent.ExecutionException;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okhttp3.OkHttpClient;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -40,29 +40,36 @@ import lombok.extern.slf4j.Slf4j;
 public class GIMPHttpClient extends GIMPRequestClient
 {
 	@Getter(AccessLevel.PACKAGE)
-	public HttpClient client;
+	public OkHttpClient client;
+
+	public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+
+	public static final int OK = 200;
+
+	public static final String EMPTY_BODY = "";
 
 	public GIMPHttpClient()
 	{
-		client = HttpClient.newHttpClient();
+		client = new OkHttpClient.Builder()
+			.readTimeout(5000, TimeUnit.MILLISECONDS)
+			.build();
 	}
 
 	/**
 	 * Logs the HTTP response, specifying the status code if it's not 200.
 	 *
-	 * @param response HTTP response instance
+	 * @param statusCode HTTP status code
+	 * @param body       body of the HTTP response
 	 */
-	private void logHttpResponse(HttpResponse<String> response)
+	private void logHttpResponse(int statusCode, String body)
 	{
-		String bodyJson = response.body();
-		int OK = 200;
-		if (response.statusCode() == OK)
+		if (statusCode == OK)
 		{
-			log.debug(bodyJson);
+			log.debug(body);
 		}
 		else
 		{
-			log.error(response.statusCode() + ": " + bodyJson);
+			log.error(statusCode + ": " + body);
 		}
 	}
 
@@ -72,24 +79,23 @@ public class GIMPHttpClient extends GIMPRequestClient
 	 * out after 5 seconds.
 	 *
 	 * @return response data in JSON
-	 * @throws URISyntaxException   if base URL is invalid
-	 * @throws ExecutionException   for unexpected HTTP request error
-	 * @throws InterruptedException if HTTP request is interrupted
+	 * @throws IOException if request fails
 	 */
-	public String ping() throws URISyntaxException, ExecutionException, InterruptedException
+	public String ping() throws IOException
 	{
-		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI(getBaseUrl() + "/ping"))
-			.version(HttpClient.Version.HTTP_1_1)
-			.timeout(Duration.of(5, ChronoUnit.SECONDS))
-			.headers("Content-Type", "application/json;charset=UTF-8")
-			.GET()
+		Request request = new Request.Builder()
+			.url(getBaseUrl() + "/ping")
+			.get()
 			.build();
-		HttpResponse<String> response = client
-			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-			.get();
-		logHttpResponse(response);
-		return response.body();
+		Response response = client.newCall(request).execute();
+		ResponseBody body = response.body();
+		if (body != null)
+		{
+			String bodyJson = body.string();
+			logHttpResponse(response.code(), bodyJson);
+			return bodyJson;
+		}
+		return EMPTY_BODY;
 	}
 
 	/**
@@ -98,23 +104,20 @@ public class GIMPHttpClient extends GIMPRequestClient
 	 * in the request body. Times out after 5 seconds.
 	 *
 	 * @param dataJson request data in JSON
-	 * @throws URISyntaxException   if base URL is invalid
-	 * @throws ExecutionException   for unexpected HTTP request error
-	 * @throws InterruptedException if HTTP request is interrupted
+	 * @throws IOException if request fails
 	 */
-	public void broadcast(String dataJson) throws URISyntaxException, ExecutionException, InterruptedException
+	public void broadcast(String dataJson) throws IOException
 	{
-
-		HttpRequest request = HttpRequest.newBuilder()
-			.uri(new URI(getBaseUrl() + "/broadcast"))
-			.version(HttpClient.Version.HTTP_1_1)
-			.timeout(Duration.of(5, ChronoUnit.SECONDS))
-			.headers("Content-Type", "application/json;charset=UTF-8")
-			.POST(HttpRequest.BodyPublishers.ofString(dataJson))
+		RequestBody body = RequestBody.create(JSON, dataJson);
+		Request request = new Request.Builder()
+			.url(getBaseUrl() + "/broadcast")
+			.post(body)
 			.build();
-		HttpResponse<String> response = client
-			.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-			.get();
-		logHttpResponse(response);
+		Response response = client.newCall(request).execute();
+		ResponseBody bodyJson = response.body();
+		if (bodyJson != null)
+		{
+			logHttpResponse(response.code(), bodyJson.string());
+		}
 	}
 }

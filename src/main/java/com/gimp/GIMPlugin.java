@@ -83,11 +83,12 @@ public class GIMPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		// If game state changes to the login screen or hopping, stop the broadcast
+		// If game state changes to the login screen or hopping, or connection is lost, stop the broadcast
 		GameState gameState = gameStateChanged.getGameState();
 		if (
 			gameState == GameState.LOGIN_SCREEN
 				|| gameState == GameState.HOPPING
+				|| gameState == GameState.CONNECTION_LOST
 		)
 		{
 			stopBroadcast();
