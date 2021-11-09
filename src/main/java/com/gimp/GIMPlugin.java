@@ -40,6 +40,7 @@ import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -108,6 +109,28 @@ public class GIMPlugin extends Plugin
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
 				startBroadcast();
+			}
+		}
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged configChanged)
+	{
+		String CONFIG_GROUP = "gimp";
+		String SERVER_IP_KEY = "serverIp";
+		String SERVER_PORT_KEY = "serverPort";
+		// Check if one of GIMP's server IP/port config values has changed
+		if (
+			configChanged.getGroup().equals(CONFIG_GROUP)
+				&& (configChanged.getKey().equals(SERVER_IP_KEY)
+				|| configChanged.getKey().equals(SERVER_PORT_KEY))
+		)
+		{
+			if (gimpBroadcastManager.isSocketConnected())
+			{
+				// If socket is currently connected, disconnect and let it reconnect with new IP/port
+				log.debug("Server IP/port changed, disconnecting socket client");
+				gimpBroadcastManager.disconnectSocketClient();
 			}
 		}
 	}
