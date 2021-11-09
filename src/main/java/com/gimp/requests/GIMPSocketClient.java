@@ -29,7 +29,7 @@ import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import io.socket.engineio.client.transports.Polling;
 import io.socket.engineio.client.transports.WebSocket;
-import java.net.*;
+import java.net.URI;
 import io.socket.client.IO;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -53,6 +53,11 @@ public class GIMPSocketClient extends GIMPRequestClient
 	 */
 	public void connect()
 	{
+		if (!validateUrl())
+		{
+			log.warn("Invalid socket URL, aborting");
+			return;
+		}
 		URI uri = URI.create(getBaseUrl());
 		IO.Options options = IO.Options.builder()
 			// IO factory options
@@ -125,6 +130,10 @@ public class GIMPSocketClient extends GIMPRequestClient
 	 */
 	public boolean isConnected()
 	{
+		if (client == null)
+		{
+			return false;
+		}
 		return client.connected();
 	}
 

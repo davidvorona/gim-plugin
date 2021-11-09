@@ -25,6 +25,7 @@
 package com.gimp.requests;
 
 import com.gimp.GIMPConfig;
+import java.net.URL;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,54 +46,23 @@ public abstract class GIMPRequestClient
 	}
 
 	/**
-	 * Validates the IP and port provided by the plugin config, using
-	 * basic string validation. The IP and port are validated independently.
+	 * Validates the URL from the config IP and port.
 	 *
-	 * @return whether IP and port are valid
+	 * @return whether the URL is valid
 	 */
-	public boolean validateIpAndPort()
+	public boolean validateUrl()
 	{
-		String ip = config.serverIp();
-		String port = config.serverPort();
-		// If no IP or port, it is invalid
-		if (ip == null || port == null)
-		{
-			return false;
-		}
-		// Validate IP
-		if (!ip.equals("localhost"))
-		{
-			// IP must contain a "."
-			if (!ip.contains("."))
-			{
-				return false;
-			}
-			// Split IP into the terms between each period
-			String[] terms = ip.split("\\.");
-			for (String term : terms)
-			{
-				try
-				{
-					// Term must coerce to a valid integer
-					Integer.parseInt(term);
-				}
-				catch (NumberFormatException e)
-				{
-					return false;
-				}
-			}
-		}
-		// Validate port
+		final URL url;
 		try
 		{
-			// Port must coerce to valid integer
-			Integer.parseInt(port);
+			url = new URL(getBaseUrl());
 		}
-		catch (NumberFormatException e)
+		catch (Exception e)
 		{
 			return false;
 		}
-		return true;
+		// URL must use HTTP/S protocol
+		return url.getProtocol().contains("http");
 	}
 
 	/**

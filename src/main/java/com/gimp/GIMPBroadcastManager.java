@@ -120,6 +120,14 @@ public class GIMPBroadcastManager
 	}
 
 	/**
+	 * Disconnects socket client from the server.
+	 */
+	public void disconnectSocketClient()
+	{
+		socketClient.disconnect();
+	}
+
+	/**
 	 * Gets broadcast client, using the socket client if it's
 	 * connected and falling back on the HTTP client.
 	 *
