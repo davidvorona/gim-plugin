@@ -37,11 +37,9 @@ import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
@@ -224,12 +222,5 @@ public class GIMPlugin extends Plugin
 	GIMPConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(GIMPConfig.class);
-	}
-
-	// Support testing via Gradle "run" task
-	public static void main(String[] args) throws Exception
-	{
-		ExternalPluginManager.loadBuiltin(GIMPlugin.class);
-		RuneLite.main(args);
 	}
 }
