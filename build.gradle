@@ -22,8 +22,9 @@ dependencies {
     testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
     testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
 
-    implementation 'com.squareup.okhttp3:okhttp'
-    implementation 'io.socket:socket.io-client:2.0.1'
+    implementation('io.socket:socket.io-client:2.0.1') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
 }
 
 group = 'com.gimp'
