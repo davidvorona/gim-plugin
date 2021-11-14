@@ -53,6 +53,10 @@ public abstract class GIMPRequestClient
 	public boolean validateUrl()
 	{
 		final URL url;
+		if (config.serverIp().isEmpty() || config.serverPort().isEmpty())
+		{
+			return false;
+		}
 		try
 		{
 			url = new URL(getBaseUrl());
