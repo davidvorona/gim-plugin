@@ -27,16 +27,21 @@ package com.gimp;
 import com.gimp.locations.*;
 import com.gimp.tasks.*;
 import com.google.inject.Provides;
+import java.awt.image.BufferedImage;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
+import net.runelite.api.clan.ClanMember;
+import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -45,6 +50,9 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 import javax.inject.Inject;
 import java.util.*;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 
 @Slf4j
 @PluginDescriptor(
@@ -65,18 +73,31 @@ public class GIMPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	@Inject
 	private GIMPConfig config;
+
+	@Inject
+	private GIMPanel panel;
+
+	private NavigationButton navButton;
 
 	@Override
 	protected void startUp()
 	{
 		log.debug("GIMP started!");
+		addPanel();
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		log.debug("GIMP stopped!");
+		removePanel();
 	}
 
 	@Subscribe
@@ -90,6 +111,7 @@ public class GIMPlugin extends Plugin
 				|| gameState == GameState.CONNECTION_LOST
 		)
 		{
+			panel.unload();
 			stopBroadcast();
 		}
 	}
@@ -106,6 +128,7 @@ public class GIMPlugin extends Plugin
 			{
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
+				loadPanel();
 				startBroadcast();
 			}
 		}
@@ -131,6 +154,46 @@ public class GIMPlugin extends Plugin
 				gimpBroadcastManager.disconnectSocketClient();
 			}
 		}
+	}
+
+	private void addPanel()
+	{
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "gimpoint.png");
+		// This is pretty arbitrary, but currently places the nav button at
+		// the bottom of the list if there are no third-party plugin panels
+		int lowPriority = 15;
+		navButton = NavigationButton.builder()
+			.tooltip("GIMP")
+			.icon(icon)
+			.priority(lowPriority)
+			.panel(panel)
+			.build();
+		clientToolbar.addNavigation(navButton);
+	}
+
+	private void loadPanel()
+	{
+		// Clan settings are loaded at an indeterminate time after login
+		clientThread.invokeLater(() ->
+		{
+			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
+			if (gimClanSettings == null)
+			{
+				return false;
+			}
+			List<String> gimUsernames = new ArrayList<>();
+			for (ClanMember member : gimClanSettings.getMembers())
+			{
+				gimUsernames.add(member.getName());
+			}
+			panel.load(gimUsernames);
+			return true;
+		});
+	}
+
+	private void removePanel()
+	{
+		clientToolbar.removeNavigation(navButton);
 	}
 
 	private void startBroadcast()
