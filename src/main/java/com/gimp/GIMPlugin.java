@@ -38,7 +38,6 @@ import net.runelite.api.clan.ClanMember;
 import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -47,7 +46,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-
 import javax.inject.Inject;
 import java.util.*;
 import net.runelite.client.ui.ClientToolbar;
@@ -158,7 +156,7 @@ public class GIMPlugin extends Plugin
 
 	private void addPanel()
 	{
-		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "gimpoint.png");
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "gimpoint-small.png");
 		// This is pretty arbitrary, but currently places the nav button at
 		// the bottom of the list if there are no third-party plugin panels
 		int lowPriority = 15;

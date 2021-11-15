@@ -105,6 +105,7 @@ public class GIMPanel extends PluginPanel
 	{
 		hiscoreClient = new HiscoreClient(okHttpClient);
 
+		setBorder(new EmptyBorder(18, 10, 0, 10));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setLayout(new GridBagLayout());
 	}
@@ -129,8 +130,7 @@ public class GIMPanel extends PluginPanel
 
 			for (String username : usernames)
 			{
-				final BufferedImage iconImage = ImageUtil.loadImageResource(getClass(), "gimpoint.png");
-
+				final BufferedImage iconImage = ImageUtil.loadImageResource(getClass(), "gimpoint-small.png");
 				MaterialTab tab = new MaterialTab(new ImageIcon(iconImage), tabGroup, null);
 				tab.setToolTipText(username);
 				tab.setOnSelectEvent(() ->
@@ -184,6 +184,8 @@ public class GIMPanel extends PluginPanel
 
 			add(statsPanel, c);
 			c.gridy++;
+
+			lookup();
 		});
 	}
 
@@ -192,7 +194,9 @@ public class GIMPanel extends PluginPanel
 		removeAll();
 	}
 
-	/* Builds a JPanel displaying an icon and level/number associated with it */
+	/**
+	 * Builds a JPanel displaying an icon and level/number associated with it.
+	 */
 	private JPanel makeHiscorePanel(HiscoreSkill skill)
 	{
 		assert SwingUtilities.isEventDispatchThread();
@@ -270,7 +274,7 @@ public class GIMPanel extends PluginPanel
 			label.setToolTipText(skill == null ? "Combat" : skill.getName());
 		}
 
-		// if for some reason no endpoint was selected, default to normal
+		// If for some reason no endpoint was selected, default to normal
 		if (selectedGimp == null)
 		{
 			selectedGimp = "";
@@ -281,7 +285,7 @@ public class GIMPanel extends PluginPanel
 			{
 				if (!sanitize(selectedGimp).equals(lookup))
 				{
-					// search has changed in the meantime
+					// Selected gimp has changed in the meantime
 					return;
 				}
 
@@ -296,7 +300,7 @@ public class GIMPanel extends PluginPanel
 					return;
 				}
 
-				// successful player search
+				// Successful player search
 				loading = false;
 				applyHiscoreResult(result);
 			}));
@@ -335,7 +339,7 @@ public class GIMPanel extends PluginPanel
 				int level = -1;
 				if (!isSkill || exp != -1L)
 				{
-					// for skills, level is only valid if exp is not -1
+					// For skills, level is only valid if exp is not -1
 					// otherwise level is always valid
 					level = s.getLevel();
 				}
@@ -350,8 +354,8 @@ public class GIMPanel extends PluginPanel
 		}
 	}
 
-	/*
-		Builds a html string to display on tooltip (when hovering a skill).
+	/**
+	 * Builds a html string to display on tooltip (when hovering a skill).
 	 */
 	private String detailsHtml(HiscoreResult result, HiscoreSkill skill)
 	{
@@ -550,7 +554,7 @@ public class GIMPanel extends PluginPanel
 				double xpGoal = xpForNextLevel != -1 ? xpForNextLevel - xpForCurrentLevel : 100;
 				int progress = (int) ((xpGained / xpGoal) * 100f);
 
-				// had to wrap the bar with an empty div, if i added the margin directly to the bar, it would mess up
+				// Had to wrap the bar with an empty div, adding the margin directly to the bar causes issues
 				content += "<div style = 'margin-top:3px'>"
 					+ "<div style = 'background: #070707; border: 1px solid #070707; height: 6px; width: 100%;'>"
 					+ "<div style = 'height: 6px; width: " + progress + "%; background: #dc8a00;'>"
