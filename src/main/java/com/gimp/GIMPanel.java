@@ -25,8 +25,8 @@
 package com.gimp;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -39,18 +39,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.Experience;
+import net.runelite.api.clan.ClanChannel;
+import net.runelite.api.clan.ClanChannelMember;
+import net.runelite.api.clan.ClanID;
+import net.runelite.api.clan.ClanMember;
+import net.runelite.api.clan.ClanSettings;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 import net.runelite.http.api.hiscore.HiscoreClient;
@@ -66,8 +76,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class GIMPanel extends PluginPanel
 {
-	/* The maximum allowed username length in RuneScape accounts */
-	private static final int MAX_USERNAME_LENGTH = 12;
+	private static final ImageIcon GIMP_ICON_SMALL;
 
 	/**
 	 * Real skills, ordered in the way they should be displayed in the panel.
@@ -83,16 +92,25 @@ public class GIMPanel extends PluginPanel
 		CONSTRUCTION, HUNTER
 	);
 
+	private static final String HTML_LABEL_TEMPLATE =
+		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
+
 	private final HiscoreClient hiscoreClient;
+
+	@Inject
+	private Client client;
 
 	// Not an EnumMap because we need null keys for combat
 	private final Map<HiscoreSkill, JLabel> skillLabels = new HashMap<>();
 
-	/* Container of all the selectable gimps */
-	private MaterialTabGroup tabGroup;
+	private final JLabel usernameLabel = new JLabel();
+	private final JLabel worldLabel = new JLabel();
 
 	/* Container of all selectable gimp usernames */
-	private List<String> gimps = new ArrayList<>();
+	private final List<String> gimps = new ArrayList<>();
+
+	/* Container of all the selectable gimp tabs */
+	private MaterialTabGroup tabGroup;
 
 	/* The currently selected gimp */
 	private String selectedGimp;
@@ -100,92 +118,164 @@ public class GIMPanel extends PluginPanel
 	/* Used to prevent users from switching gimp tabs while the results are loading */
 	private boolean loading = false;
 
+	static
+	{
+		final BufferedImage gimpIconSmallImg = ImageUtil.loadImageResource(GIMPanel.class, "gimpoint-small.png");
+		GIMP_ICON_SMALL = new ImageIcon(gimpIconSmallImg);
+	}
+
 	@Inject
 	public GIMPanel(OkHttpClient okHttpClient)
 	{
 		hiscoreClient = new HiscoreClient(okHttpClient);
 
-		setBorder(new EmptyBorder(18, 10, 0, 10));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
-		setLayout(new GridBagLayout());
+		setBorder(new EmptyBorder(10, 10, 10, 10));
+		setLayout(new BorderLayout());
 	}
 
-	public void load(List<String> usernames)
+	public void load(ClientThread clientThread)
 	{
-		SwingUtilities.invokeLater(() ->
+		clientThread.invokeLater(() ->
 		{
-			// Expand sub items to fit width of panel, align to top of panel
-			GridBagConstraints c = new GridBagConstraints();
-			c.fill = GridBagConstraints.HORIZONTAL;
-			c.gridx = 0;
-			c.gridy = 0;
-			c.weightx = 1;
-			c.weighty = 0;
-			c.insets = new Insets(0, 0, 10, 0);
-
-			gimps = usernames;
-			int gimpCount = usernames.size();
-			tabGroup = new MaterialTabGroup();
-			tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
-
-			for (String username : usernames)
+			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
+			if (gimClanSettings == null)
 			{
-				final BufferedImage iconImage = ImageUtil.loadImageResource(getClass(), "gimpoint-small.png");
-				MaterialTab tab = new MaterialTab(new ImageIcon(iconImage), tabGroup, null);
-				tab.setToolTipText(username);
-				tab.setOnSelectEvent(() ->
+				return false;
+			}
+			for (ClanMember member : gimClanSettings.getMembers())
+			{
+				gimps.add(member.getName());
+			}
+			try
+			{
+				SwingUtilities.invokeAndWait(() ->
 				{
-					if (loading)
-					{
-						return false;
-					}
+					// Create panel that will hold gimp data
+					final JPanel container = new JPanel();
+					container.setBackground(ColorScheme.DARK_GRAY_COLOR);
+					container.setLayout(new GridBagLayout());
 
-					selectedGimp = username;
-					return true;
-				});
+					// Expand sub items to fit width of panel, align to top of panel
+					GridBagConstraints c = new GridBagConstraints();
+					c.fill = GridBagConstraints.HORIZONTAL;
+					c.gridx = 0;
+					c.gridy = 0;
+					c.weightx = 1;
+					c.weighty = 0;
+					c.insets = new Insets(0, 0, 10, 0);
 
-				// Adding the lookup method to a mouseListener instead of the above onSelectedEvent
-				// Because sometimes you might want to switch the tab, without calling for lookup
-				tab.addMouseListener(new MouseAdapter()
-				{
-					@Override
-					public void mousePressed(MouseEvent mouseEvent)
+					// Add tabs for each gimp
+					int gimpCount = gimps.size();
+					tabGroup = new MaterialTabGroup();
+					tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
+
+					for (String username : gimps)
 					{
-						if (loading)
+						MaterialTab tab = new MaterialTab(GIMP_ICON_SMALL, tabGroup, null);
+						tab.setToolTipText(username);
+						tab.setOnSelectEvent(() ->
 						{
-							return;
-						}
+							if (loading)
+							{
+								return false;
+							}
 
-						lookup();
+							selectedGimp = username;
+							return true;
+						});
+
+						// Adding the lookup method to a mouseListener instead of the above onSelectedEvent
+						// Because sometimes you might want to switch the tab, without calling for lookup
+						tab.addMouseListener(new MouseAdapter()
+						{
+							@Override
+							public void mousePressed(MouseEvent mouseEvent)
+							{
+								if (loading)
+								{
+									return;
+								}
+
+								lookup();
+							}
+						});
+
+						tabGroup.addTab(tab);
 					}
+
+					// Default selected tab is first gimp
+					resetSelectedTab();
+
+					container.add(tabGroup, c);
+					c.gridy++;
+
+					// Create panel that will contain overall data
+					JPanel overallPanel = new JPanel();
+					overallPanel.setBorder(BorderFactory.createCompoundBorder(
+						BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
+						BorderFactory.createEmptyBorder(8, 10, 8, 10)
+					));
+					overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+					overallPanel.setLayout(new BorderLayout());
+
+					// Add icon and contents
+					final JPanel overallInfo = new JPanel();
+					overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+					overallInfo.setLayout(new GridLayout(2, 1));
+					overallInfo.setBorder(new EmptyBorder(2, 10, 2, 0));
+					usernameLabel.setFont(FontManager.getRunescapeFont());
+					overallInfo.add(usernameLabel);
+					worldLabel.setFont(FontManager.getRunescapeFont());
+					overallInfo.add(worldLabel);
+					overallPanel.add(overallInfo);
+					container.add(overallPanel, c);
+					c.gridy++;
+
+					// Create button to locate gimp on world map
+					JButton locateButton = new JButton("Locate");
+					locateButton.addActionListener((e) ->
+					{
+						log.debug("Locating gimp...");
+						// TODO: how do I open the world map?
+					});
+					container.add(locateButton, c);
+					c.gridy++;
+
+					// Panel that holds skill icons
+					JPanel statsPanel = new JPanel();
+					statsPanel.setLayout(new GridLayout(8, 3));
+					statsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+					statsPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+					// For each skill on the in-game panel, create a Label and add it to the UI
+					for (HiscoreSkill skill : SKILLS)
+					{
+						JPanel panel = makeHiscorePanel(skill);
+						statsPanel.add(panel);
+					}
+
+					container.add(statsPanel, c);
+					c.gridy++;
+
+					// Create button to refresh gimp data
+					JButton refreshButton = new JButton("Refresh");
+					refreshButton.addActionListener((e) ->
+					{
+						lookup();
+					});
+					container.add(refreshButton, c);
+					c.gridy++;
+
+					add(container, BorderLayout.CENTER);
 				});
-
-				tabGroup.addTab(tab);
 			}
-
-			// Default selected tab is first gimp
-			resetEndpoints();
-
-			add(tabGroup, c);
-			c.gridy++;
-
-			// Panel that holds skill icons
-			JPanel statsPanel = new JPanel();
-			statsPanel.setLayout(new GridLayout(8, 3));
-			statsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-			statsPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
-
-			// For each skill on the in-game panel, create a Label and add it to the UI
-			for (HiscoreSkill skill : SKILLS)
+			catch (Exception e)
 			{
-				JPanel panel = makeHiscorePanel(skill);
-				statsPanel.add(panel);
+				log.error(e.toString());
 			}
-
-			add(statsPanel, c);
-			c.gridy++;
-
 			lookup();
+			return true;
 		});
 	}
 
@@ -250,19 +340,22 @@ public class GIMPanel extends PluginPanel
 	{
 		final String lookup = sanitize(selectedGimp);
 
-		if (Strings.isNullOrEmpty(lookup))
-		{
-			return;
-		}
-
-		/* RuneScape usernames can't be longer than 12 characters long */
-		if (lookup.length() > MAX_USERNAME_LENGTH)
+		// Sanity check, GIM clan channel definitely loaded by now
+		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
+		if (gimClanChannel == null)
 		{
 			loading = false;
 			return;
 		}
 
 		loading = true;
+
+		usernameLabel.setText(htmlLabelStr("Username:", lookup));
+		ClanChannelMember onlineMember = gimClanChannel.findMember(lookup);
+		String worldText = onlineMember != null
+			? String.valueOf(onlineMember.getWorld())
+			: "offline";
+		worldLabel.setText(htmlLabelStr("World:", worldText));
 
 		for (Map.Entry<HiscoreSkill, JLabel> entry : skillLabels.entrySet())
 		{
@@ -567,7 +660,20 @@ public class GIMPanel extends PluginPanel
 		return openingTags + content + closingTags;
 	}
 
-	private void resetEndpoints()
+	private static String htmlLabelInt(String key, int value)
+	{
+		final String valueStr = QuantityFormatter.quantityToStackSize(value);
+		return String.format(HTML_LABEL_TEMPLATE, ColorUtil.toHexColor(ColorScheme.LIGHT_GRAY_COLOR), key, valueStr);
+	}
+
+	private static String htmlLabelStr(String key, String value)
+	{
+		String SPACE_CHAR = " ";
+		return "<html><body style = 'color:#a5a5a5'>" + key + SPACE_CHAR
+			+ "<span style = 'color:white'>" + value + "</span></body></html>";
+	}
+
+	private void resetSelectedTab()
 	{
 		int firstGimpIdx = 0;
 		tabGroup.select(tabGroup.getTab(firstGimpIdx));

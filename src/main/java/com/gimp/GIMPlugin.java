@@ -34,8 +34,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
-import net.runelite.api.clan.ClanMember;
-import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.widgets.Widget;
@@ -79,7 +77,6 @@ public class GIMPlugin extends Plugin
 	@Inject
 	private GIMPConfig config;
 
-	@Inject
 	private GIMPanel panel;
 
 	private NavigationButton navButton;
@@ -126,7 +123,7 @@ public class GIMPlugin extends Plugin
 			{
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
-				loadPanel();
+				panel.load(clientThread);
 				startBroadcast();
 			}
 		}
@@ -156,6 +153,8 @@ public class GIMPlugin extends Plugin
 
 	private void addPanel()
 	{
+		// Panel must be injected this way to avoid UI inconsistencies
+		panel = injector.getInstance(GIMPanel.class);
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "gimpoint-small.png");
 		// This is pretty arbitrary, but currently places the nav button at
 		// the bottom of the list if there are no third-party plugin panels
@@ -167,26 +166,6 @@ public class GIMPlugin extends Plugin
 			.panel(panel)
 			.build();
 		clientToolbar.addNavigation(navButton);
-	}
-
-	private void loadPanel()
-	{
-		// Clan settings are loaded at an indeterminate time after login
-		clientThread.invokeLater(() ->
-		{
-			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
-			if (gimClanSettings == null)
-			{
-				return false;
-			}
-			List<String> gimUsernames = new ArrayList<>();
-			for (ClanMember member : gimClanSettings.getMembers())
-			{
-				gimUsernames.add(member.getName());
-			}
-			panel.load(gimUsernames);
-			return true;
-		});
 	}
 
 	private void removePanel()
