@@ -105,6 +105,7 @@ public class GIMPanel extends PluginPanel
 
 	private final JLabel usernameLabel = new JLabel();
 	private final JLabel worldLabel = new JLabel();
+	private final JButton refreshButton = new JButton("Refresh");
 
 	/* Container of all selectable gimp usernames */
 	private final List<String> gimps = new ArrayList<>();
@@ -141,6 +142,7 @@ public class GIMPanel extends PluginPanel
 			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
 			if (gimClanSettings == null)
 			{
+				// ClanSettings not loaded yet, retry
 				return false;
 			}
 			for (ClanMember member : gimClanSettings.getMembers())
@@ -149,6 +151,7 @@ public class GIMPanel extends PluginPanel
 			}
 			try
 			{
+				// invokeAndWait so we can call lookup() after the UI has loaded
 				SwingUtilities.invokeAndWait(() ->
 				{
 					// Create panel that will hold gimp data
@@ -182,9 +185,10 @@ public class GIMPanel extends PluginPanel
 							}
 
 							selectedGimp = username;
+							// Removes focus border from refresh button on tab select
+							tab.requestFocus();
 							return true;
 						});
-
 						// Adding the lookup method to a mouseListener instead of the above onSelectedEvent
 						// Because sometimes you might want to switch the tab, without calling for lookup
 						tab.addMouseListener(new MouseAdapter()
@@ -196,15 +200,13 @@ public class GIMPanel extends PluginPanel
 								{
 									return;
 								}
-
 								lookup();
 							}
 						});
-
 						tabGroup.addTab(tab);
 					}
 
-					// Default selected tab is first gimp
+					// Default selected tab is first gimp (or should it be you?)
 					resetSelectedTab();
 
 					container.add(tabGroup, c);
@@ -232,16 +234,6 @@ public class GIMPanel extends PluginPanel
 					container.add(overallPanel, c);
 					c.gridy++;
 
-					// Create button to locate gimp on world map
-					JButton locateButton = new JButton("Locate");
-					locateButton.addActionListener((e) ->
-					{
-						log.debug("Locating gimp...");
-						// TODO: how do I open the world map?
-					});
-					container.add(locateButton, c);
-					c.gridy++;
-
 					// Panel that holds skill icons
 					JPanel statsPanel = new JPanel();
 					statsPanel.setLayout(new GridLayout(8, 3));
@@ -259,7 +251,6 @@ public class GIMPanel extends PluginPanel
 					c.gridy++;
 
 					// Create button to refresh gimp data
-					JButton refreshButton = new JButton("Refresh");
 					refreshButton.addActionListener((e) ->
 					{
 						lookup();
@@ -267,6 +258,7 @@ public class GIMPanel extends PluginPanel
 					container.add(refreshButton, c);
 					c.gridy++;
 
+					// Add data container to panel
 					add(container, BorderLayout.CENTER);
 				});
 			}
@@ -275,6 +267,7 @@ public class GIMPanel extends PluginPanel
 				log.error(e.toString());
 			}
 			lookup();
+			// Returning true tells client thread to stop invoking load method
 			return true;
 		});
 	}
@@ -367,10 +360,10 @@ public class GIMPanel extends PluginPanel
 			label.setToolTipText(skill == null ? "Combat" : skill.getName());
 		}
 
-		// If for some reason no endpoint was selected, default to normal
+		// If for some reason no tab was selected, default to normal
 		if (selectedGimp == null)
 		{
-			selectedGimp = "";
+			resetSelectedTab();
 		}
 
 		hiscoreClient.lookupAsync(lookup, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
