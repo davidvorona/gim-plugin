@@ -24,6 +24,7 @@
  */
 package com.gimp;
 
+import com.gimp.group.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.awt.BorderLayout;
@@ -95,10 +96,15 @@ public class GIMPanel extends PluginPanel
 	private static final String HTML_LABEL_TEMPLATE =
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
+	private final GIMPlugin plugin;
 	private final HiscoreClient hiscoreClient;
+	private final Group group;
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	// Not an EnumMap because we need null keys for combat
 	private final Map<HiscoreSkill, JLabel> skillLabels = new HashMap<>();
@@ -106,9 +112,6 @@ public class GIMPanel extends PluginPanel
 	private final JLabel usernameLabel = new JLabel();
 	private final JLabel worldLabel = new JLabel();
 	private final JButton refreshButton = new JButton("Refresh");
-
-	/* Container of all selectable gimp usernames */
-	private final List<String> gimps = new ArrayList<>();
 
 	/* Container of all the selectable gimp tabs */
 	private MaterialTabGroup tabGroup;
@@ -126,29 +129,27 @@ public class GIMPanel extends PluginPanel
 	}
 
 	@Inject
-	public GIMPanel(OkHttpClient okHttpClient)
+	public GIMPanel(GIMPlugin plugin, OkHttpClient okHttpClient)
 	{
-		hiscoreClient = new HiscoreClient(okHttpClient);
+		this.plugin = plugin;
+		this.hiscoreClient = new HiscoreClient(okHttpClient);
+		// TODO: how else to access group?
+		this.group = plugin.getGroup();
 
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 		setLayout(new BorderLayout());
 	}
 
-	public void load(ClientThread clientThread)
+	public void load()
 	{
 		clientThread.invokeLater(() ->
 		{
-			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
-			if (gimClanSettings == null)
+			if (!group.isLoaded())
 			{
-				// ClanSettings not loaded yet, retry
 				return false;
 			}
-			for (ClanMember member : gimClanSettings.getMembers())
-			{
-				gimps.add(member.getName());
-			}
+			List<String> gimps = group.getNames();
 			try
 			{
 				// invokeAndWait so we can call lookup() after the UI has loaded
@@ -325,7 +326,8 @@ public class GIMPanel extends PluginPanel
 
 	public void lookup(String username)
 	{
-		tabGroup.select(tabGroup.getTab(gimps.indexOf(username)));
+		Group group = plugin.getGroup();
+		tabGroup.select(tabGroup.getTab(group.getIndexOfGimp(username)));
 		lookup();
 	}
 
