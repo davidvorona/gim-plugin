@@ -24,18 +24,24 @@
  */
 package com.gimp;
 
+import com.gimp.group.*;
 import com.gimp.locations.*;
 import com.gimp.tasks.*;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
+import net.runelite.api.Skill;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
+import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.StatChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -49,6 +55,7 @@ import java.util.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.OkHttpClient;
 
 @Slf4j
 @PluginDescriptor(
@@ -64,6 +71,10 @@ public class GIMPlugin extends Plugin
 
 	@Inject
 	private GIMPBroadcastManager gimpBroadcastManager;
+
+	@Inject
+	@Getter
+	private Group group;
 
 	@Inject
 	private Client client;
@@ -95,6 +106,37 @@ public class GIMPlugin extends Plugin
 		removePanel();
 	}
 
+//	@Subscribe
+//	public void onGameTick(GameTick gameTick)
+//	{
+//		final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
+//		final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
+//		Gimp localGimp = group.getLocalGimp();
+//		final int lastHp = localGimp.getCurrentHp();
+//		if (currentHp != lastHp)
+//		{
+//			// send health update to server
+//		}
+//		final int lastPrayer = localGimp.getCurrentPrayer();
+//		if (currentPrayer != lastPrayer)
+//		{
+//			// send prayer update to server
+//		}
+//	}
+//
+//	@Subscribe
+//	public void onStatChanged(StatChanged statChanged)
+//	{
+//		if (statChanged.getSkill() == Skill.HITPOINTS)
+//		{
+//			// send hp max update to server
+//		}
+//		if (statChanged.getSkill() == Skill.PRAYER)
+//		{
+//			// send prayer max update to server
+//		}
+//	}
+
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
@@ -107,6 +149,7 @@ public class GIMPlugin extends Plugin
 		)
 		{
 			panel.unload();
+			group.unload();
 			stopBroadcast();
 		}
 	}
@@ -123,7 +166,8 @@ public class GIMPlugin extends Plugin
 			{
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
-				panel.load(clientThread);
+				group.load();
+				panel.load();
 				startBroadcast();
 			}
 		}
