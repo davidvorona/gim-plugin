@@ -103,68 +103,6 @@ public class GimPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onGameTick(GameTick gameTick)
-	{
-		// Don't bother checking until gimps are loaded
-		GimPlayer localGimp = group.getLocalGimp();
-		if (localGimp != null)
-		{
-			final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
-			final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
-			final int lastHp = localGimp.getHp();
-			// If HP value has changed, broadcast
-			if (currentHp != lastHp)
-			{
-				Map<String, Object> hpData = localGimp.getData();
-				hpData.put("hp", currentHp);
-				gimBroadcastManager.broadcast(hpData);
-			}
-			final int lastPrayer = localGimp.getPrayer();
-			// If prayer value has changed, broadcast
-			if (currentPrayer != lastPrayer)
-			{
-				Map<String, Object> prayerData = localGimp.getData();
-				prayerData.put("prayer", currentPrayer);
-				gimBroadcastManager.broadcast(prayerData);
-			}
-		}
-	}
-
-	@Subscribe
-	public void onStatChanged(StatChanged statChanged)
-	{
-		// Don't bother checking until gimps are loaded
-		GimPlayer localGimp = group.getLocalGimp();
-		if (localGimp != null)
-		{
-			if (statChanged.getSkill() == Skill.HITPOINTS)
-			{
-				final int currentMaxHp = client.getRealSkillLevel(Skill.HITPOINTS);
-				final int lastMaxHp = localGimp.getMaxHp();
-				// If max (real) HP value has changed, broadcast
-				if (currentMaxHp != lastMaxHp)
-				{
-					Map<String, Object> hpData = localGimp.getData();
-					hpData.put("maxHp", currentMaxHp);
-					gimBroadcastManager.broadcast(hpData);
-				}
-			}
-			if (statChanged.getSkill() == Skill.PRAYER)
-			{
-				final int currentMaxPrayer = client.getRealSkillLevel(Skill.PRAYER);
-				final int lastMaxPrayer = localGimp.getMaxPrayer();
-				// If max (real) prayer value has changed, broadcast
-				if (currentMaxPrayer != lastMaxPrayer)
-				{
-					Map<String, Object> prayerData = localGimp.getData();
-					prayerData.put("maxPrayer", currentMaxPrayer);
-					gimBroadcastManager.broadcast(prayerData);
-				}
-			}
-		}
-	}
-
-	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		// If game state changes to the login screen or hopping, or connection is lost, stop the broadcast
@@ -200,6 +138,78 @@ public class GimPlugin extends Plugin
 					panel.load();
 					startBroadcast();
 				});
+			}
+		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick gameTick)
+	{
+		// Don't bother checking until gimps are loaded
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
+			final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
+			final int lastHp = localGimp.getHp();
+			// If HP value has changed, broadcast
+			if (currentHp != lastHp)
+			{
+				Map<String, Object> hpData = localGimp.getData();
+				hpData.put("hp", currentHp);
+				gimBroadcastManager.broadcast(hpData);
+			}
+			final int lastPrayer = localGimp.getPrayer();
+			// If prayer value has changed, broadcast
+			if (currentPrayer != lastPrayer)
+			{
+				Map<String, Object> prayerData = localGimp.getData();
+				prayerData.put("prayer", currentPrayer);
+				gimBroadcastManager.broadcast(prayerData);
+			}
+			// If any gimp world / online status has changed, update locally
+			for (GimPlayer gimp : group.getGimps())
+			{
+				final int currentWorld = group.getCurrentWorld(gimp.getName());
+				final int lastWorld = gimp.getWorld();
+				if (currentWorld != lastWorld)
+				{
+					group.setWorld(gimp.getName(), currentWorld);
+				}
+			}
+		}
+	}
+
+	@Subscribe
+	public void onStatChanged(StatChanged statChanged)
+	{
+		// Don't bother checking until gimps are loaded
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			if (statChanged.getSkill() == Skill.HITPOINTS)
+			{
+				final int currentMaxHp = client.getRealSkillLevel(Skill.HITPOINTS);
+				final int lastMaxHp = localGimp.getMaxHp();
+				// If max (real) HP value has changed, broadcast
+				if (currentMaxHp != lastMaxHp)
+				{
+					Map<String, Object> hpData = localGimp.getData();
+					hpData.put("maxHp", currentMaxHp);
+					gimBroadcastManager.broadcast(hpData);
+				}
+			}
+			if (statChanged.getSkill() == Skill.PRAYER)
+			{
+				final int currentMaxPrayer = client.getRealSkillLevel(Skill.PRAYER);
+				final int lastMaxPrayer = localGimp.getMaxPrayer();
+				// If max (real) prayer value has changed, broadcast
+				if (currentMaxPrayer != lastMaxPrayer)
+				{
+					Map<String, Object> prayerData = localGimp.getData();
+					prayerData.put("maxPrayer", currentMaxPrayer);
+					gimBroadcastManager.broadcast(prayerData);
+				}
 			}
 		}
 	}

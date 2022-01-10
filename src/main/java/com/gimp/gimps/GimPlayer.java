@@ -63,14 +63,19 @@ public class GimPlayer
 	@Getter
 	private String customStatus;
 
+	@Setter
+	@Getter
+	private Integer world;
+
 	@Nullable
 	@Getter
 	private GimLocation location;
 
 	@Inject
-	public GimPlayer(String name)
+	public GimPlayer(String name, int world)
 	{
 		this.name = name;
+		this.world = world;
 		GimIconProvider iconProvider = new GimIconProvider();
 		icon = iconProvider.getIcon(name);
 	}

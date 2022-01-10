@@ -44,6 +44,8 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 @Slf4j
 public class Group
 {
+	final static int OFFLINE_WORLD = 0;
+
 	@Getter
 	final private List<GimPlayer> gimps = new ArrayList<>();
 
@@ -60,8 +62,8 @@ public class Group
 	private boolean loaded = false;
 
 	/**
-	 * Loads player data to the Group once the client has finished loading clan data.
-	 * Initializes data for the local gimp.
+	 * Loads player data to the Group once the client has finished loading clan
+	 * data. Initializes data for the local gimp.
 	 */
 	public void load()
 	{
@@ -76,7 +78,9 @@ public class Group
 			List<ClanMember> clanMembers = gimClanSettings.getMembers();
 			for (ClanMember member : clanMembers)
 			{
-				gimps.add(new GimPlayer(member.getName()));
+				String name = member.getName();
+				int world = getCurrentWorld(name);
+				gimps.add(new GimPlayer(name, world));
 			}
 			initLocalGimp();
 			loaded = true;
@@ -250,15 +254,48 @@ public class Group
 		// Set GimPlayer location to new location
 		gimp.setLocation(newGimLocation);
 		// Add point to world map (if not local player)
-		if (gimp != getLocalGimp())
+		if (gimp != getLocalGimp() && gimp.getWorld() != OFFLINE_WORLD)
 		{
 			worldMapPointManager.add(newGimLocation.getWorldMapPoint());
 		}
 	}
 
-	public int getWorld(String name)
+	/**
+	 * Sets the world number of the GimPlayer by name and removes
+	 * the map point if the world number is 0, e.g. the player is offline.
+	 *
+	 * @param name  GimPlayer name
+	 * @param world world number
+	 */
+	public void setWorld(String name, int world)
 	{
-		int OFFLINE_WORLD = 0;
+		GimPlayer gimp = getGimp(name);
+		if (gimp == null)
+		{
+			return;
+		}
+		gimp.setWorld(world);
+		// If player is offline, remove map point
+		if (world == OFFLINE_WORLD)
+		{
+			GimLocation gimLocation = gimp.getLocation();
+			if (gimLocation != null)
+			{
+				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
+				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
+			}
+		}
+	}
+
+	/**
+	 * Gets the world of a player by name, returns -1 if the player
+	 * is offline.
+	 *
+	 * @param name GimPlayer name
+	 * @return world number
+	 */
+	public int getCurrentWorld(String name)
+	{
 		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
 		if (validateGimpName(name) && gimClanChannel != null)
 		{
