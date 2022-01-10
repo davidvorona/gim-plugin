@@ -24,11 +24,17 @@
  */
 package com.gimp;
 
-import com.gimp.group.*;
+import com.gimp.gimps.*;
 import com.gimp.locations.*;
+import com.gimp.requests.SocketClient;
 import com.gimp.tasks.*;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Type;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -37,7 +43,7 @@ import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
-import net.runelite.api.clan.ClanSettings;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -55,22 +61,20 @@ import java.util.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
-import okhttp3.OkHttpClient;
+import org.graalvm.compiler.hotspot.replacements.HashCodeSnippets;
+import org.json.JSONObject;
 
 @Slf4j
 @PluginDescriptor(
 	name = "GIMP"
 )
-public class GIMPlugin extends Plugin
+public class GimPlugin extends Plugin
 {
 	@Inject
-	private GIMPLocationManager gimpLocationManager;
+	private TaskManager taskManager;
 
 	@Inject
-	private GIMPTaskManager gimpTaskManager;
-
-	@Inject
-	private GIMPBroadcastManager gimpBroadcastManager;
+	private GimBroadcastManager gimBroadcastManager;
 
 	@Inject
 	@Getter
@@ -86,9 +90,9 @@ public class GIMPlugin extends Plugin
 	private ClientToolbar clientToolbar;
 
 	@Inject
-	private GIMPConfig config;
+	private GimPluginConfig config;
 
-	private GIMPanel panel;
+	private GimPluginPanel panel;
 
 	private NavigationButton navButton;
 
@@ -106,36 +110,67 @@ public class GIMPlugin extends Plugin
 		removePanel();
 	}
 
-//	@Subscribe
-//	public void onGameTick(GameTick gameTick)
-//	{
-//		final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
-//		final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
-//		Gimp localGimp = group.getLocalGimp();
-//		final int lastHp = localGimp.getCurrentHp();
-//		if (currentHp != lastHp)
-//		{
-//			// send health update to server
-//		}
-//		final int lastPrayer = localGimp.getCurrentPrayer();
-//		if (currentPrayer != lastPrayer)
-//		{
-//			// send prayer update to server
-//		}
-//	}
-//
-//	@Subscribe
-//	public void onStatChanged(StatChanged statChanged)
-//	{
-//		if (statChanged.getSkill() == Skill.HITPOINTS)
-//		{
-//			// send hp max update to server
-//		}
-//		if (statChanged.getSkill() == Skill.PRAYER)
-//		{
-//			// send prayer max update to server
-//		}
-//	}
+	@Subscribe
+	public void onGameTick(GameTick gameTick)
+	{
+		// Don't bother checking until gimps are loaded
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
+			final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
+			final int lastHp = localGimp.getHp();
+			// If HP value has changed, broadcast
+			if (currentHp != lastHp)
+			{
+				Map<String, Object> hpData = localGimp.getData();
+				hpData.put("hp", currentHp);
+				gimBroadcastManager.broadcast(hpData);
+			}
+			final int lastPrayer = localGimp.getPrayer();
+			// If prayer value has changed, broadcast
+			if (currentPrayer != lastPrayer)
+			{
+				Map<String, Object> prayerData = localGimp.getData();
+				prayerData.put("prayer", currentPrayer);
+				gimBroadcastManager.broadcast(prayerData);
+			}
+		}
+	}
+
+	@Subscribe
+	public void onStatChanged(StatChanged statChanged)
+	{
+		// Don't bother checking until gimps are loaded
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			if (statChanged.getSkill() == Skill.HITPOINTS)
+			{
+				final int currentMaxHp = client.getRealSkillLevel(Skill.HITPOINTS);
+				final int lastMaxHp = localGimp.getMaxHp();
+				// If max (real) HP value has changed, broadcast
+				if (currentMaxHp != lastMaxHp)
+				{
+					Map<String, Object> hpData = localGimp.getData();
+					hpData.put("maxHp", currentMaxHp);
+					gimBroadcastManager.broadcast(hpData);
+				}
+			}
+			if (statChanged.getSkill() == Skill.PRAYER)
+			{
+				final int currentMaxPrayer = client.getRealSkillLevel(Skill.PRAYER);
+				final int lastMaxPrayer = localGimp.getMaxPrayer();
+				// If max (real) prayer value has changed, broadcast
+				if (currentMaxPrayer != lastMaxPrayer)
+				{
+					Map<String, Object> prayerData = localGimp.getData();
+					prayerData.put("maxPrayer", currentMaxPrayer);
+					gimBroadcastManager.broadcast(prayerData);
+				}
+			}
+		}
+	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
@@ -148,8 +183,8 @@ public class GIMPlugin extends Plugin
 				|| gameState == GameState.CONNECTION_LOST
 		)
 		{
-			panel.unload();
 			group.unload();
+			panel.unload();
 			stopBroadcast();
 		}
 	}
@@ -167,8 +202,12 @@ public class GIMPlugin extends Plugin
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
 				group.load();
-				panel.load();
-				startBroadcast();
+				// Once group is loaded, we can display panel and start the broadcast
+				group.waitForLoad(() ->
+				{
+					panel.load();
+					startBroadcast();
+				});
 			}
 		}
 	}
@@ -186,11 +225,11 @@ public class GIMPlugin extends Plugin
 				|| configChanged.getKey().equals(SERVER_PORT_KEY))
 		)
 		{
-			if (gimpBroadcastManager.isSocketConnected())
+			if (gimBroadcastManager.isSocketConnected())
 			{
 				// If socket is currently connected, disconnect and let it reconnect with new IP/port
 				log.debug("Server IP/port changed, disconnecting socket client");
-				gimpBroadcastManager.disconnectSocketClient();
+				gimBroadcastManager.disconnectSocketClient();
 			}
 		}
 	}
@@ -198,7 +237,7 @@ public class GIMPlugin extends Plugin
 	private void addPanel()
 	{
 		// Panel must be injected this way to avoid UI inconsistencies
-		panel = injector.getInstance(GIMPanel.class);
+		panel = injector.getInstance(GimPluginPanel.class);
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "gimpoint-small.png");
 		// This is pretty arbitrary, but currently places the nav button at
 		// the bottom of the list if there are no third-party plugin panels
@@ -220,53 +259,84 @@ public class GIMPlugin extends Plugin
 	private void startBroadcast()
 	{
 		log.debug("Starting broadcast...");
-		gimpBroadcastManager.connectSocketClient();
+		gimBroadcastManager.connectSocketClient();
+		// Start listening for server broadcast
+		listenForBroadcast();
+		// Start interval-based broadcast tasks
+		startIntervalTasks();
+	}
+
+	private void listenForBroadcast()
+	{
+		gimBroadcastManager.listen(new Emitter.Listener()
+		{
+			@Override
+			public void call(Object... args)
+			{
+				JSONObject dataJson = (JSONObject) args[0];
+				GimPlayer gimpData = GimBroadcastManager.parseBroadcastData(dataJson.toString());
+				group.update(gimpData);
+			}
+		});
+	}
+
+	private void startIntervalTasks()
+	{
 		// Sanity check
 		Player localPlayer = client.getLocalPlayer();
 		if (localPlayer != null)
 		{
 			long FIVE_SECONDS = 5000;
-			GIMPTask socketConnectTask = new GIMPTask(FIVE_SECONDS * 2)
+			Task socketConnectTask = new Task(FIVE_SECONDS * 2)
 			{
 				@Override
 				public void run()
 				{
-					if (!gimpBroadcastManager.isSocketConnected())
+					if (!gimBroadcastManager.isSocketConnected())
 					{
-						gimpBroadcastManager.connectSocketClient();
+						gimBroadcastManager.connectSocketClient();
 					}
 				}
 			};
-			GIMPTask broadcastTask = new GIMPTask(FIVE_SECONDS)
+			Task locationBroadcastTask = new Task(FIVE_SECONDS)
 			{
 				@Override
 				public void run()
 				{
 					if (!config.ghostMode())
 					{
-						GIMPLocation location = gimpLocationManager.getCurrentLocation(localPlayer);
-						gimpBroadcastManager.broadcast(localPlayer.getName(), location);
+						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
+						Map<String, Object> data = group.getLocalGimp().getData();
+						data.put("location", gimLocation.getLocation());
+						gimBroadcastManager.broadcast(data);
 					}
 				}
 
 				@Override
 				public long delay()
 				{
-					if (gimpBroadcastManager.isSocketConnected())
+					if (gimBroadcastManager.isSocketConnected())
 					{
 						return period / 2;
 					}
 					return period;
 				}
 			};
-			GIMPTask pingTask = new GIMPTask(FIVE_SECONDS * 2)
+			Task httpFallbackPingTask = new Task(FIVE_SECONDS * 2)
 			{
 				@Override
 				public void run()
 				{
-					Map<String, GIMPLocation> locationData = gimpBroadcastManager.ping();
-					gimpLocationManager.updateLocations(locationData);
-					gimpLocationManager.updateMapPoints(localPlayer);
+					// If socket is not connected, fetch data (instead of waiting for broadcast)
+					if (!gimBroadcastManager.isSocketConnected())
+					{
+						Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
+						for (GimPlayer gimp : group.getGimps())
+						{
+							GimPlayer gimpData = gimData.get(gimp.getName());
+							group.update(gimpData);
+						}
+					}
 				}
 
 				@Override
@@ -281,30 +351,28 @@ public class GIMPlugin extends Plugin
 						nextDelay = nextDelay / 4;
 					}
 					// Half delay if socket is connected: 1.25 secs if map open, 5 secs if closed
-					if (gimpBroadcastManager.isSocketConnected())
+					if (gimBroadcastManager.isSocketConnected())
 					{
 						nextDelay = nextDelay / 2;
 					}
 					return nextDelay;
 				}
 			};
-			gimpTaskManager.schedule(broadcastTask, 0);
-			gimpTaskManager.schedule(pingTask, FIVE_SECONDS / 2);
-			gimpTaskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
+			taskManager.schedule(locationBroadcastTask, 0);
+			taskManager.schedule(httpFallbackPingTask, FIVE_SECONDS / 2);
+			taskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
 		}
 	}
 
 	private void stopBroadcast()
 	{
 		log.debug("Stopping broadcast...");
-		gimpTaskManager.resetTasks();
-		gimpLocationManager.purgeLocations();
-		gimpLocationManager.clearMapPoints();
+		taskManager.resetTasks();
 	}
 
 	@Provides
-	GIMPConfig provideConfig(ConfigManager configManager)
+	GimPluginConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(GIMPConfig.class);
+		return configManager.getConfig(GimPluginConfig.class);
 	}
 }

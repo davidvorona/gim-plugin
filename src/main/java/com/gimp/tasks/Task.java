@@ -22,42 +22,39 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gimp;
+package com.gimp.tasks;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-
-@ConfigGroup("gimp")
-public interface GIMPConfig extends Config
+interface TaskRunner
 {
-	@ConfigItem(
-		keyName = "serverIp",
-		name = "Server IP",
-		description = "IP of the remote GIMP server"
-	)
-	default String serverIp()
+	void run();
+
+	long delay();
+}
+
+public class Task implements TaskRunner
+{
+	final public long period;
+
+	public Task(long defaultPeriod)
 	{
-		return "";
+		period = defaultPeriod;
 	}
 
-	@ConfigItem(
-		keyName = "serverPort",
-		name = "Server Port",
-		description = "Port of the remote GIMP server"
-	)
-	default String serverPort()
+	/**
+	 * Runs code that can be overridden, meant to be called
+	 * after a delay.
+	 */
+	public void run()
 	{
-		return "";
 	}
 
-	@ConfigItem(
-		keyName = "ghostMode",
-		name = "Ghost Mode",
-		description = "Hides your location from your fellow GIMPs"
-	)
-	default boolean ghostMode()
+	/**
+	 * Returns the delay, can be overridden for a dynamic delay.
+	 *
+	 * @return duration in milliseconds by which to delay task
+	 */
+	public long delay()
 	{
-		return false;
+		return period;
 	}
 }

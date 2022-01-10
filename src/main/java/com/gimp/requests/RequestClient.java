@@ -24,16 +24,16 @@
  */
 package com.gimp.requests;
 
-import com.gimp.GIMPConfig;
+import com.gimp.GimPluginConfig;
 import java.net.URL;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class GIMPRequestClient
+public abstract class RequestClient
 {
 	@Inject
-	public GIMPConfig config;
+	public GimPluginConfig config;
 
 	/**
 	 * Gets the base URL from the IP and port injected from the plugin config.

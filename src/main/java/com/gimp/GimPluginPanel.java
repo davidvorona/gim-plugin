@@ -24,7 +24,7 @@
  */
 package com.gimp;
 
-import com.gimp.group.*;
+import com.gimp.gimps.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.awt.BorderLayout;
@@ -35,7 +35,6 @@ import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,8 +52,6 @@ import net.runelite.api.Experience;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanChannelMember;
 import net.runelite.api.clan.ClanID;
-import net.runelite.api.clan.ClanMember;
-import net.runelite.api.clan.ClanSettings;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -64,18 +61,18 @@ import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
-import net.runelite.http.api.hiscore.HiscoreClient;
-import net.runelite.http.api.hiscore.HiscoreEndpoint;
-import net.runelite.http.api.hiscore.HiscoreResult;
-import net.runelite.http.api.hiscore.HiscoreSkill;
-import static net.runelite.http.api.hiscore.HiscoreSkill.*;
-import net.runelite.http.api.hiscore.HiscoreSkillType;
-import net.runelite.http.api.hiscore.Skill;
+import net.runelite.client.hiscore.HiscoreSkill;
+import static net.runelite.client.hiscore.HiscoreSkill.*;
+import net.runelite.client.hiscore.HiscoreClient;
+import net.runelite.client.hiscore.HiscoreEndpoint;
+import net.runelite.client.hiscore.HiscoreResult;
+import net.runelite.client.hiscore.HiscoreSkillType;
+import net.runelite.client.hiscore.Skill;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-public class GIMPanel extends PluginPanel
+public class GimPluginPanel extends PluginPanel
 {
 	private static final ImageIcon GIMP_ICON_SMALL;
 
@@ -96,7 +93,7 @@ public class GIMPanel extends PluginPanel
 	private static final String HTML_LABEL_TEMPLATE =
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
-	private final GIMPlugin plugin;
+	private final GimPlugin plugin;
 	private final HiscoreClient hiscoreClient;
 	private final Group group;
 
@@ -124,16 +121,15 @@ public class GIMPanel extends PluginPanel
 
 	static
 	{
-		final BufferedImage gimpIconSmallImg = ImageUtil.loadImageResource(GIMPanel.class, "gimpoint-small.png");
+		final BufferedImage gimpIconSmallImg = ImageUtil.loadImageResource(GimPluginPanel.class, "gimpoint-small.png");
 		GIMP_ICON_SMALL = new ImageIcon(gimpIconSmallImg);
 	}
 
 	@Inject
-	public GIMPanel(GIMPlugin plugin, OkHttpClient okHttpClient)
+	public GimPluginPanel(GimPlugin plugin, OkHttpClient okHttpClient)
 	{
 		this.plugin = plugin;
 		this.hiscoreClient = new HiscoreClient(okHttpClient);
-		// TODO: how else to access group?
 		this.group = plugin.getGroup();
 
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -143,134 +139,125 @@ public class GIMPanel extends PluginPanel
 
 	public void load()
 	{
-		clientThread.invokeLater(() ->
+		List<String> gimps = group.getNames();
+		try
 		{
-			if (!group.isLoaded())
+			// invokeAndWait so we can call lookup() after the UI has loaded
+			SwingUtilities.invokeAndWait(() ->
 			{
-				return false;
-			}
-			List<String> gimps = group.getNames();
-			try
-			{
-				// invokeAndWait so we can call lookup() after the UI has loaded
-				SwingUtilities.invokeAndWait(() ->
+				// Create panel that will hold gimp data
+				final JPanel container = new JPanel();
+				container.setBackground(ColorScheme.DARK_GRAY_COLOR);
+				container.setLayout(new GridBagLayout());
+
+				// Expand sub items to fit width of panel, align to top of panel
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.HORIZONTAL;
+				c.gridx = 0;
+				c.gridy = 0;
+				c.weightx = 1;
+				c.weighty = 0;
+				c.insets = new Insets(0, 0, 10, 0);
+
+				// Add tabs for each gimp
+				int gimpCount = gimps.size();
+				tabGroup = new MaterialTabGroup();
+				tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
+
+				for (String username : gimps)
 				{
-					// Create panel that will hold gimp data
-					final JPanel container = new JPanel();
-					container.setBackground(ColorScheme.DARK_GRAY_COLOR);
-					container.setLayout(new GridBagLayout());
-
-					// Expand sub items to fit width of panel, align to top of panel
-					GridBagConstraints c = new GridBagConstraints();
-					c.fill = GridBagConstraints.HORIZONTAL;
-					c.gridx = 0;
-					c.gridy = 0;
-					c.weightx = 1;
-					c.weighty = 0;
-					c.insets = new Insets(0, 0, 10, 0);
-
-					// Add tabs for each gimp
-					int gimpCount = gimps.size();
-					tabGroup = new MaterialTabGroup();
-					tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
-
-					for (String username : gimps)
+					MaterialTab tab = new MaterialTab(GIMP_ICON_SMALL, tabGroup, null);
+					tab.setToolTipText(username);
+					tab.setOnSelectEvent(() ->
 					{
-						MaterialTab tab = new MaterialTab(GIMP_ICON_SMALL, tabGroup, null);
-						tab.setToolTipText(username);
-						tab.setOnSelectEvent(() ->
+						if (loading)
+						{
+							return false;
+						}
+
+						selectedGimp = username;
+						// Removes focus border from refresh button on tab select
+						tab.requestFocus();
+						return true;
+					});
+					// Adding the lookup method to a mouseListener instead of the above onSelectedEvent
+					// Because sometimes you might want to switch the tab, without calling for lookup
+					tab.addMouseListener(new MouseAdapter()
+					{
+						@Override
+						public void mousePressed(MouseEvent mouseEvent)
 						{
 							if (loading)
 							{
-								return false;
+								return;
 							}
-
-							selectedGimp = username;
-							// Removes focus border from refresh button on tab select
-							tab.requestFocus();
-							return true;
-						});
-						// Adding the lookup method to a mouseListener instead of the above onSelectedEvent
-						// Because sometimes you might want to switch the tab, without calling for lookup
-						tab.addMouseListener(new MouseAdapter()
-						{
-							@Override
-							public void mousePressed(MouseEvent mouseEvent)
-							{
-								if (loading)
-								{
-									return;
-								}
-								lookup();
-							}
-						});
-						tabGroup.addTab(tab);
-					}
-
-					// Default selected tab is first gimp (or should it be you?)
-					resetSelectedTab();
-
-					container.add(tabGroup, c);
-					c.gridy++;
-
-					// Create panel that will contain overall data
-					JPanel overallPanel = new JPanel();
-					overallPanel.setBorder(BorderFactory.createCompoundBorder(
-						BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
-						BorderFactory.createEmptyBorder(8, 10, 8, 10)
-					));
-					overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-					overallPanel.setLayout(new BorderLayout());
-
-					// Add icon and contents
-					final JPanel overallInfo = new JPanel();
-					overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-					overallInfo.setLayout(new GridLayout(2, 1));
-					overallInfo.setBorder(new EmptyBorder(2, 10, 2, 0));
-					usernameLabel.setFont(FontManager.getRunescapeFont());
-					overallInfo.add(usernameLabel);
-					worldLabel.setFont(FontManager.getRunescapeFont());
-					overallInfo.add(worldLabel);
-					overallPanel.add(overallInfo);
-					container.add(overallPanel, c);
-					c.gridy++;
-
-					// Panel that holds skill icons
-					JPanel statsPanel = new JPanel();
-					statsPanel.setLayout(new GridLayout(8, 3));
-					statsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-					statsPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
-
-					// For each skill on the in-game panel, create a Label and add it to the UI
-					for (HiscoreSkill skill : SKILLS)
-					{
-						JPanel panel = makeHiscorePanel(skill);
-						statsPanel.add(panel);
-					}
-
-					container.add(statsPanel, c);
-					c.gridy++;
-
-					// Create button to refresh gimp data
-					refreshButton.addActionListener((e) ->
-					{
-						lookup();
+							lookup();
+						}
 					});
-					container.add(refreshButton, c);
-					c.gridy++;
+					tabGroup.addTab(tab);
+				}
 
-					// Add data container to panel
-					add(container, BorderLayout.CENTER);
+				// Default selected tab is first gimp (or should it be you?)
+				resetSelectedTab();
+
+				container.add(tabGroup, c);
+				c.gridy++;
+
+				// Create panel that will contain overall data
+				JPanel overallPanel = new JPanel();
+				overallPanel.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
+					BorderFactory.createEmptyBorder(8, 10, 8, 10)
+				));
+				overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+				overallPanel.setLayout(new BorderLayout());
+
+				// Add icon and contents
+				final JPanel overallInfo = new JPanel();
+				overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+				overallInfo.setLayout(new GridLayout(2, 1));
+				overallInfo.setBorder(new EmptyBorder(2, 10, 2, 0));
+				usernameLabel.setFont(FontManager.getRunescapeFont());
+				overallInfo.add(usernameLabel);
+				worldLabel.setFont(FontManager.getRunescapeFont());
+				overallInfo.add(worldLabel);
+				overallPanel.add(overallInfo);
+				container.add(overallPanel, c);
+				c.gridy++;
+
+				// Panel that holds skill icons
+				JPanel statsPanel = new JPanel();
+				statsPanel.setLayout(new GridLayout(8, 3));
+				statsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+				statsPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+				// For each skill on the in-game panel, create a Label and add it to the UI
+				for (HiscoreSkill skill : SKILLS)
+				{
+					JPanel panel = makeHiscorePanel(skill);
+					statsPanel.add(panel);
+				}
+
+				container.add(statsPanel, c);
+				c.gridy++;
+
+				// Create button to refresh gimp data
+				refreshButton.addActionListener((e) ->
+				{
+					lookup();
 				});
-			}
-			catch (Exception e)
-			{
-				log.error(e.toString());
-			}
+				container.add(refreshButton, c);
+				c.gridy++;
+
+				// Add data container to panel
+				add(container, BorderLayout.CENTER);
+			});
 			lookup();
-			// Returning true tells client thread to stop invoking load method
-			return true;
-		});
+		}
+		catch (Exception e)
+		{
+			log.error(e.toString());
+		}
 	}
 
 	public void unload()

@@ -34,13 +34,13 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GIMPIconProvider
+public class GimIconProvider
 {
 	final static Font FONT = FontManager.getRunescapeBoldFont();
 
 	final private Map<String, BufferedImage> icons;
 
-	public GIMPIconProvider()
+	public GimIconProvider()
 	{
 		icons = new HashMap<>(5);
 	}
@@ -59,7 +59,7 @@ public class GIMPIconProvider
 		final int textWidth = (int) textBounds.getWidth();
 
 		// Load the GIMP logo
-		final BufferedImage gimpLogo = ImageUtil.loadImageResource(GIMPlugin.class, "gimpoint.png");
+		final BufferedImage gimpLogo = ImageUtil.loadImageResource(GimPlugin.class, "gimpoint.png");
 
 		// Initialize the resulting icon, must be large enough to fit everything with the GIMP logo centered
 		final BufferedImage icon = new BufferedImage(textWidth + 4,
