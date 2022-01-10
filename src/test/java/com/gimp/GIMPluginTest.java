@@ -7,7 +7,7 @@ public class GIMPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(GIMPlugin.class);
+		ExternalPluginManager.loadBuiltin(GimPlugin.class);
 		RuneLite.main(args);
 	}
 }

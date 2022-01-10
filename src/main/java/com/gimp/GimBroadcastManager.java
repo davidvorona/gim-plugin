@@ -24,39 +24,30 @@
  */
 package com.gimp;
 
-import com.gimp.locations.GIMPLocation;
+import com.gimp.gimps.GimPlayer;
 import com.gimp.requests.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
 @Slf4j
-public class GIMPBroadcastManager
+public class GimBroadcastManager
 {
-	@Inject
-	private GIMPHttpClient httpClient;
-
-	@Inject
-	private GIMPSocketClient socketClient;
-
-	/**
-	 * Get JSON string of the broadcast data.
-	 *
-	 * @param name     name of player
-	 * @param location location of player
-	 * @return JSON string of keys/values name, x, y, plane
-	 */
-	static String stringifyBroadcastData(String name, GIMPLocation location)
+	public static final Type pingDataTypeForJson = new TypeToken<Map<String, GimPlayer>>()
 	{
-		Map<String, Object> broadcastData = location.getLocation();
-		String NAME_FIELD = "name";
-		broadcastData.put(NAME_FIELD, name); // name, x, y, plane
-		Gson gson = new Gson();
-		return gson.toJson(broadcastData);
-	}
+	}.getType();
+
+	@Inject
+	private HttpClient httpClient;
+
+	@Inject
+	private SocketClient socketClient;
 
 	/**
 	 * Parses JSON string of the ping data and adds to a Map.
@@ -64,41 +55,22 @@ public class GIMPBroadcastManager
 	 * @param dataJson JSON string of ping data
 	 * @return map: name => GIMPLocation
 	 */
-	static Map<String, GIMPLocation> parsePingData(String dataJson)
+	static Map<String, GimPlayer> parsePingData(String dataJson)
 	{
 		Gson gson = new Gson();
-		Map<String, Map<String, Integer>> body = gson.fromJson(dataJson, new TypeToken<HashMap<String, Map<String, Integer>>>()
-		{
-		}.getType());
-		Map<String, GIMPLocation> data = new HashMap<>();
-		for (String name : body.keySet())
-		{
-			Map<String, Integer> coordinates = body.get(name);
-			GIMPLocation location = new GIMPLocation(
-				coordinates.get("x"),
-				coordinates.get("y"),
-				coordinates.get("plane")
-			);
-			data.put(name, location);
-		}
-		return data;
+		return gson.fromJson(dataJson, pingDataTypeForJson);
 	}
 
 	/**
-	 * Spoofs data returned from the ping request.
+	 * Parses JSON string of the broadcast data and maps to a GimPlayer instance.
 	 *
-	 * @return map: name => GIMPLocation
+	 * @param dataJson JSON string of broadcast data
+	 * @return GimPlayer
 	 */
-	static Map<String, GIMPLocation> spoofPingData()
+	static GimPlayer parseBroadcastData(String dataJson)
 	{
-		Map<String, GIMPLocation> data = new HashMap<>();
-		// x = 2951, y = 3450: Doric's Anvil
-		// x = 3220, y = 3219: Lumbridge Castle
-		GIMPLocation gimpLocation1 = new GIMPLocation(2951, 3450, 0);
-		GIMPLocation gimpLocation2 = new GIMPLocation(3220, 3219, 0);
-		data.put("Manogram", gimpLocation1);
-		data.put("Diregram", gimpLocation2);
-		return data;
+		Gson gson = new Gson();
+		return gson.fromJson(dataJson, GimPlayer.class);
 	}
 
 	/**
@@ -133,7 +105,7 @@ public class GIMPBroadcastManager
 	 *
 	 * @return a SocketClient or HTTPClient
 	 */
-	private GIMPRequestClient getRequestClient()
+	private RequestClient getRequestClient()
 	{
 		if (socketClient.isConnected())
 		{
@@ -145,18 +117,22 @@ public class GIMPBroadcastManager
 		}
 	}
 
+	public void listen(Emitter.Listener handleBroadcast)
+	{
+		Socket client = socketClient.getClient();
+		client.on("broadcast", handleBroadcast);
+	}
+
 	/**
 	 * Sends broadcast request to the server via HTTP or socket.
-	 *
-	 * @param name     username of local player
-	 * @param location GIMPLocation of local player
 	 */
-	public void broadcast(String name, GIMPLocation location)
+	public void broadcast(Map<String, Object> data)
 	{
 		try
 		{
-			GIMPRequestClient requestClient = getRequestClient();
-			String dataJson = GIMPBroadcastManager.stringifyBroadcastData(name, location);
+			RequestClient requestClient = getRequestClient();
+			Gson gson = new Gson();
+			String dataJson = gson.toJson(data);
 			requestClient.broadcast(dataJson);
 		}
 		catch (Exception e)
@@ -168,15 +144,15 @@ public class GIMPBroadcastManager
 	/**
 	 * Sends ping request to the server via HTTP or socket.
 	 *
-	 * @return map: name => GIMPLocation
+	 * @return map: name => GimPlayer
 	 */
-	public Map<String, GIMPLocation> ping()
+	public Map<String, GimPlayer> ping()
 	{
 		try
 		{
-			GIMPRequestClient requestClient = getRequestClient();
+			RequestClient requestClient = getRequestClient();
 			String dataJson = requestClient.ping();
-			return GIMPBroadcastManager.parsePingData(dataJson);
+			return GimBroadcastManager.parsePingData(dataJson);
 		}
 		catch (Exception e)
 		{

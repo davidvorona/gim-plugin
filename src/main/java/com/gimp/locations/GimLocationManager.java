@@ -24,7 +24,7 @@
  */
 package com.gimp.locations;
 
-import com.gimp.GIMPIconProvider;
+import com.gimp.GimIconProvider;
 import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,16 +36,16 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 
 @Slf4j
-public class GIMPLocationManager
+public class GimLocationManager
 {
 	@Inject
-	private GIMPIconProvider iconProvider;
+	private GimIconProvider iconProvider;
 
 	@Inject
 	private WorldMapPointManager worldMapPointManager;
 
 	@Getter(AccessLevel.PACKAGE)
-	final private Map<String, GIMPLocation> gimpLocations = new HashMap<>();
+	final private Map<String, GimLocation> gimpLocations = new HashMap<>();
 
 	@Getter(AccessLevel.PACKAGE)
 	final private List<WorldMapPoint> playerWaypoints = new ArrayList<>();
@@ -55,12 +55,12 @@ public class GIMPLocationManager
 	 *
 	 * @param data map: name => GIMPLocation
 	 */
-	public void updateLocations(Map<String, GIMPLocation> data)
+	public void updateLocations(Map<String, GimLocation> data)
 	{
 		purgeLocations();
 		for (String name : data.keySet())
 		{
-			GIMPLocation location = data.get(name);
+			GimLocation location = data.get(name);
 			gimpLocations.put(name, location);
 		}
 	}
@@ -118,10 +118,10 @@ public class GIMPLocationManager
 	 * @param localPlayer client's local player instance
 	 * @return GIMPLocation of local player
 	 */
-	public GIMPLocation getCurrentLocation(Player localPlayer)
+	public GimLocation getCurrentLocation(Player localPlayer)
 	{
 		WorldPoint worldPoint = localPlayer.getWorldLocation();
-		return new GIMPLocation(
+		return new GimLocation(
 			worldPoint.getX(),
 			worldPoint.getY(),
 			worldPoint.getPlane()
@@ -140,7 +140,7 @@ public class GIMPLocationManager
 		{
 			if (!name.equals(localName))
 			{
-				GIMPLocation location = gimpLocations.get(name);
+				GimLocation location = gimpLocations.get(name);
 				worldPoints.put(name, location.getWorldPoint());
 			}
 		}

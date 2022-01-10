@@ -1,29 +1,26 @@
-package com.gimp.group;
+package com.gimp.gimps;
 
-import com.google.common.base.Strings;
+import com.gimp.locations.GimLocation;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.inject.Inject;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.Skill;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanChannelMember;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.clan.ClanMember;
 import net.runelite.api.clan.ClanSettings;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
 
 @Slf4j
 public class Group
 {
 	@Getter
-	final private List<Gimp> gimps = new ArrayList<>();
+	final private List<GimPlayer> gimps = new ArrayList<>();
 
 	@Inject
 	private Client client;
@@ -47,22 +44,73 @@ public class Group
 			List<ClanMember> clanMembers = gimClanSettings.getMembers();
 			for (ClanMember member : clanMembers)
 			{
-				gimps.add(new Gimp(member.getName()));
+				gimps.add(new GimPlayer(member.getName()));
 			}
+			initLocalGimp();
 			loaded = true;
+			return true;
+		});
+	}
+
+	public void update(GimPlayer gimpData)
+	{
+		log.debug(gimpData.toJson());
+		for (GimPlayer gimp : gimps)
+		{
+			String gimpName = gimpData.getName();
+			if (gimp.getName().equals(gimpName))
+			{
+				if (gimpData.getHp() != null)
+				{
+					gimp.setHp(gimpData.getHp());
+				}
+				if (gimpData.getMaxHp() != null)
+				{
+					gimp.setMaxHp(gimpData.getMaxHp());
+				}
+				if (gimpData.getPrayer() != null)
+				{
+					gimp.setPrayer(gimpData.getPrayer());
+				}
+				if (gimpData.getMaxPrayer() != null)
+				{
+					gimp.setMaxPrayer(gimpData.getMaxPrayer());
+				}
+				if (gimpData.getCustomStatus() != null)
+				{
+					gimp.setCustomStatus(gimpData.getCustomStatus());
+				}
+				if (gimpData.getLocation() != null)
+				{
+					gimp.setLocation(gimpData.getLocation());
+				}
+			}
+		}
+	}
+
+	public void waitForLoad(Runnable r)
+	{
+		clientThread.invokeLater(() ->
+		{
+			if (!isLoaded())
+			{
+				return false;
+			}
+			r.run();
 			return true;
 		});
 	}
 
 	public void unload()
 	{
+		clearMapPoints();
 		gimps.clear();
 		loaded = false;
 	}
 
-	public Gimp getGimp(String name)
+	public GimPlayer getGimp(String name)
 	{
-		for (Gimp gimp : gimps)
+		for (GimPlayer gimp : gimps)
 		{
 			if (gimp.getName().equals(name))
 			{
@@ -72,7 +120,7 @@ public class Group
 		return null;
 	}
 
-	public Gimp getLocalGimp()
+	public GimPlayer getLocalGimp()
 	{
 		final Player localPlayer = client.getLocalPlayer();
 		if (localPlayer != null)
@@ -82,9 +130,24 @@ public class Group
 		return null;
 	}
 
+	public void initLocalGimp()
+	{
+		Player localPlayer = client.getLocalPlayer();
+		GimPlayer localGimp = getLocalGimp();
+		if (localPlayer != null && localGimp != null)
+		{
+			localGimp.setHp(client.getBoostedSkillLevel(Skill.HITPOINTS));
+			localGimp.setMaxHp(client.getRealSkillLevel(Skill.HITPOINTS));
+			localGimp.setPrayer(client.getBoostedSkillLevel(Skill.PRAYER));
+			localGimp.setMaxPrayer(client.getRealSkillLevel(Skill.PRAYER));
+			GimLocation location = new GimLocation(localPlayer.getWorldLocation());
+			localGimp.setLocation(location);
+		}
+	}
+
 	public int getIndexOfGimp(String name)
 	{
-		for (Gimp gimp : gimps)
+		for (GimPlayer gimp : gimps)
 		{
 			if (gimp.getName().equals(name))
 			{
@@ -97,36 +160,44 @@ public class Group
 	public List<String> getNames()
 	{
 		List<String> names = new ArrayList<>();
-		for (Gimp gimp : gimps)
+		for (GimPlayer gimp : gimps)
 		{
 			names.add(gimp.getName());
 		}
 		return names;
 	}
 
-	public void setWorldPoint(String name, WorldPoint worldPoint)
+	private void clearMapPoints()
 	{
-		Gimp gimp = getGimp(name);
+		for (GimPlayer gimp : gimps)
+		{
+			gimp.clearMapPoint();
+		}
+	}
+
+	public void setLocation(String name, GimLocation location)
+	{
+		GimPlayer gimp = getGimp(name);
 		if (gimp == null)
 		{
 			return;
 		}
-		gimp.setWorldPoint(worldPoint);
+		gimp.setLocation(location);
 	}
 
 	public void setCurrentHp(String name, int hp)
 	{
-		Gimp gimp = getGimp(name);
+		GimPlayer gimp = getGimp(name);
 		if (gimp == null)
 		{
 			return;
 		}
-		gimp.setCurrentHp(hp);
+		gimp.setHp(hp);
 	}
 
 	public void setMaxHp(String name, int hpMax)
 	{
-		Gimp gimp = getGimp(name);
+		GimPlayer gimp = getGimp(name);
 		if (gimp == null)
 		{
 			return;
@@ -136,17 +207,17 @@ public class Group
 
 	public void setCurrentPrayer(String name, int prayer)
 	{
-		Gimp gimp = getGimp(name);
+		GimPlayer gimp = getGimp(name);
 		if (gimp == null)
 		{
 			return;
 		}
-		gimp.setCurrentPrayer(prayer);
+		gimp.setPrayer(prayer);
 	}
 
 	public void setMaxPrayer(String name, int prayerMax)
 	{
-		Gimp gimp = getGimp(name);
+		GimPlayer gimp = getGimp(name);
 		if (gimp == null)
 		{
 			return;
@@ -156,7 +227,7 @@ public class Group
 
 	public void setCustomStatus(String name, String customStatus)
 	{
-		Gimp gimp = getGimp(name);
+		GimPlayer gimp = getGimp(name);
 		if (gimp == null)
 		{
 			return;

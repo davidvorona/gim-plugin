@@ -22,62 +22,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gimp.locations;
+package com.gimp.tasks;
 
-import lombok.AccessLevel;
-import lombok.Getter;
+import java.util.Timer;
+import java.util.TimerTask;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import java.util.HashMap;
-import java.util.Map;
-import net.runelite.api.coords.WorldPoint;
 
 @Slf4j
-public class GIMPLocation
+public class TaskManager
 {
-	public enum Coordinate
+	@Inject
+	private Timer timer;
+
+	/**
+	 * Schedules a task to run after the delay and then schedules
+	 * it again after calculating the next delay.
+	 *
+	 * @param task  task to run after a delay and then reschedule
+	 * @param delay initial duration in milliseconds by which to delay task
+	 */
+	public void schedule(Task task, long delay)
 	{
-		plane,
-		x,
-		y
-	}
-
-	@Getter(AccessLevel.PACKAGE)
-	int x;
-
-	@Getter(AccessLevel.PACKAGE)
-	int y;
-
-	@Getter(AccessLevel.PACKAGE)
-	int plane;
-
-	public GIMPLocation(int xArg, int yArg, int planeArg)
-	{
-		x = xArg;
-		y = yArg;
-		plane = planeArg;
+		TimerTask timerTask = new TimerTask()
+		{
+			@Override
+			public void run()
+			{
+				task.run();
+				long nextDelay = task.delay();
+				if (nextDelay != 0)
+				{
+					schedule(task, nextDelay);
+				}
+			}
+		};
+		timer.schedule(timerTask, delay);
 	}
 
 	/**
-	 * Maps member coordinates x, y, and plane to HashMap.
-	 *
-	 * @return map: coordinateName => coordinateValue
+	 * Purges any canceled tasks and cancels the timer, then
+	 * creates a new one.
 	 */
-	public Map<String, Object> getLocation()
+	public void resetTasks()
 	{
-		Map<String, Object> location = new HashMap<>();
-		location.put(Coordinate.x.toString(), x);
-		location.put(Coordinate.y.toString(), y);
-		location.put(Coordinate.plane.toString(), plane);
-		return location;
-	}
-
-	/**
-	 * Gets WorldPoint instance from member coordinates.
-	 *
-	 * @return WorldPoint from coordinates
-	 */
-	public WorldPoint getWorldPoint()
-	{
-		return new WorldPoint(x, y, plane);
+		timer.purge();
+		timer.cancel();
+		timer = new Timer();
 	}
 }

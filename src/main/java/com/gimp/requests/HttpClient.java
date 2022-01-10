@@ -37,7 +37,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class GIMPHttpClient extends GIMPRequestClient
+public class HttpClient extends RequestClient
 {
 	@Getter(AccessLevel.PACKAGE)
 	public OkHttpClient client;
@@ -48,7 +48,7 @@ public class GIMPHttpClient extends GIMPRequestClient
 
 	public static final String EMPTY_BODY = "";
 
-	public GIMPHttpClient()
+	public HttpClient()
 	{
 		client = new OkHttpClient.Builder()
 			.readTimeout(5000, TimeUnit.MILLISECONDS)

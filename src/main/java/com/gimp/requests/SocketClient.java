@@ -41,9 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 
 @Slf4j
-public class GIMPSocketClient extends GIMPRequestClient
+public class SocketClient extends RequestClient
 {
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	public Socket client;
 
 	/**
