@@ -50,10 +50,10 @@ public class GimBroadcastManager
 	private SocketClient socketClient;
 
 	/**
-	 * Parses JSON string of the ping data and adds to a Map.
+	 * Parses JSON string of the ping data and adds to a GimPlayer Map.
 	 *
 	 * @param dataJson JSON string of ping data
-	 * @return map: name => GIMPLocation
+	 * @return map: name => GimPlayer
 	 */
 	static Map<String, GimPlayer> parsePingData(String dataJson)
 	{
@@ -117,6 +117,12 @@ public class GimBroadcastManager
 		}
 	}
 
+	/**
+	 * Starts listening for the "broadcast" socket event and passes in a listener
+	 * to handle the broadcast data.
+	 *
+	 * @param handleBroadcast handler for processing the broadcast data
+	 */
 	public void listen(Emitter.Listener handleBroadcast)
 	{
 		Socket client = socketClient.getClient();
