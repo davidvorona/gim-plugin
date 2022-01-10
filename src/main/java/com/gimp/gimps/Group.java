@@ -15,6 +15,8 @@ import net.runelite.api.clan.ClanID;
 import net.runelite.api.clan.ClanMember;
 import net.runelite.api.clan.ClanSettings;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 
 @Slf4j
 public class Group
@@ -27,6 +29,9 @@ public class Group
 
 	@Inject
 	private ClientThread clientThread;
+
+	@Inject
+	private WorldMapPointManager worldMapPointManager;
 
 	@Getter
 	private boolean loaded = false;
@@ -54,7 +59,6 @@ public class Group
 
 	public void update(GimPlayer gimpData)
 	{
-		log.debug(gimpData.toJson());
 		for (GimPlayer gimp : gimps)
 		{
 			String gimpName = gimpData.getName();
@@ -82,7 +86,7 @@ public class Group
 				}
 				if (gimpData.getLocation() != null)
 				{
-					gimp.setLocation(gimpData.getLocation());
+					setLocation(gimpName, gimpData.getLocation());
 				}
 			}
 		}
@@ -171,7 +175,12 @@ public class Group
 	{
 		for (GimPlayer gimp : gimps)
 		{
-			gimp.clearMapPoint();
+			GimLocation gimLocation = gimp.getLocation();
+			if (gimLocation != null)
+			{
+				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
+				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
+			}
 		}
 	}
 
@@ -182,57 +191,26 @@ public class Group
 		{
 			return;
 		}
-		gimp.setLocation(location);
-	}
-
-	public void setCurrentHp(String name, int hp)
-	{
-		GimPlayer gimp = getGimp(name);
-		if (gimp == null)
+		// Remove existing world map point
+		GimLocation gimLocation = gimp.getLocation();
+		if (gimLocation != null)
 		{
-			return;
+			WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
+			worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
 		}
-		gimp.setHp(hp);
-	}
-
-	public void setMaxHp(String name, int hpMax)
-	{
-		GimPlayer gimp = getGimp(name);
-		if (gimp == null)
+		// Create new GimLocation from raw data
+		GimLocation newGimLocation = new GimLocation(
+			location.getX(),
+			location.getY(),
+			location.getPlane()
+		);
+		// Set GimPlayer location to new location
+		gimp.setLocation(newGimLocation);
+		// Add point to world map (if not local player)
+		if (gimp != getLocalGimp())
 		{
-			return;
+			worldMapPointManager.add(newGimLocation.getWorldMapPoint());
 		}
-		gimp.setMaxHp(hpMax);
-	}
-
-	public void setCurrentPrayer(String name, int prayer)
-	{
-		GimPlayer gimp = getGimp(name);
-		if (gimp == null)
-		{
-			return;
-		}
-		gimp.setPrayer(prayer);
-	}
-
-	public void setMaxPrayer(String name, int prayerMax)
-	{
-		GimPlayer gimp = getGimp(name);
-		if (gimp == null)
-		{
-			return;
-		}
-		gimp.setMaxPrayer(prayerMax);
-	}
-
-	public void setCustomStatus(String name, String customStatus)
-	{
-		GimPlayer gimp = getGimp(name);
-		if (gimp == null)
-		{
-			return;
-		}
-		gimp.setCustomStatus(customStatus);
 	}
 
 	public int getWorld(String name)
