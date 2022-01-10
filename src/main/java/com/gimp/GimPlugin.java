@@ -25,7 +25,6 @@
 package com.gimp;
 
 import com.gimp.gimps.*;
-import com.gimp.locations.*;
 import com.gimp.tasks.*;
 import com.google.inject.Provides;
 import io.socket.emitter.Emitter;
