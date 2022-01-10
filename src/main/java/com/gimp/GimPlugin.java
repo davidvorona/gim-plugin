@@ -26,15 +26,10 @@ package com.gimp;
 
 import com.gimp.gimps.*;
 import com.gimp.locations.*;
-import com.gimp.requests.SocketClient;
 import com.gimp.tasks.*;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
-import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Type;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -43,7 +38,6 @@ import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -61,7 +55,6 @@ import java.util.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
-import org.graalvm.compiler.hotspot.replacements.HashCodeSnippets;
 import org.json.JSONObject;
 
 @Slf4j

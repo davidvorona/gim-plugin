@@ -73,14 +73,6 @@ public class GimLocation
 		worldPoint = new WorldPoint(x, y, plane);
 	}
 
-	public GimLocation(Map<String, Integer> coordinates)
-	{
-		x = coordinates.get(Coordinate.x.toString());
-		y = coordinates.get(Coordinate.y.toString());
-		plane = coordinates.get(Coordinate.plane.toString());
-		worldPoint = new WorldPoint(x, y, plane);
-	}
-
 	/**
 	 * Maps member coordinates x, y, and plane to HashMap.
 	 *
