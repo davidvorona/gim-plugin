@@ -27,11 +27,7 @@ package com.gimp.gimps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import javax.inject.Inject;
-import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -197,18 +193,6 @@ public class Group
 		}
 	}
 
-	public int getIndexOfGimp(String name)
-	{
-		for (GimPlayer gimp : gimps)
-		{
-			if (gimp.getName().equals(name))
-			{
-				return gimps.indexOf(gimp);
-			}
-		}
-		return -1;
-	}
-
 	public List<String> getNames()
 	{
 		List<String> names = new ArrayList<>();
@@ -319,8 +303,6 @@ public class Group
 	public CompletableFuture<HiscoreResult> getHiscores(String name)
 	{
 		CompletableFuture<HiscoreResult> hiscoreResponse = new CompletableFuture<>();
-//		try
-//		{
 		GimPlayer gimp = getGimp(name);
 		hiscoreClient.lookupAsync(name, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
 		{
@@ -337,12 +319,6 @@ public class Group
 			hiscoreResponse.complete(result);
 		});
 		return hiscoreResponse;
-//		}
-//		catch (Exception e)
-//		{
-//			log.error(e.toString());
-//			return hiscoreResponse;
-//		}
 	}
 
 	private boolean validateGimpName(String name)

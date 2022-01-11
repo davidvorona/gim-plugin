@@ -109,6 +109,7 @@ public class GimPluginPanel extends PluginPanel
 	private static final Color PRAYER_FG = new Color(0, 149, 151);
 	private static final Color PRAYER_BG = Color.black;
 
+	private final JLabel noDataLabel = new JLabel();
 	private final JLabel usernameLabel = new JLabel();
 	private final JLabel worldLabel = new JLabel();
 	private final ProgressBar hpBar = new ProgressBar();
@@ -149,6 +150,8 @@ public class GimPluginPanel extends PluginPanel
 			// invokeAndWait so we can call loadGimpData() after the UI has loaded
 			SwingUtilities.invokeAndWait(() ->
 			{
+				// Remove noData text
+				removeAll();
 				// Create panel that will hold gimp data
 				final JPanel container = new JPanel();
 				container.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -238,6 +241,9 @@ public class GimPluginPanel extends PluginPanel
 
 				// Add data container to panel
 				add(container, BorderLayout.CENTER);
+				// Revalidate layout and repaint
+				revalidate();
+				repaint();
 			});
 			loadGimpData();
 		}
@@ -249,7 +255,27 @@ public class GimPluginPanel extends PluginPanel
 
 	public void unload()
 	{
-		removeAll();
+		SwingUtilities.invokeLater(() ->
+		{
+			// Remove GIMP data
+			removeAll();
+			// Create noData panel
+			JPanel noDataPanel = makeNoDataPanel();
+			add(noDataPanel, BorderLayout.CENTER);
+			// Revalidate layout and repaint
+			revalidate();
+			repaint();
+		});
+	}
+
+	private JPanel makeNoDataPanel()
+	{
+		JPanel container = new JPanel();
+		container.setLayout(new BorderLayout());
+		noDataLabel.setFont(FontManager.getRunescapeFont());
+		noDataLabel.setText("<html><div style='text-align: center;'>You must be logged in to a group ironman to see GIMP data.</div></html>");
+		container.add(noDataLabel);
+		return container;
 	}
 
 	private JPanel makeInfoPanel()

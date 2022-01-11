@@ -25,7 +25,6 @@
 package com.gimp.gimps;
 
 import com.gimp.GimIconProvider;
-import com.google.gson.Gson;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,22 +97,5 @@ public class GimPlayer
 		Map<String, Object> data = new HashMap<>();
 		data.put("name", name);
 		return data;
-	}
-
-	public String toJson()
-	{
-		Map<String, Object> gimpData = new HashMap<>();
-		gimpData.put("name", name);
-		gimpData.put("hp", hp);
-		gimpData.put("maxHp", maxHp);
-		gimpData.put("prayer", prayer);
-		gimpData.put("maxPrayer", maxPrayer);
-		gimpData.put("customStatus", customStatus);
-		if (location != null)
-		{
-			gimpData.put("location", location.getLocation());
-		}
-		Gson gson = new Gson();
-		return gson.toJson(gimpData);
 	}
 }
