@@ -270,6 +270,8 @@ public class GimPluginPanel extends PluginPanel
 
 	private JPanel makeNoDataPanel()
 	{
+		assert SwingUtilities.isEventDispatchThread();
+
 		JPanel container = new JPanel();
 		container.setLayout(new BorderLayout());
 		noDataLabel.setFont(FontManager.getRunescapeFont());
@@ -280,6 +282,8 @@ public class GimPluginPanel extends PluginPanel
 
 	private JPanel makeInfoPanel()
 	{
+		assert SwingUtilities.isEventDispatchThread();
+
 		// Create panel that will contain overall data
 		JPanel overallPanel = new JPanel();
 		overallPanel.setBorder(BorderFactory.createCompoundBorder(
