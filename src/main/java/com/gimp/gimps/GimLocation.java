@@ -24,13 +24,12 @@
  */
 package com.gimp.gimps;
 
-import java.awt.image.BufferedImage;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.coords.WorldPoint;
+
 import java.util.HashMap;
 import java.util.Map;
-import net.runelite.api.coords.WorldPoint;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 
 @Slf4j
 public class GimLocation
@@ -51,18 +50,11 @@ public class GimLocation
 	@Getter
 	final int plane;
 
-	@Getter
-	final WorldPoint worldPoint;
-
-	@Getter
-	WorldMapPoint worldMapPoint;
-
 	public GimLocation(WorldPoint worldPoint)
 	{
 		x = worldPoint.getX();
 		y = worldPoint.getY();
 		plane = worldPoint.getPlane();
-		this.worldPoint = worldPoint;
 	}
 
 	public GimLocation(int x, int y, int plane)
@@ -70,7 +62,6 @@ public class GimLocation
 		this.x = x;
 		this.y = y;
 		this.plane = plane;
-		worldPoint = new WorldPoint(x, y, plane);
 	}
 
 	/**
@@ -87,18 +78,14 @@ public class GimLocation
 		return location;
 	}
 
-	public void setWorldMapPoint(String name, BufferedImage gimpIcon)
+	public WorldPoint toWorldPoint()
 	{
-		// Set world map point
-		worldMapPoint = new WorldMapPoint(worldPoint, gimpIcon);
-		// Configure world map point
-		worldMapPoint.setTarget(worldPoint);
-		// Snaps to edge if outside of current map frame
-		worldMapPoint.setSnapToEdge(true);
-		// Jumps to location if clicked on
-		worldMapPoint.setJumpOnClick(true);
-		// Name is necessary for jumpOnClick behavior
-		worldMapPoint.setName(name);
+		return new WorldPoint(x, y, plane);
+	}
+
+	public double getDistanceTo(GimLocation other)
+	{
+		return Math.sqrt(Math.pow(other.x - x, 2) + Math.pow(other.y - y, 2));
 	}
 
 	public static boolean compare(GimLocation loc1, GimLocation loc2)

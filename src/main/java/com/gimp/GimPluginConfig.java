@@ -52,4 +52,14 @@ public interface GimPluginConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "showSelf",
+			name = "Show Self",
+			description = "Show yourself on the map"
+	)
+	default boolean showSelf()
+	{
+		return false;
+	}
 }

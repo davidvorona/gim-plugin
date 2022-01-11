@@ -24,34 +24,29 @@
  */
 package com.gimp.gimps;
 
+import com.gimp.GimPlugin;
 import com.gimp.GimPluginConfig;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
-import net.runelite.api.clan.ClanChannel;
-import net.runelite.api.clan.ClanChannelMember;
-import net.runelite.api.clan.ClanID;
-import net.runelite.api.clan.ClanMember;
-import net.runelite.api.clan.ClanSettings;
+import net.runelite.api.clan.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.hiscore.HiscoreClient;
 import net.runelite.client.hiscore.HiscoreEndpoint;
 import net.runelite.client.hiscore.HiscoreResult;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 import okhttp3.OkHttpClient;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class Group
 {
-	final static int OFFLINE_WORLD = 0;
-
 	@Getter
 	final private List<GimPlayer> gimps = new ArrayList<>();
 
@@ -189,7 +184,6 @@ public class Group
 
 	public void unload()
 	{
-		clearMapPoints();
 		gimps.clear();
 		loaded = false;
 	}
@@ -246,19 +240,6 @@ public class Group
 		return names;
 	}
 
-	private void clearMapPoints()
-	{
-		for (GimPlayer gimp : gimps)
-		{
-			GimLocation gimLocation = gimp.getLocation();
-			if (gimLocation != null)
-			{
-				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
-				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
-			}
-		}
-	}
-
 	/**
 	 * Sets a GimPlayer's location using the provided location data and
 	 * updates its icon on the world map if the gimp is online and doesn't
@@ -274,13 +255,6 @@ public class Group
 		{
 			return;
 		}
-		// Remove existing world map point
-		GimLocation gimLocation = gimp.getLocation();
-		if (gimLocation != null)
-		{
-			WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
-			worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
-		}
 		// Create new GimLocation from raw data
 		GimLocation newGimLocation = new GimLocation(
 			location.getX(),
@@ -289,11 +263,6 @@ public class Group
 		);
 		// Set GimPlayer location to new location
 		gimp.setLocation(newGimLocation);
-		// Add point to world map (if not local player)
-		if (gimp != getLocalGimp() && gimp.shouldIncludeLocation() && gimp.getWorld() != OFFLINE_WORLD)
-		{
-			worldMapPointManager.add(newGimLocation.getWorldMapPoint());
-		}
 	}
 
 	/**
@@ -311,16 +280,6 @@ public class Group
 			return;
 		}
 		gimp.setWorld(world);
-		// If player is offline, remove map point
-		if (world == OFFLINE_WORLD)
-		{
-			GimLocation gimLocation = gimp.getLocation();
-			if (gimLocation != null)
-			{
-				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
-				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
-			}
-		}
 	}
 
 	/**
@@ -339,21 +298,6 @@ public class Group
 			return;
 		}
 		gimp.setGhostMode(ghostMode);
-		GimLocation gimLocation = gimp.getLocation();
-		if (gimLocation != null)
-		{
-			// If ghost mode set to true, remove map point
-			if (ghostMode)
-			{
-				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
-				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
-			}
-			// Otherwise, show the map point (if not local player)
-			else if (gimp != getLocalGimp())
-			{
-				worldMapPointManager.add(gimLocation.getWorldMapPoint());
-			}
-		}
 	}
 
 	/**
@@ -374,7 +318,7 @@ public class Group
 				return onlineMember.getWorld();
 			}
 		}
-		return OFFLINE_WORLD;
+		return GimPlugin.OFFLINE_WORLD;
 	}
 
 	public CompletableFuture<HiscoreResult> setHiscores(String name)

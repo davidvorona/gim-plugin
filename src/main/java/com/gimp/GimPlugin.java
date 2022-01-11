@@ -24,11 +24,18 @@
  */
 package com.gimp;
 
-import com.gimp.gimps.*;
-import com.gimp.tasks.*;
+import com.gimp.gimps.GimLocation;
+import com.gimp.gimps.GimPlayer;
+import com.gimp.gimps.Group;
+import com.gimp.map.GimWorldMapPoint;
+import com.gimp.map.GimWorldMapPointManager;
+import com.gimp.tasks.Task;
+import com.gimp.tasks.TaskManager;
 import com.google.inject.Provides;
 import io.socket.emitter.Emitter;
 import java.awt.image.BufferedImage;
+import java.util.Map;
+import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -43,14 +50,14 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import javax.inject.Inject;
-import java.util.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
@@ -62,6 +69,9 @@ import org.json.JSONObject;
 )
 public class GimPlugin extends Plugin
 {
+	public final static int OFFLINE_WORLD = 0;
+	private final static int MAP_POINT_TICK_PERIOD = 300;
+
 	@Inject
 	private TaskManager taskManager;
 
@@ -84,9 +94,20 @@ public class GimPlugin extends Plugin
 	@Getter
 	private Group group;
 
+	@Inject
+	private GimWorldMapPointManager gimWorldMapPointManager;
+
 	private GimPluginPanel panel;
 
 	private NavigationButton navButton;
+
+	/**
+	 * Toggle to determine if we're on an "even" frame or an "odd" frame of map point ticking.
+	 * This is the simplest way to keep map point motion smooth and consistent, as we can either
+	 * move by one tile each frame (fast) or move by one tile every other frame (slow),
+	 * without any variation in delay or distance between each frame.
+	 */
+	private boolean frameToggle;
 
 	final private Emitter.Listener onBroadcastReconnect = new Emitter.Listener()
 	{
@@ -134,8 +155,9 @@ public class GimPlugin extends Plugin
 				|| gameState == GameState.CONNECTION_LOST
 		)
 		{
-			group.unload();
+			gimWorldMapPointManager.clear();
 			panel.unload();
+			group.unload();
 			stopBroadcast();
 		}
 	}
@@ -301,7 +323,7 @@ public class GimPlugin extends Plugin
 	 */
 	private void startBroadcast()
 	{
-		log.debug("Starting broadcast...");
+		log.info("Starting broadcast...");
 		gimBroadcastManager.connectSocketClient();
 		// Send out initial broadcast
 		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
@@ -413,9 +435,27 @@ public class GimPlugin extends Plugin
 					return nextDelay;
 				}
 			};
+			Task tickMapPoints = new Task(MAP_POINT_TICK_PERIOD)
+			{
+				@Override
+				public void run()
+				{
+					frameToggle = !frameToggle;
+					for (GimPlayer gimp : group.getGimps())
+					{
+						if (gimp != null && gimWorldMapPointManager.hasPoint(gimp.getName()))
+						{
+							final GimWorldMapPoint gimWorldMapPoint = gimWorldMapPointManager.getPoint(gimp.getName());
+							gimWorldMapPoint.moveTowardPlayer(gimp, frameToggle);
+							refreshMapPointVisibility(gimp);
+						}
+					}
+				}
+			};
 			taskManager.schedule(locationBroadcastTask, 0);
 			taskManager.schedule(httpFallbackPingTask, FIVE_SECONDS / 2);
 			taskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
+			taskManager.schedule(tickMapPoints, 0);
 		}
 	}
 
@@ -445,7 +485,7 @@ public class GimPlugin extends Plugin
 	 */
 	private void stopBroadcast()
 	{
-		log.debug("Stopping broadcast...");
+		log.info("Stopping broadcast...");
 		taskManager.resetTasks();
 		gimBroadcastManager.stopListening();
 	}
@@ -619,9 +659,46 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Determine if the given player's world map point should be displayed or not,
+	 * then either add or remove it accordingly.
+	 *
+	 * @param gimp the player whose map point is to be refreshed
+	 */
+	private void refreshMapPointVisibility(GimPlayer gimp)
+	{
+		final String name = gimp.getName();
+		final boolean isLocalGimp = gimp == group.getLocalGimp();
+		final boolean shouldShow =
+				// Condition 1: Player must have a location
+				gimp.getLocation() != null
+				// Condition 2: Must be another player (unless "show self" is on)
+				&& (!isLocalGimp || config.showSelf())
+				// Condition 3: Must not be in ghost mode (unless it's the local player)
+				&& (gimp.shouldIncludeLocation() || isLocalGimp)
+				// Condition 4: Must be logged in
+				&& gimp.getWorld() != OFFLINE_WORLD;
+		// Add or remove the player's world map point accordingly
+		if (shouldShow && !gimWorldMapPointManager.hasPoint(name))
+		{
+			gimWorldMapPointManager.addPoint(gimp);
+		}
+		else if (!shouldShow && gimWorldMapPointManager.hasPoint(name))
+		{
+			gimWorldMapPointManager.removePoint(name);
+		}
+	}
+
 	@Provides
 	GimPluginConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(GimPluginConfig.class);
+	}
+
+	// Support testing via Gradle "run" task
+	public static void main(String[] args) throws Exception
+	{
+		ExternalPluginManager.loadBuiltin(GimPlugin.class);
+		RuneLite.main(args);
 	}
 }

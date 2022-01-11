@@ -24,24 +24,21 @@
  */
 package com.gimp.gimps;
 
-import com.gimp.GimIconProvider;
-import java.awt.image.BufferedImage;
-import java.util.HashMap;
-import java.util.Map;
-import javax.annotation.Nullable;
-import javax.inject.Inject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.hiscore.HiscoreResult;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 public class GimPlayer
 {
 	@Getter
 	final private String name;
-
-	final private BufferedImage icon;
 
 	@Setter
 	@Getter
@@ -85,21 +82,47 @@ public class GimPlayer
 
 	public static final String IN_GAME_ACTIVITY = "IN_GAME_ACTIVITY";
 
+	/**
+	 * Speed of this player in tiles per second.
+	 */
+	@Getter
+	private double speed;
+
+	/**
+	 * Timestamp of the last location update (in system time milliseconds).
+	 * Used for computing the effective "speed" of the player.
+	 */
+	private long locationTimestamp;
+
 	@Inject
 	public GimPlayer(String name, int world)
 	{
 		this.name = name;
 		this.world = world;
-		GimIconProvider iconProvider = new GimIconProvider();
-		icon = iconProvider.getIcon(name);
 	}
 
 	public void setLocation(GimLocation location)
 	{
+		// Determine the "speed" of the player
+		if (this.location != null)
+		{
+			final long millisSinceLastLocation = System.currentTimeMillis() - locationTimestamp;
+			final double distance = this.location.getDistanceTo(location);
+			if (this.location.plane != location.plane)
+			{
+				// If switching between planes, keep the speed at zero
+				speed = 0;
+			}
+			else
+			{
+				// Otherwise, compute the speed (doesn't account for teleports, but oh well...)
+				speed = distance * 1000.0 / millisSinceLastLocation;
+			}
+		}
 		// Set location to new GimLocation
 		this.location = location;
-		// Create and configure new world map point
-		this.location.setWorldMapPoint(name, icon);
+		// Update timestamp
+		locationTimestamp = System.currentTimeMillis();
 	}
 
 	public Map<String, Object> getData()
