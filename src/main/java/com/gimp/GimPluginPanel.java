@@ -44,6 +44,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,6 @@ import static net.runelite.client.hiscore.HiscoreSkill.*;
 import net.runelite.client.hiscore.HiscoreResult;
 import net.runelite.client.hiscore.HiscoreSkillType;
 import net.runelite.client.hiscore.Skill;
-import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -273,7 +273,7 @@ public class GimPluginPanel extends PluginPanel
 		JPanel container = new JPanel();
 		container.setLayout(new BorderLayout());
 		noDataLabel.setFont(FontManager.getRunescapeFont());
-		noDataLabel.setText("<html><div style='text-align: center;'>You must be logged in to a group ironman to see GIMP data.</div></html>");
+		noDataLabel.setText("<html><body style='text-align:center;'>You must be logged in to a group ironman to see GIMP data.</body></html>");
 		container.add(noDataLabel);
 		return container;
 	}
@@ -294,16 +294,23 @@ public class GimPluginPanel extends PluginPanel
 		// Add icon and contents
 		final JPanel overallInfo = new JPanel();
 		overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		overallInfo.setLayout(new DynamicGridLayout(3, 1, 0, 4));
+		overallInfo.setLayout(new DynamicGridLayout(2, 1, 0, 4));
 		overallInfo.setBorder(new EmptyBorder(2, 10, 2, 10));
 
+		// Add title panel
+		JPanel titleWrapper = new JPanel();
+		titleWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		titleWrapper.setLayout(new DynamicGridLayout(1, 2, 0, 0));
+		titleWrapper.setBorder(new EmptyBorder(2, 0, 2, 0));
 		// Add username label
-		usernameLabel.setFont(FontManager.getRunescapeFont());
-		overallInfo.add(usernameLabel);
-
+		usernameLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		usernameLabel.setFont(FontManager.getRunescapeBoldFont());
+		titleWrapper.add(usernameLabel);
 		// Add world label
+		worldLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 		worldLabel.setFont(FontManager.getRunescapeFont());
-		overallInfo.add(worldLabel);
+		titleWrapper.add(worldLabel);
+		overallInfo.add(titleWrapper);
 
 		// Add gimp status data
 		JPanel statusWrapper = new JPanel();
@@ -493,10 +500,8 @@ public class GimPluginPanel extends PluginPanel
 	{
 		if (selectedGimp.equals(gimpName))
 		{
-			String worldText = world != 0
-				? String.valueOf(world)
-				: "offline";
-			worldLabel.setText(htmlLabelStr("World:", worldText));
+			worldLabel.setText(world != 0 ? "W" + world : "Offline");
+			worldLabel.setForeground(world != 0 ? Color.GREEN : Color.RED);
 		}
 	}
 
@@ -505,7 +510,7 @@ public class GimPluginPanel extends PluginPanel
 		assert SwingUtilities.isEventDispatchThread();
 
 		String gimpName = gimp.getName();
-		usernameLabel.setText(htmlLabelStr("Username:", gimpName));
+		usernameLabel.setText(gimpName);
 
 		setWorld(gimpName, group.getCurrentWorld(gimpName));
 		setHpBar(gimpName, gimp.getHp(), gimp.getMaxHp());
@@ -585,7 +590,7 @@ public class GimPluginPanel extends PluginPanel
 	private String detailsHtml(HiscoreResult result, HiscoreSkill skill)
 	{
 		String openingTags = "<html><body style = 'padding: 5px;color:#989898'>";
-		String closingTags = "</html><body>";
+		String closingTags = "</body></html>";
 
 		String content = "";
 
