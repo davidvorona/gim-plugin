@@ -98,19 +98,4 @@ public class GimPlayer
 		data.put("name", name);
 		return data;
 	}
-
-	public Map<String, Object> getGimpData()
-	{
-		Map<String, Object> gimpData = getData();
-		gimpData.put("hp", hp);
-		gimpData.put("maxHp", maxHp);
-		gimpData.put("prayer", prayer);
-		gimpData.put("maxPrayer", maxPrayer);
-		gimpData.put("customStatus", customStatus);
-		if (location != null)
-		{
-			gimpData.put("location", location.getLocation());
-		}
-		return gimpData;
-	}
 }

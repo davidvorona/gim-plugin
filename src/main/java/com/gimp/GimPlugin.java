@@ -309,18 +309,8 @@ public class GimPlugin extends Plugin
 					if (!config.ghostMode())
 					{
 						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
-						Map<String, Object> data;
-						// If socket is connected, only broadcast location data
-						if (gimBroadcastManager.isSocketConnected())
-						{
-							data = group.getLocalGimp().getData();
-							data.put("location", gimLocation.getLocation());
-						}
-						// Otherwise, broadcast everything
-						else
-						{
-							data = group.getLocalGimp().getGimpData();
-						}
+						Map<String, Object> data = group.getLocalGimp().getData();
+						data.put("location", gimLocation.getLocation());
 						gimBroadcastManager.broadcast(data);
 					}
 				}
