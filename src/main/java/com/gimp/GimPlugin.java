@@ -301,7 +301,7 @@ public class GimPlugin extends Plugin
 					}
 				}
 			};
-			Task locationBroadcastTask = new Task(FIVE_SECONDS)
+			Task broadcastTask = new Task(FIVE_SECONDS)
 			{
 				@Override
 				public void run()
@@ -309,8 +309,18 @@ public class GimPlugin extends Plugin
 					if (!config.ghostMode())
 					{
 						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
-						Map<String, Object> data = group.getLocalGimp().getData();
-						data.put("location", gimLocation.getLocation());
+						Map<String, Object> data;
+						// If socket is connected, only broadcast location data
+						if (gimBroadcastManager.isSocketConnected())
+						{
+							data = group.getLocalGimp().getData();
+							data.put("location", gimLocation.getLocation());
+						}
+						// Otherwise, broadcast everything
+						else
+						{
+							data = group.getLocalGimp().getGimpData();
+						}
 						gimBroadcastManager.broadcast(data);
 					}
 				}
@@ -365,7 +375,7 @@ public class GimPlugin extends Plugin
 					return nextDelay;
 				}
 			};
-			taskManager.schedule(locationBroadcastTask, 0);
+			taskManager.schedule(broadcastTask, 0);
 			taskManager.schedule(httpFallbackPingTask, FIVE_SECONDS / 2);
 			taskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
 		}
