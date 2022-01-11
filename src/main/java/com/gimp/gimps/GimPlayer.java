@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.hiscore.HiscoreResult;
 
 @Slf4j
 public class GimPlayer
@@ -58,6 +59,10 @@ public class GimPlayer
 	@Setter
 	@Getter
 	private Integer maxPrayer;
+
+	@Setter
+	@Getter
+	private HiscoreResult hiscores;
 
 	@Setter
 	@Getter

@@ -39,9 +39,11 @@ import java.util.Map;
 @Slf4j
 public class GimBroadcastManager
 {
-	public static final Type pingDataTypeForJson = new TypeToken<Map<String, GimPlayer>>()
+	private static final Type pingDataTypeForJson = new TypeToken<Map<String, GimPlayer>>()
 	{
 	}.getType();
+
+	private static final String EVENT_BROADCAST = "broadcast";
 
 	@Inject
 	private HttpClient httpClient;
@@ -126,7 +128,19 @@ public class GimBroadcastManager
 	public void listen(Emitter.Listener handleBroadcast)
 	{
 		Socket client = socketClient.getClient();
-		client.on("broadcast", handleBroadcast);
+		client.on(EVENT_BROADCAST, handleBroadcast);
+	}
+
+	/**
+	 * Turns off the listener for the "broadcast" event.
+	 */
+	public void stopListening()
+	{
+		Socket client = socketClient.getClient();
+		if (client != null)
+		{
+			client.off(EVENT_BROADCAST);
+		}
 	}
 
 	/**

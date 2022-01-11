@@ -26,7 +26,12 @@ package com.gimp.gimps;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -38,8 +43,12 @@ import net.runelite.api.clan.ClanID;
 import net.runelite.api.clan.ClanMember;
 import net.runelite.api.clan.ClanSettings;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.hiscore.HiscoreClient;
+import net.runelite.client.hiscore.HiscoreEndpoint;
+import net.runelite.client.hiscore.HiscoreResult;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
+import okhttp3.OkHttpClient;
 
 @Slf4j
 public class Group
@@ -58,15 +67,24 @@ public class Group
 	@Inject
 	private WorldMapPointManager worldMapPointManager;
 
+	final private HiscoreClient hiscoreClient;
+
 	@Getter
 	private boolean loaded = false;
+
+	public Group()
+	{
+		OkHttpClient okHttpClient = new OkHttpClient();
+		hiscoreClient = new HiscoreClient(okHttpClient);
+	}
 
 	/**
 	 * Loads player data to the Group once the client has finished loading clan
 	 * data. Initializes data for the local gimp.
 	 */
-	public void load()
+	public CompletableFuture<Void> load()
 	{
+		CompletableFuture<Void> loadingResult = new CompletableFuture<>();
 		clientThread.invokeLater(() ->
 		{
 			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
@@ -84,8 +102,10 @@ public class Group
 			}
 			initLocalGimp();
 			loaded = true;
+			loadingResult.complete(null);
 			return true;
 		});
+		return loadingResult;
 	}
 
 	/**
@@ -126,19 +146,6 @@ public class Group
 				}
 			}
 		}
-	}
-
-	public void waitForLoad(Runnable r)
-	{
-		clientThread.invokeLater(() ->
-		{
-			if (!isLoaded())
-			{
-				return false;
-			}
-			r.run();
-			return true;
-		});
 	}
 
 	public void unload()
@@ -186,6 +193,7 @@ public class Group
 			localGimp.setMaxPrayer(client.getRealSkillLevel(Skill.PRAYER));
 			GimLocation location = new GimLocation(localPlayer.getWorldLocation());
 			localGimp.setLocation(location);
+			getHiscores(localGimp.getName());
 		}
 	}
 
@@ -288,7 +296,7 @@ public class Group
 	}
 
 	/**
-	 * Gets the world of a player by name, returns -1 if the player
+	 * Gets the world of a player by name, returns 0 if the player
 	 * is offline.
 	 *
 	 * @param name GimPlayer name
@@ -306,6 +314,35 @@ public class Group
 			}
 		}
 		return OFFLINE_WORLD;
+	}
+
+	public CompletableFuture<HiscoreResult> getHiscores(String name)
+	{
+		CompletableFuture<HiscoreResult> hiscoreResponse = new CompletableFuture<>();
+//		try
+//		{
+		GimPlayer gimp = getGimp(name);
+		hiscoreClient.lookupAsync(name, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
+		{
+			if (result == null || ex != null)
+			{
+				if (ex != null)
+				{
+					log.warn("Error fetching Hiscore data " + ex.getMessage());
+				}
+				return;
+			}
+			// Successful hiscores lookup
+			gimp.setHiscores(result);
+			hiscoreResponse.complete(result);
+		});
+		return hiscoreResponse;
+//		}
+//		catch (Exception e)
+//		{
+//			log.error(e.toString());
+//			return hiscoreResponse;
+//		}
 	}
 
 	private boolean validateGimpName(String name)

@@ -25,9 +25,9 @@
 package com.gimp;
 
 import com.gimp.gimps.*;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -50,21 +50,20 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Experience;
 import net.runelite.api.clan.ClanChannel;
-import net.runelite.api.clan.ClanChannelMember;
 import net.runelite.api.clan.ClanID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
+import net.runelite.client.ui.components.ProgressBar;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.hiscore.HiscoreSkill;
 import static net.runelite.client.hiscore.HiscoreSkill.*;
-import net.runelite.client.hiscore.HiscoreClient;
-import net.runelite.client.hiscore.HiscoreEndpoint;
 import net.runelite.client.hiscore.HiscoreResult;
 import net.runelite.client.hiscore.HiscoreSkillType;
 import net.runelite.client.hiscore.Skill;
@@ -94,7 +93,6 @@ public class GimPluginPanel extends PluginPanel
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
 	private final GimPlugin plugin;
-	private final HiscoreClient hiscoreClient;
 	private final Group group;
 
 	@Inject
@@ -106,8 +104,15 @@ public class GimPluginPanel extends PluginPanel
 	// Not an EnumMap because we need null keys for combat
 	private final Map<HiscoreSkill, JLabel> skillLabels = new HashMap<>();
 
+	private static final Color HP_FG = new Color(0, 146, 54, 230);
+	private static final Color HP_BG = new Color(102, 15, 16, 230);
+	private static final Color PRAYER_FG = new Color(0, 149, 151);
+	private static final Color PRAYER_BG = Color.black;
+
 	private final JLabel usernameLabel = new JLabel();
 	private final JLabel worldLabel = new JLabel();
+	private final ProgressBar hpBar = new ProgressBar();
+	private final ProgressBar prayerBar = new ProgressBar();
 	private final JButton refreshButton = new JButton("Refresh");
 
 	/* Container of all the selectable gimp tabs */
@@ -129,7 +134,6 @@ public class GimPluginPanel extends PluginPanel
 	public GimPluginPanel(GimPlugin plugin, OkHttpClient okHttpClient)
 	{
 		this.plugin = plugin;
-		this.hiscoreClient = new HiscoreClient(okHttpClient);
 		this.group = plugin.getGroup();
 
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -142,7 +146,7 @@ public class GimPluginPanel extends PluginPanel
 		List<String> gimps = group.getNames();
 		try
 		{
-			// invokeAndWait so we can call lookup() after the UI has loaded
+			// invokeAndWait so we can call loadGimpData() after the UI has loaded
 			SwingUtilities.invokeAndWait(() ->
 			{
 				// Create panel that will hold gimp data
@@ -191,7 +195,7 @@ public class GimPluginPanel extends PluginPanel
 							{
 								return;
 							}
-							lookup();
+							loadGimpData();
 						}
 					});
 					tabGroup.addTab(tab);
@@ -203,26 +207,9 @@ public class GimPluginPanel extends PluginPanel
 				container.add(tabGroup, c);
 				c.gridy++;
 
-				// Create panel that will contain overall data
-				JPanel overallPanel = new JPanel();
-				overallPanel.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
-					BorderFactory.createEmptyBorder(8, 10, 8, 10)
-				));
-				overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				overallPanel.setLayout(new BorderLayout());
-
-				// Add icon and contents
-				final JPanel overallInfo = new JPanel();
-				overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				overallInfo.setLayout(new GridLayout(2, 1));
-				overallInfo.setBorder(new EmptyBorder(2, 10, 2, 0));
-				usernameLabel.setFont(FontManager.getRunescapeFont());
-				overallInfo.add(usernameLabel);
-				worldLabel.setFont(FontManager.getRunescapeFont());
-				overallInfo.add(worldLabel);
-				overallPanel.add(overallInfo);
-				container.add(overallPanel, c);
+				// Panel that hold gimp info and status
+				JPanel infoPanel = makeInfoPanel();
+				container.add(infoPanel, c);
 				c.gridy++;
 
 				// Panel that holds skill icons
@@ -244,7 +231,7 @@ public class GimPluginPanel extends PluginPanel
 				// Create button to refresh gimp data
 				refreshButton.addActionListener((e) ->
 				{
-					lookup();
+					loadGimpData();
 				});
 				container.add(refreshButton, c);
 				c.gridy++;
@@ -252,7 +239,7 @@ public class GimPluginPanel extends PluginPanel
 				// Add data container to panel
 				add(container, BorderLayout.CENTER);
 			});
-			lookup();
+			loadGimpData();
 		}
 		catch (Exception e)
 		{
@@ -263,6 +250,68 @@ public class GimPluginPanel extends PluginPanel
 	public void unload()
 	{
 		removeAll();
+	}
+
+	private JPanel makeInfoPanel()
+	{
+		// Create panel that will contain overall data
+		JPanel overallPanel = new JPanel();
+		overallPanel.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
+			BorderFactory.createEmptyBorder(8, 10, 8, 10)
+		));
+		overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		overallPanel.setLayout(new BorderLayout());
+
+		// Add icon and contents
+		final JPanel overallInfo = new JPanel();
+		overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		overallInfo.setLayout(new DynamicGridLayout(3, 1, 0, 4));
+		overallInfo.setBorder(new EmptyBorder(2, 10, 2, 10));
+
+		// Add username label
+		usernameLabel.setFont(FontManager.getRunescapeFont());
+		overallInfo.add(usernameLabel);
+
+		// Add world label
+		worldLabel.setFont(FontManager.getRunescapeFont());
+		overallInfo.add(worldLabel);
+
+		// Add gimp status data
+		JPanel statusWrapper = new JPanel();
+		statusWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		statusWrapper.setLayout(new DynamicGridLayout(2, 1, 0, 2));
+		statusWrapper.setBorder(new EmptyBorder(2, 0, 2, 0));
+		// HP icon and bar
+		JPanel hpWrapper = new JPanel();
+		hpWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		hpWrapper.setLayout(new DynamicGridLayout(1, 2, 2, 0));
+		hpBar.setBackground(HP_BG);
+		hpBar.setForeground(HP_FG);
+		String hpUri = "/skill_icons_small/hitpoints.png";
+		ImageIcon hpIcon = new ImageIcon(ImageUtil.loadImageResource(getClass(), hpUri));
+		JLabel hpLabel = new JLabel(hpIcon);
+		hpWrapper.add(hpLabel);
+		hpWrapper.add(hpBar);
+		// Prayer icon and bar
+		JPanel prayerWrapper = new JPanel();
+		prayerWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		prayerWrapper.setLayout(new DynamicGridLayout(1, 2, 2, 0));
+		prayerBar.setBackground(PRAYER_BG);
+		prayerBar.setForeground(PRAYER_FG);
+		String prayerUri = "/skill_icons_small/prayer.png";
+		ImageIcon prayerIcon = new ImageIcon(ImageUtil.loadImageResource(getClass(), prayerUri));
+		JLabel prayerLabel = new JLabel(prayerIcon);
+		prayerWrapper.add(prayerLabel);
+		prayerWrapper.add(prayerBar);
+		// Add HP and prayer data to info panel
+		statusWrapper.add(hpWrapper);
+		statusWrapper.add(prayerWrapper);
+		overallInfo.add(statusWrapper);
+
+		// Add overall info to the container
+		overallPanel.add(overallInfo);
+		return overallPanel;
 	}
 
 	/**
@@ -311,16 +360,15 @@ public class GimPluginPanel extends PluginPanel
 		return skillPanel;
 	}
 
-	public void lookup(String username)
+	private void loadGimpData()
 	{
-		Group group = plugin.getGroup();
-		tabGroup.select(tabGroup.getTab(group.getIndexOfGimp(username)));
-		lookup();
-	}
+		// If for some reason no tab was selected, default to normal
+		if (selectedGimp == null)
+		{
+			resetSelectedTab();
+		}
 
-	private void lookup()
-	{
-		final String lookup = sanitize(selectedGimp);
+		final String gimpName = sanitize(selectedGimp);
 
 		// Sanity check, GIM clan channel definitely loaded by now
 		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
@@ -332,53 +380,127 @@ public class GimPluginPanel extends PluginPanel
 
 		loading = true;
 
-		usernameLabel.setText(htmlLabelStr("Username:", lookup));
-		ClanChannelMember onlineMember = gimClanChannel.findMember(lookup);
-		String worldText = onlineMember != null
-			? String.valueOf(onlineMember.getWorld())
-			: "offline";
-		worldLabel.setText(htmlLabelStr("World:", worldText));
-
-		for (Map.Entry<HiscoreSkill, JLabel> entry : skillLabels.entrySet())
+		// Display gimp data
+		GimPlayer gimp = group.getGimp(gimpName);
+		SwingUtilities.invokeLater(() ->
 		{
-			HiscoreSkill skill = entry.getKey();
-			JLabel label = entry.getValue();
-			HiscoreSkillType skillType = skill == null ? HiscoreSkillType.SKILL : skill.getType();
+			applyGimpData(gimp);
 
-			label.setText(pad("--", skillType));
-			label.setToolTipText(skill == null ? "Combat" : skill.getName());
-		}
+			// Apply hiscore date separately
+			for (Map.Entry<HiscoreSkill, JLabel> entry : skillLabels.entrySet())
+			{
+				HiscoreSkill skill = entry.getKey();
+				JLabel label = entry.getValue();
+				HiscoreSkillType skillType = skill == null ? HiscoreSkillType.SKILL : skill.getType();
 
-		// If for some reason no tab was selected, default to normal
-		if (selectedGimp == null)
-		{
-			resetSelectedTab();
-		}
+				label.setText(pad("--", skillType));
+				label.setToolTipText(skill == null ? "Combat" : skill.getName());
+			}
+		});
 
-		hiscoreClient.lookupAsync(lookup, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
+		group.getHiscores(gimpName).whenCompleteAsync((result, ex) ->
 			SwingUtilities.invokeLater(() ->
 			{
-				if (!sanitize(selectedGimp).equals(lookup))
+				if (!sanitize(selectedGimp).equals(gimpName))
 				{
 					// Selected gimp has changed in the meantime
 					return;
 				}
 
-				if (result == null || ex != null)
+				if (result == null)
 				{
-					if (ex != null)
-					{
-						log.warn("Error fetching Hiscore data " + ex.getMessage());
-					}
-
 					loading = false;
 					return;
 				}
 
-				// Successful player search
+				// Successful player lookup
 				loading = false;
+				fillGimpStatusData(gimp, result);
 				applyHiscoreResult(result);
 			}));
+	}
+
+	public void updateGimpData(GimPlayer gimpData)
+	{
+		if (selectedGimp.equals(gimpData.getName()))
+		{
+			GimPlayer gimp = group.getGimp(selectedGimp);
+			if (gimpData.getHp() != null || gimpData.getMaxHp() != null)
+			{
+				int hpValue = gimpData.getHp() != null ? gimpData.getHp() : gimp.getHp();
+				int maxHpValue = gimpData.getMaxHp() != null ? gimpData.getMaxHp() : gimp.getMaxHp();
+				setHpBar(selectedGimp, hpValue, maxHpValue);
+			}
+			if (gimpData.getPrayer() != null || gimpData.getMaxPrayer() != null)
+			{
+				int prayerValue = gimpData.getPrayer() != null ? gimpData.getPrayer() : gimp.getPrayer();
+				int maxPrayerValue = gimpData.getMaxPrayer() != null ? gimpData.getMaxPrayer() : gimp.getMaxPrayer();
+				setPrayerBar(selectedGimp, prayerValue, maxPrayerValue);
+			}
+			// Update more gimp data...
+		}
+	}
+
+	public void setHpBar(String gimpName, Integer hp, Integer maxHp)
+	{
+		if (selectedGimp.equals(gimpName))
+		{
+			hpBar.setValue(formatStatusValue(hp));
+			hpBar.setMaximumValue(formatStatusValue(maxHp));
+			hpBar.setCenterLabel(formatStatusValue(hp) + "/" + formatStatusValue(maxHp));
+		}
+	}
+
+	public void setPrayerBar(String gimpName, Integer prayer, Integer maxPrayer)
+	{
+		if (selectedGimp.equals(gimpName))
+		{
+			prayerBar.setValue(formatStatusValue(prayer));
+			prayerBar.setMaximumValue(formatStatusValue(maxPrayer));
+			prayerBar.setCenterLabel(formatStatusValue(prayer) + "/" + formatStatusValue(maxPrayer));
+		}
+	}
+
+	public void setWorld(String gimpName, int world)
+	{
+		if (selectedGimp.equals(gimpName))
+		{
+			String worldText = world != 0
+				? String.valueOf(world)
+				: "offline";
+			worldLabel.setText(htmlLabelStr("World:", worldText));
+		}
+	}
+
+	private void applyGimpData(GimPlayer gimp)
+	{
+		assert SwingUtilities.isEventDispatchThread();
+
+		String gimpName = gimp.getName();
+		usernameLabel.setText(htmlLabelStr("Username:", gimpName));
+
+		setWorld(gimpName, group.getCurrentWorld(gimpName));
+		setHpBar(gimpName, gimp.getHp(), gimp.getMaxHp());
+		setPrayerBar(gimpName, gimp.getPrayer(), gimp.getMaxPrayer());
+	}
+
+	/**
+	 * Uses the hiscores result to fill missing HP/prayer status data.
+	 *
+	 * @param result HiscoreResult
+	 */
+	private void fillGimpStatusData(GimPlayer gimp, HiscoreResult result)
+	{
+		assert SwingUtilities.isEventDispatchThread();
+
+		if (gimp.getMaxHp() == null)
+		{
+			setHpBar(gimp.getName(), gimp.getHp(), result.getHitpoints().getLevel());
+		}
+		if (gimp.getMaxPrayer() == null)
+		{
+			setPrayerBar(gimp.getName(), gimp.getPrayer(), result.getPrayer().getLevel());
+		}
 	}
 
 	private void applyHiscoreResult(HiscoreResult result)
@@ -666,8 +788,16 @@ public class GimPluginPanel extends PluginPanel
 		return lookup.replace('\u00A0', ' ');
 	}
 
-	@VisibleForTesting
-	static String formatLevel(int level)
+	private static int formatStatusValue(Integer statusValue)
+	{
+		if (statusValue == null)
+		{
+			return 0;
+		}
+		return statusValue;
+	}
+
+	private static String formatLevel(int level)
 	{
 		if (level < 10000)
 		{

@@ -69,10 +69,6 @@ public class GimPlugin extends Plugin
 	private GimBroadcastManager gimBroadcastManager;
 
 	@Inject
-	@Getter
-	private Group group;
-
-	@Inject
 	private Client client;
 
 	@Inject
@@ -83,6 +79,10 @@ public class GimPlugin extends Plugin
 
 	@Inject
 	private GimPluginConfig config;
+
+	@Inject
+	@Getter
+	private Group group;
 
 	private GimPluginPanel panel;
 
@@ -131,9 +131,8 @@ public class GimPlugin extends Plugin
 			{
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
-				group.load();
 				// Once group is loaded, we can display panel and start the broadcast
-				group.waitForLoad(() ->
+				group.load().whenCompleteAsync((result, ex) ->
 				{
 					panel.load();
 					startBroadcast();
@@ -175,6 +174,7 @@ public class GimPlugin extends Plugin
 				if (currentWorld != lastWorld)
 				{
 					group.setWorld(gimp.getName(), currentWorld);
+					panel.setWorld(gimp.getName(), currentWorld);
 				}
 			}
 		}
@@ -278,6 +278,7 @@ public class GimPlugin extends Plugin
 				JSONObject dataJson = (JSONObject) args[0];
 				GimPlayer gimpData = GimBroadcastManager.parseBroadcastData(dataJson.toString());
 				group.update(gimpData);
+				panel.updateGimpData(gimpData);
 			}
 		});
 	}
@@ -336,7 +337,11 @@ public class GimPlugin extends Plugin
 						for (GimPlayer gimp : group.getGimps())
 						{
 							GimPlayer gimpData = gimData.get(gimp.getName());
-							group.update(gimpData);
+							if (gimpData != null)
+							{
+								group.update(gimpData);
+								panel.updateGimpData(gimpData);
+							}
 						}
 					}
 				}
@@ -370,6 +375,7 @@ public class GimPlugin extends Plugin
 	{
 		log.debug("Stopping broadcast...");
 		taskManager.resetTasks();
+		gimBroadcastManager.stopListening();
 	}
 
 	@Provides
