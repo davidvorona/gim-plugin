@@ -92,7 +92,6 @@ public class GimPluginPanel extends PluginPanel
 	private static final String HTML_LABEL_TEMPLATE =
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
-	private final GimPlugin plugin;
 	private final Group group;
 
 	@Inject
@@ -132,9 +131,8 @@ public class GimPluginPanel extends PluginPanel
 	}
 
 	@Inject
-	public GimPluginPanel(GimPlugin plugin, OkHttpClient okHttpClient)
+	public GimPluginPanel(GimPlugin plugin)
 	{
-		this.plugin = plugin;
 		this.group = plugin.getGroup();
 
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
