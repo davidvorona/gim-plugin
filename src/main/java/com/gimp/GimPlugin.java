@@ -262,6 +262,8 @@ public class GimPlugin extends Plugin
 	{
 		log.debug("Starting broadcast...");
 		gimBroadcastManager.connectSocketClient();
+		// Send out initial broadcast
+		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
 		// Start listening for server broadcast
 		listenForBroadcast();
 		// Start interval-based broadcast tasks
@@ -309,7 +311,14 @@ public class GimPlugin extends Plugin
 					if (!config.ghostMode())
 					{
 						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
-						Map<String, Object> data = group.getLocalGimp().getData();
+						GimPlayer localGimp = group.getLocalGimp();
+						GimLocation lastLocation = localGimp.getLocation();
+						// Don't broadcast location if it hasn't changed
+						if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
+						{
+							return;
+						}
+						Map<String, Object> data = localGimp.getData();
 						data.put("location", gimLocation.getLocation());
 						gimBroadcastManager.broadcast(data);
 					}

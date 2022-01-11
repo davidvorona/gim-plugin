@@ -100,4 +100,11 @@ public class GimLocation
 		// Name is necessary for jumpOnClick behavior
 		worldMapPoint.setName(name);
 	}
+
+	public static boolean compare(GimLocation loc1, GimLocation loc2)
+	{
+		return (loc1.getX() == loc2.getX())
+			&& (loc1.getY() == loc2.getY())
+			&& (loc1.getPlane() == loc2.getPlane());
+	}
 }
