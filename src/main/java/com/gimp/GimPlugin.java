@@ -264,6 +264,17 @@ public class GimPlugin extends Plugin
 		gimBroadcastManager.connectSocketClient();
 		// Send out initial broadcast
 		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
+		// Ping for initial gimp data
+		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
+		for (GimPlayer gimp : group.getGimps())
+		{
+			GimPlayer gimpData = gimData.get(gimp.getName());
+			if (gimpData != null)
+			{
+				group.update(gimpData);
+				panel.updateGimpData(gimpData);
+			}
+		}
 		// Start listening for server broadcast
 		listenForBroadcast();
 		// Start interval-based broadcast tasks
@@ -303,7 +314,7 @@ public class GimPlugin extends Plugin
 					}
 				}
 			};
-			Task broadcastTask = new Task(FIVE_SECONDS)
+			Task locationBroadcastTask = new Task(FIVE_SECONDS)
 			{
 				@Override
 				public void run()
@@ -374,7 +385,7 @@ public class GimPlugin extends Plugin
 					return nextDelay;
 				}
 			};
-			taskManager.schedule(broadcastTask, 0);
+			taskManager.schedule(locationBroadcastTask, 0);
 			taskManager.schedule(httpFallbackPingTask, FIVE_SECONDS / 2);
 			taskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
 		}
