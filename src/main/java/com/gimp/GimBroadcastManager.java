@@ -94,6 +94,19 @@ public class GimBroadcastManager
 	}
 
 	/**
+	 * Unsets any existing "connect" listeners and registers a
+	 * new one.
+	 *
+	 * @param handleConnect listener for the connect event
+	 */
+	public void onBroadcastConnect(Emitter.Listener handleConnect)
+	{
+		Socket client = socketClient.getClient();
+		client.off(Socket.EVENT_CONNECT);
+		client.on(Socket.EVENT_CONNECT, handleConnect);
+	}
+
+	/**
 	 * Disconnects socket client from the server.
 	 */
 	public void disconnectSocketClient()
@@ -157,7 +170,7 @@ public class GimBroadcastManager
 		}
 		catch (Exception e)
 		{
-			log.error(e.toString());
+			log.error("Broadcast error: " + e);
 		}
 	}
 
@@ -176,7 +189,7 @@ public class GimBroadcastManager
 		}
 		catch (Exception e)
 		{
-			log.error(e.toString());
+			log.error("Ping error: " + e);
 			return new HashMap<>();
 		}
 	}

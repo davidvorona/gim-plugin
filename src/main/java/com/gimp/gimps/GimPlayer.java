@@ -75,6 +75,10 @@ public class GimPlayer
 	@Getter
 	private GimLocation location;
 
+	@Setter
+	@Getter
+	private Boolean ghostMode;
+
 	@Inject
 	public GimPlayer(String name, int world)
 	{
@@ -99,6 +103,11 @@ public class GimPlayer
 		return data;
 	}
 
+	public boolean shouldIncludeLocation()
+	{
+		return ghostMode == null || !ghostMode;
+	}
+
 	public Map<String, Object> getGimpData()
 	{
 		Map<String, Object> gimpData = new HashMap<>();
@@ -108,7 +117,9 @@ public class GimPlayer
 		gimpData.put("prayer", prayer);
 		gimpData.put("maxPrayer", maxPrayer);
 		gimpData.put("customStatus", customStatus);
-		if (location != null)
+		gimpData.put("ghostMode", ghostMode);
+		// Don't get location if ghostMode is active
+		if (location != null && this.shouldIncludeLocation())
 		{
 			gimpData.put("location", location.getLocation());
 		}
