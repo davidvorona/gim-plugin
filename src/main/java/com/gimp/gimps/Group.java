@@ -278,7 +278,7 @@ public class Group
 		// Set GimPlayer location to new location
 		gimp.setLocation(newGimLocation);
 		// Add point to world map (if not local player)
-		if (/*gimp != getLocalGimp() && */gimp.shouldIncludeLocation() && gimp.getWorld() != OFFLINE_WORLD)
+		if (gimp != getLocalGimp() && gimp.shouldIncludeLocation() && gimp.getWorld() != OFFLINE_WORLD)
 		{
 			worldMapPointManager.add(newGimLocation.getWorldMapPoint());
 		}
