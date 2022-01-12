@@ -303,7 +303,7 @@ public class GimPluginPanel extends PluginPanel
 		JPanel titleWrapper = new JPanel();
 		titleWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		titleWrapper.setLayout(new DynamicGridLayout(1, 2, 0, 0));
-		titleWrapper.setBorder(new EmptyBorder(2, 0, 2, 0));
+		titleWrapper.setBorder(new EmptyBorder(2, 0, 0, 0));
 		// Add username label
 		usernameLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		usernameLabel.setFont(FontManager.getRunescapeBoldFont());
@@ -313,6 +313,12 @@ public class GimPluginPanel extends PluginPanel
 		worldLabel.setFont(FontManager.getRunescapeFont());
 		titleWrapper.add(worldLabel);
 		overallInfo.add(titleWrapper);
+
+		// Add last activity label
+		activityLabel.setBorder(new EmptyBorder(0, 0, 2, 0));
+		activityLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		activityLabel.setFont(FontManager.getRunescapeSmallFont());
+		overallInfo.add(activityLabel);
 
 		// Add gimp status data
 		JPanel statusWrapper = new JPanel();
@@ -345,11 +351,6 @@ public class GimPluginPanel extends PluginPanel
 		statusWrapper.add(hpWrapper);
 		statusWrapper.add(prayerWrapper);
 		overallInfo.add(statusWrapper);
-
-		// Add last activity label
-		activityLabel.setHorizontalAlignment(SwingConstants.LEFT);
-		activityLabel.setFont(FontManager.getRunescapeFont());
-		overallInfo.add(activityLabel);
 
 		// Add overall info to the container
 		overallPanel.add(overallInfo);
@@ -516,16 +517,16 @@ public class GimPluginPanel extends PluginPanel
 			// If activity is empty or reserved IN_GAME_ACTIVITY, use generic text
 			if (activity == null || activity.isEmpty() || activity.equals(GimPlayer.IN_GAME_ACTIVITY))
 			{
-				activityText = world == 0 ? "Last activity: inactive" : "Currently: in game";
+				activityText = world == 0 ? htmlLabelStr("Last activity:", "inactive") : htmlLabelStr("Currently:", "in game");
 			}
 			// Select descriptor text based on whether gimp is logged in
 			else if (world == 0)
 			{
-				activityText = "Last activity: " + activity.toLowerCase(Locale.ROOT);
+				activityText = htmlLabelStr("Last activity:", activity.toLowerCase(Locale.ROOT));
 			}
 			else
 			{
-				activityText = "Currently: training " + activity.toLowerCase(Locale.ROOT);
+				activityText = htmlLabelStr("Currently:", "training " + activity.toLowerCase(Locale.ROOT));
 			}
 			activityLabel.setText(activityText);
 		}
