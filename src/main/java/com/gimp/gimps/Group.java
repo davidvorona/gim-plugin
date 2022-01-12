@@ -67,6 +67,9 @@ public class Group
 	@Getter
 	private boolean loaded = false;
 
+	@Getter
+	private String name;
+
 	public Group()
 	{
 		OkHttpClient okHttpClient = new OkHttpClient();
@@ -90,6 +93,7 @@ public class Group
 				// ClanSettings not loaded yet, retry
 				return false;
 			}
+			name = gimClanSettings.getName();
 			List<ClanMember> clanMembers = gimClanSettings.getMembers();
 			for (ClanMember member : clanMembers)
 			{
@@ -104,7 +108,6 @@ public class Group
 				loadingResult.complete(null);
 			});
 			return true;
-
 		});
 		return loadingResult;
 	}

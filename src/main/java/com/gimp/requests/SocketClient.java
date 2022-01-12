@@ -24,6 +24,7 @@
  */
 package com.gimp.requests;
 
+import com.gimp.GimPluginConfig;
 import io.socket.client.Ack;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -44,6 +45,14 @@ public class SocketClient extends RequestClient
 {
 	@Getter
 	public Socket client;
+
+	private static final String EVENT_CONNECTION_ACK = "connection-ack";
+
+	public SocketClient(String namespace, GimPluginConfig config)
+	{
+		this.namespace = namespace;
+		this.config = config;
+	}
 
 	/**
 	 * Connects the socket to the server at the base URL, using default config
@@ -95,6 +104,8 @@ public class SocketClient extends RequestClient
 			public void call(Object... args)
 			{
 				log.debug("Socket connected");
+				String roomId = namespace;
+				client.emit(EVENT_CONNECTION_ACK, roomId);
 			}
 		});
 

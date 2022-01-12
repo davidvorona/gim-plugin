@@ -24,6 +24,7 @@
  */
 package com.gimp.requests;
 
+import com.gimp.GimPluginConfig;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okhttp3.MediaType;
@@ -48,8 +49,10 @@ public class HttpClient extends RequestClient
 
 	public static final String EMPTY_BODY = "";
 
-	public HttpClient()
+	public HttpClient(String namespace, GimPluginConfig config)
 	{
+		this.config = config;
+		this.namespace = namespace;
 		client = new OkHttpClient.Builder()
 			.readTimeout(5000, TimeUnit.MILLISECONDS)
 			.build();
@@ -84,7 +87,7 @@ public class HttpClient extends RequestClient
 	public String ping() throws IOException
 	{
 		Request request = new Request.Builder()
-			.url(getBaseUrl() + "/ping")
+			.url(getBaseUrl() + "/ping/" + namespace)
 			.get()
 			.build();
 		Response response = client.newCall(request).execute();
@@ -110,7 +113,7 @@ public class HttpClient extends RequestClient
 	{
 		RequestBody body = RequestBody.create(JSON, dataJson);
 		Request request = new Request.Builder()
-			.url(getBaseUrl() + "/broadcast")
+			.url(getBaseUrl() + "/broadcast/" + namespace)
 			.post(body)
 			.build();
 		Response response = client.newCall(request).execute();

@@ -54,9 +54,9 @@ public interface GimPluginConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "showSelf",
-			name = "Show Self",
-			description = "Show yourself on the map"
+		keyName = "showSelf",
+		name = "Show Self",
+		description = "Show yourself on the map"
 	)
 	default boolean showSelf()
 	{
