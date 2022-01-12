@@ -76,9 +76,6 @@ public class GimPlugin extends Plugin
 	private TaskManager taskManager;
 
 	@Inject
-	private GimBroadcastManager gimBroadcastManager;
-
-	@Inject
 	private Client client;
 
 	@Inject
@@ -97,6 +94,8 @@ public class GimPlugin extends Plugin
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
 
+	private GimBroadcastManager gimBroadcastManager;
+
 	private GimPluginPanel panel;
 
 	private NavigationButton navButton;
@@ -114,7 +113,6 @@ public class GimPlugin extends Plugin
 		@Override
 		public void call(Object... args)
 		{
-			log.debug("Socket reconnected");
 			// Update local gimp
 			group.localUpdate();
 			// Must be invoked later or it blocks this thread
@@ -274,7 +272,7 @@ public class GimPlugin extends Plugin
 				&& configChanged.getKey().equals(SERVER_ADDRESS_KEY)
 		)
 		{
-			if (gimBroadcastManager.isSocketConnected())
+			if (gimBroadcastManager != null && gimBroadcastManager.isSocketConnected())
 			{
 				// If socket is currently connected, disconnect and let it reconnect with new address
 				log.debug("Server address changed, disconnecting socket client");
@@ -323,7 +321,8 @@ public class GimPlugin extends Plugin
 	 */
 	private void startBroadcast()
 	{
-		log.info("Starting broadcast...");
+		log.debug("Starting broadcast...");
+		gimBroadcastManager = new GimBroadcastManager(group.getName(), config);
 		gimBroadcastManager.connectSocketClient();
 		// Send out initial broadcast
 		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
@@ -466,15 +465,18 @@ public class GimPlugin extends Plugin
 	private void pingForUpdate()
 	{
 		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
-		for (GimPlayer gimp : group.getGimps())
+		if (gimData != null)
 		{
-			GimPlayer gimpData = gimData.get(gimp.getName());
-			// TODO: Some data for the local gimp needs to come from the server, so
-			// we comment out this condition. Instead, we need to implement a method
-			// that hydrates empty data on a GimPlayer but does not overwrite existing.
-			if (gimpData != null/*  && gimp != group.getLocalGimp()*/)
+			for (GimPlayer gimp : group.getGimps())
 			{
-				handleUpdate(gimpData);
+				GimPlayer gimpData = gimData.get(gimp.getName());
+				// TODO: Some data for the local gimp needs to come from the server, so
+				// we comment out this condition. Instead, we need to implement a method
+				// that hydrates empty data on a GimPlayer but does not overwrite existing.
+				if (gimpData != null/*  && gimp != group.getLocalGimp()*/)
+				{
+					handleUpdate(gimpData);
+				}
 			}
 		}
 	}
@@ -487,7 +489,10 @@ public class GimPlugin extends Plugin
 	{
 		log.info("Stopping broadcast...");
 		taskManager.resetTasks();
-		gimBroadcastManager.stopListening();
+		if (gimBroadcastManager != null)
+		{
+			gimBroadcastManager.stopListening();
+		}
 	}
 
 	/* UPDATE FUNCTIONS */
@@ -670,8 +675,8 @@ public class GimPlugin extends Plugin
 		final String name = gimp.getName();
 		final boolean isLocalGimp = gimp == group.getLocalGimp();
 		final boolean shouldShow =
-				// Condition 1: Player must have a location
-				gimp.getLocation() != null
+			// Condition 1: Player must have a location
+			gimp.getLocation() != null
 				// Condition 2: Must be another player (unless "show self" is on)
 				&& (!isLocalGimp || config.showSelf())
 				// Condition 3: Must not be in ghost mode (unless it's the local player)

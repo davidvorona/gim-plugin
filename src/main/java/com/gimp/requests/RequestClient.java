@@ -26,14 +26,15 @@ package com.gimp.requests;
 
 import com.gimp.GimPluginConfig;
 import java.net.URL;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class RequestClient
 {
-	@Inject
 	public GimPluginConfig config;
+
+	/* Used to join a server-side socket room and/or namespace HTTP requests. */
+	public String namespace;
 
 	/**
 	 * Gets the base URL from the address injected from the plugin config.
@@ -75,14 +76,14 @@ public abstract class RequestClient
 	}
 
 	/**
-	 * Pings server for location of fellow GIMPs
+	 * Sends a /ping request or emits "ping" to the server.
 	 *
 	 * @return response data in JSON
 	 */
 	abstract public String ping() throws Exception;
 
 	/**
-	 * Broadcasts local GIMP's current location to server
+	 * Send a /broadcast request or emits "broadcast" to the server.
 	 *
 	 * @param dataJson request data in JSON
 	 */

@@ -32,7 +32,6 @@ import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
@@ -45,11 +44,15 @@ public class GimBroadcastManager
 
 	private static final String EVENT_BROADCAST = "broadcast";
 
-	@Inject
-	private HttpClient httpClient;
+	private final HttpClient httpClient;
 
-	@Inject
-	private SocketClient socketClient;
+	private final SocketClient socketClient;
+
+	public GimBroadcastManager(String groupName, GimPluginConfig config)
+	{
+		httpClient = new HttpClient(groupName, config);
+		socketClient = new SocketClient(groupName, config);
+	}
 
 	/**
 	 * Parses JSON string of the ping data and adds to a GimPlayer Map.
@@ -86,7 +89,7 @@ public class GimBroadcastManager
 	}
 
 	/**
-	 * Connects socket client to the server.
+	 * Connects socket client to the server and joins the group's room.
 	 */
 	public void connectSocketClient()
 	{
@@ -94,15 +97,13 @@ public class GimBroadcastManager
 	}
 
 	/**
-	 * Unsets any existing "connect" listeners and registers a
-	 * new one.
+	 * Registers a "connect" listener.
 	 *
 	 * @param handleConnect listener for the connect event
 	 */
 	public void onBroadcastConnect(Emitter.Listener handleConnect)
 	{
 		Socket client = socketClient.getClient();
-		client.off(Socket.EVENT_CONNECT);
 		client.on(Socket.EVENT_CONNECT, handleConnect);
 	}
 
