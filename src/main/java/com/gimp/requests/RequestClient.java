@@ -36,24 +36,29 @@ public abstract class RequestClient
 	public GimPluginConfig config;
 
 	/**
-	 * Gets the base URL from the IP and port injected from the plugin config.
+	 * Gets the base URL from the address injected from the plugin config.
 	 *
 	 * @return server base URL
 	 */
 	public String getBaseUrl()
 	{
-		return "http://" + config.serverIp() + ":" + config.serverPort();
+		String configServerAddress = config.serverAddress();
+		if (!configServerAddress.contains("http"))
+		{
+			return "http://" + configServerAddress;
+		}
+		return configServerAddress;
 	}
 
 	/**
-	 * Validates the URL from the config IP and port.
+	 * Validates the URL from the config server address.
 	 *
 	 * @return whether the URL is valid
 	 */
 	public boolean validateUrl()
 	{
 		final URL url;
-		if (config.serverIp().isEmpty() || config.serverPort().isEmpty())
+		if (config.serverAddress().isEmpty())
 		{
 			return false;
 		}

@@ -31,30 +31,22 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup("gimp")
 public interface GimPluginConfig extends Config
 {
-	@ConfigItem(
-		keyName = "serverIp",
-		name = "Server IP",
-		description = "IP of the remote GIMP server"
-	)
-	default String serverIp()
-	{
-		return "";
-	}
+	String PUBLIC_SERVER_ADDRESS = "https://gimp-server.herokuapp.com";
 
 	@ConfigItem(
-		keyName = "serverPort",
-		name = "Server Port",
-		description = "Port of the remote GIMP server"
+		keyName = "serverAddress",
+		name = "Server Address",
+		description = "Address of the remote GIMP server. Reset to default to use public server."
 	)
-	default String serverPort()
+	default String serverAddress()
 	{
-		return "";
+		return PUBLIC_SERVER_ADDRESS;
 	}
 
 	@ConfigItem(
 		keyName = "ghostMode",
 		name = "Ghost Mode",
-		description = "Hides your location from your fellow GIMPs"
+		description = "Hides your location from your fellow gimps."
 	)
 	default boolean ghostMode()
 	{

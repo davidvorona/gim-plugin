@@ -171,15 +171,13 @@ public class GimPlugin extends Plugin
 		{
 			final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
 			final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
-			final int lastHp = localGimp.getHp();
 			// If HP value has changed, update
-			if (currentHp != lastHp)
+			if (currentHp != localGimp.getHp())
 			{
 				updateHp(currentHp);
 			}
-			final int lastPrayer = localGimp.getPrayer();
 			// If prayer value has changed, update
-			if (currentPrayer != lastPrayer)
+			if (currentPrayer != localGimp.getPrayer())
 			{
 				updatePrayer(currentPrayer);
 			}
@@ -233,7 +231,7 @@ public class GimPlugin extends Plugin
 				// Process XP changed for last activity update, except never Hitpoints
 				else if (
 					(localGimp.getLastActivity() == null || !activity.equals(localGimp.getLastActivity()))
-					&& statChanged.getSkill() != Skill.HITPOINTS
+						&& statChanged.getSkill() != Skill.HITPOINTS
 				)
 				{
 					updateLastActivity(activity);
@@ -246,20 +244,18 @@ public class GimPlugin extends Plugin
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
 		String CONFIG_GROUP = "gimp";
-		String SERVER_IP_KEY = "serverIp";
-		String SERVER_PORT_KEY = "serverPort";
+		String SERVER_ADDRESS_KEY = "serverAddress";
 		String GHOST_MODE = "ghostMode";
-		// Check if one of GIMP's server IP/port config values has changed
+		// Check if one of GIMP's server address config value has changed
 		if (
 			configChanged.getGroup().equals(CONFIG_GROUP)
-				&& (configChanged.getKey().equals(SERVER_IP_KEY)
-				|| configChanged.getKey().equals(SERVER_PORT_KEY))
+				&& configChanged.getKey().equals(SERVER_ADDRESS_KEY)
 		)
 		{
 			if (gimBroadcastManager.isSocketConnected())
 			{
-				// If socket is currently connected, disconnect and let it reconnect with new IP/port
-				log.debug("Server IP/port changed, disconnecting socket client");
+				// If socket is currently connected, disconnect and let it reconnect with new address
+				log.debug("Server address changed, disconnecting socket client");
 				gimBroadcastManager.disconnectSocketClient();
 			}
 		}
@@ -454,7 +450,7 @@ public class GimPlugin extends Plugin
 		gimBroadcastManager.stopListening();
 	}
 
-	/* UPDATE FUNCTIONS - */
+	/* UPDATE FUNCTIONS */
 
 	/**
 	 * Handles an update from the server, maps gimp data to the
