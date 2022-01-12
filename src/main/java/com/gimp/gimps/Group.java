@@ -81,6 +81,8 @@ public class Group
 	/**
 	 * Loads player data to the Group once the client has finished loading clan
 	 * data. Initializes data for the local gimp.
+	 *
+	 * @return result of loading gimps
 	 */
 	public CompletableFuture<Void> load()
 	{
@@ -112,6 +114,11 @@ public class Group
 		return loadingResult;
 	}
 
+	/**
+	 * Loads data for the local GimPlayer, including fetching its hiscores.
+	 *
+	 * @return result of loading local gimp data
+	 */
 	public CompletableFuture<Void> localLoad()
 	{
 		CompletableFuture<Void> loadingResult = new CompletableFuture<>();
@@ -250,7 +257,8 @@ public class Group
 
 	/**
 	 * Sets a GimPlayer's location using the provided location data and
-	 * updates its icon on the world map.
+	 * updates its icon on the world map if the gimp is online and doesn't
+	 * have ghost mode enabled.
 	 *
 	 * @param name     GimPlayer name
 	 * @param location GimPlayer location data
@@ -311,6 +319,14 @@ public class Group
 		}
 	}
 
+	/**
+	 * Sets the ghost mode value of the GimPlayer by name. If the GimPlayer
+	 * has a location stored, either removes the corresponding map point or
+	 * creates one, depending on the new ghost mode setting.
+	 *
+	 * @param name      GimPlayer name
+	 * @param ghostMode ghost mode setting
+	 */
 	public void setGhostMode(String name, boolean ghostMode)
 	{
 		GimPlayer gimp = getGimp(name);

@@ -282,6 +282,11 @@ public class GimPlugin extends Plugin
 
 	/* MAIN ACTIONS */
 
+	/**
+	 * Starts the main broadcast, connecting to the socket
+	 * client and sending out the initial ping for data / broadcast.
+	 * It also starts all broadcast-related interval tasks.
+	 */
 	private void startBroadcast()
 	{
 		log.debug("Starting broadcast...");
@@ -296,6 +301,10 @@ public class GimPlugin extends Plugin
 		startIntervalTasks();
 	}
 
+	/**
+	 * Listens for the socket "broadcast" event and updates
+	 * gimp data.
+	 */
 	private void listenForBroadcast()
 	{
 		gimBroadcastManager.listen(new Emitter.Listener()
@@ -306,12 +315,16 @@ public class GimPlugin extends Plugin
 				JSONObject dataJson = (JSONObject) args[0];
 				log.debug(dataJson.toString());
 				GimPlayer gimpData = GimBroadcastManager.parseBroadcastData(dataJson.toString());
-				group.update(gimpData);
-				panel.updateGimpData(gimpData);
+				handleUpdate(gimpData);
 			}
 		});
 	}
 
+	/**
+	 * Starts all broadcast interval tasks, including handling socket
+	 * reconnects, broadcasting location, and pinging for gimp data
+	 * via HTTP if sockets fail.
+	 */
 	private void startIntervalTasks()
 	{
 		// Sanity check
@@ -394,6 +407,10 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Sends a ping via HTTP or socket for all server gimp data. Sent
+	 * when the broadcast starts and as a fallback if the socket disconnects.
+	 */
 	private void pingForUpdate()
 	{
 		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
@@ -402,12 +419,15 @@ public class GimPlugin extends Plugin
 			GimPlayer gimpData = gimData.get(gimp.getName());
 			if (gimpData != null && gimp != group.getLocalGimp())
 			{
-				group.update(gimpData);
-				panel.updateGimpData(gimpData);
+				handleUpdate(gimpData);
 			}
 		}
 	}
 
+	/**
+	 * Stops the broadcast, canceling all broadcast-related
+	 * behaviors that are not initiated by RuneLite events.
+	 */
 	private void stopBroadcast()
 	{
 		log.debug("Stopping broadcast...");
@@ -415,8 +435,26 @@ public class GimPlugin extends Plugin
 		gimBroadcastManager.stopListening();
 	}
 
-	/* UPDATE FUNCTIONS */
+	/* UPDATE FUNCTIONS - */
 
+	/**
+	 * Handles an update from the server, maps gimp data to the
+	 * corresponding gimp and updates the panel.
+	 *
+	 * @param gimpData GimPlayer data
+	 */
+	private void handleUpdate(GimPlayer gimpData)
+	{
+		group.update(gimpData);
+		panel.updateGimpData(gimpData);
+	}
+
+	/**
+	 * Updates the local gimp HP value and broadcasts
+	 * the change.
+	 *
+	 * @param hp HP value of the local GimPlayer
+	 */
 	private void updateHp(int hp)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
@@ -432,6 +470,12 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the local gimp max HP value and broadcasts
+	 * the change.
+	 *
+	 * @param maxHp max HP value of the local GimPlayer
+	 */
 	private void updateMaxHp(int maxHp)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
@@ -447,6 +491,12 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the local gimp prayer value and broadcasts
+	 * the change.
+	 *
+	 * @param prayer prayer value of the local GimPlayer
+	 */
 	private void updatePrayer(int prayer)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
@@ -462,6 +512,12 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the local gimp max prayer value and broadcasts
+	 * the change.
+	 *
+	 * @param maxPrayer max prayer value of the local GimPlayer
+	 */
 	private void updateMaxPrayer(int maxPrayer)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
@@ -477,6 +533,11 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the local gimp world.
+	 *
+	 * @param world world number of local GimPlayer
+	 */
 	private void updateWorld(int world)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
@@ -487,6 +548,13 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the local gimp ghost mode value and broadcasts
+	 * the change to the server. If ghost mode is turned off,
+	 * includes all local gimp data in broadcast.
+	 *
+	 * @param ghostMode ghost mode setting of local GimPlayer
+	 */
 	private void updateGhostMode(boolean ghostMode)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
@@ -502,6 +570,12 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the local gimp location and broadcasts the change
+	 * if ghost mode is not enabled.
+	 *
+	 * @param gimLocation world location of local GimPlayer
+	 */
 	private void updateLocation(GimLocation gimLocation)
 	{
 		GimPlayer localGimp = group.getLocalGimp();

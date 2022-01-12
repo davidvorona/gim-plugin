@@ -108,6 +108,12 @@ public class GimPlayer
 		return ghostMode == null || !ghostMode;
 	}
 
+	/**
+	 * Retrieves GimPlayer data for a broadcast. Suppresses and/or
+	 * modifies data for this purpose.
+	 *
+	 * @return GimPlayer broadcast-ready data
+	 */
 	public Map<String, Object> getGimpData()
 	{
 		Map<String, Object> gimpData = new HashMap<>();
