@@ -344,8 +344,8 @@ public class Group
 				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
 				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
 			}
-			// Otherwise, show the map point
-			else
+			// Otherwise, show the map point (if not local player)
+			else if (gimp != getLocalGimp())
 			{
 				worldMapPointManager.add(gimLocation.getWorldMapPoint());
 			}
