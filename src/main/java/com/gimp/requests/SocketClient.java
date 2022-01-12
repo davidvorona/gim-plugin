@@ -82,6 +82,10 @@ public class SocketClient extends RequestClient
 			// Socket options
 			.setAuth(null)
 			.build();
+		if (client != null)
+		{
+			client.close();
+		}
 		client = IO.socket(uri, options);
 		client.connect();
 
@@ -90,7 +94,7 @@ public class SocketClient extends RequestClient
 			@Override
 			public void call(Object... args)
 			{
-				log.debug(client.id() + " connected");
+				log.debug("Socket connected");
 			}
 		});
 
@@ -159,7 +163,7 @@ public class SocketClient extends RequestClient
 				socketResponse.complete(data.toString());
 			}
 		});
-		String data = socketResponse.get(5, TimeUnit.SECONDS);
+		String data = socketResponse.get(2, TimeUnit.SECONDS);
 		log.debug(data);
 		return data;
 	}
@@ -186,7 +190,7 @@ public class SocketClient extends RequestClient
 				socketResponse.complete(data.toString());
 			}
 		});
-		String data = socketResponse.get(5, TimeUnit.SECONDS);
+		String data = socketResponse.get(2, TimeUnit.SECONDS);
 		log.debug(data);
 	}
 }

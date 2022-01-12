@@ -88,6 +88,25 @@ public class GimPlugin extends Plugin
 
 	private NavigationButton navButton;
 
+	final private Emitter.Listener onBroadcastReconnect = new Emitter.Listener()
+	{
+		@Override
+		public void call(Object... args)
+		{
+			log.debug("Socket reconnected");
+			// Update local gimp
+			group.localUpdate();
+			// Must be invoked later or it blocks this thread
+			clientThread.invokeLater(() ->
+			{
+				// Send out broadcast
+				gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
+				// Ping for initial gimp data
+				pingForUpdate();
+			});
+		}
+	};
+
 	@Override
 	protected void startUp()
 	{
@@ -154,6 +173,10 @@ public class GimPlugin extends Plugin
 			// If HP value has changed, broadcast
 			if (currentHp != lastHp)
 			{
+				// Set it locally first, to prevent loops
+				localGimp.setHp(currentHp);
+				panel.updateGimpData(localGimp);
+				// Broadcast new HP value
 				Map<String, Object> hpData = localGimp.getData();
 				hpData.put("hp", currentHp);
 				gimBroadcastManager.broadcast(hpData);
@@ -162,6 +185,10 @@ public class GimPlugin extends Plugin
 			// If prayer value has changed, broadcast
 			if (currentPrayer != lastPrayer)
 			{
+				// Set it locally first, to prevent loops
+				localGimp.setPrayer(currentPrayer);
+				panel.updateGimpData(localGimp);
+				// Broadcast new prayer value
 				Map<String, Object> prayerData = localGimp.getData();
 				prayerData.put("prayer", currentPrayer);
 				gimBroadcastManager.broadcast(prayerData);
@@ -194,6 +221,10 @@ public class GimPlugin extends Plugin
 				// If max (real) HP value has changed, broadcast
 				if (currentMaxHp != lastMaxHp)
 				{
+					// Set it locally first, to prevent loops
+					localGimp.setMaxHp(currentMaxHp);
+					panel.updateGimpData(localGimp);
+					// Broadcast new max HP value
 					Map<String, Object> hpData = localGimp.getData();
 					hpData.put("maxHp", currentMaxHp);
 					gimBroadcastManager.broadcast(hpData);
@@ -206,6 +237,10 @@ public class GimPlugin extends Plugin
 				// If max (real) prayer value has changed, broadcast
 				if (currentMaxPrayer != lastMaxPrayer)
 				{
+					// Set it locally first, to prevent loops
+					localGimp.setMaxPrayer(currentMaxPrayer);
+					panel.updateGimpData(localGimp);
+					// Broadcast new max prayer value
 					Map<String, Object> prayerData = localGimp.getData();
 					prayerData.put("maxPrayer", currentMaxPrayer);
 					gimBroadcastManager.broadcast(prayerData);
@@ -220,6 +255,7 @@ public class GimPlugin extends Plugin
 		String CONFIG_GROUP = "gimp";
 		String SERVER_IP_KEY = "serverIp";
 		String SERVER_PORT_KEY = "serverPort";
+		String GHOST_MODE = "ghostMode";
 		// Check if one of GIMP's server IP/port config values has changed
 		if (
 			configChanged.getGroup().equals(CONFIG_GROUP)
@@ -233,6 +269,13 @@ public class GimPlugin extends Plugin
 				log.debug("Server IP/port changed, disconnecting socket client");
 				gimBroadcastManager.disconnectSocketClient();
 			}
+		}
+		else if (
+			configChanged.getGroup().equals(CONFIG_GROUP)
+				&& configChanged.getKey().equals(GHOST_MODE)
+		)
+		{
+			handleGhostMode(config.ghostMode());
 		}
 	}
 
@@ -258,6 +301,36 @@ public class GimPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 	}
 
+	private void pingForUpdate()
+	{
+		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
+		for (GimPlayer gimp : group.getGimps())
+		{
+			GimPlayer gimpData = gimData.get(gimp.getName());
+			if (gimpData != null && gimp != group.getLocalGimp())
+			{
+				group.update(gimpData);
+				panel.updateGimpData(gimpData);
+			}
+		}
+	}
+
+	private void handleGhostMode(boolean ghostMode)
+	{
+		Player localPlayer = client.getLocalPlayer();
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localPlayer != null && localGimp != null)
+		{
+			Map<String, Object> ghostModeData = ghostMode
+				? localGimp.getData()
+				: localGimp.getGimpData(); // if ghostMode off, broadcast all data
+			// Set new ghost mode locally before broadcast
+			group.setGhostMode(localGimp.getName(), ghostMode);
+			ghostModeData.put("ghostMode", ghostMode);
+			gimBroadcastManager.broadcast(ghostModeData);
+		}
+	}
+
 	private void startBroadcast()
 	{
 		log.debug("Starting broadcast...");
@@ -265,16 +338,7 @@ public class GimPlugin extends Plugin
 		// Send out initial broadcast
 		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
 		// Ping for initial gimp data
-		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
-		for (GimPlayer gimp : group.getGimps())
-		{
-			GimPlayer gimpData = gimData.get(gimp.getName());
-			if (gimpData != null)
-			{
-				group.update(gimpData);
-				panel.updateGimpData(gimpData);
-			}
-		}
+		pingForUpdate();
 		// Start listening for server broadcast
 		listenForBroadcast();
 		// Start interval-based broadcast tasks
@@ -289,6 +353,7 @@ public class GimPlugin extends Plugin
 			public void call(Object... args)
 			{
 				JSONObject dataJson = (JSONObject) args[0];
+				log.debug(dataJson.toString());
 				GimPlayer gimpData = GimBroadcastManager.parseBroadcastData(dataJson.toString());
 				group.update(gimpData);
 				panel.updateGimpData(gimpData);
@@ -311,6 +376,7 @@ public class GimPlugin extends Plugin
 					if (!gimBroadcastManager.isSocketConnected())
 					{
 						gimBroadcastManager.connectSocketClient();
+						gimBroadcastManager.onBroadcastConnect(onBroadcastReconnect);
 					}
 				}
 			};
@@ -319,16 +385,21 @@ public class GimPlugin extends Plugin
 				@Override
 				public void run()
 				{
+
+					GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
+					GimPlayer localGimp = group.getLocalGimp();
+					GimLocation lastLocation = localGimp.getLocation();
+					// Don't broadcast location if it hasn't changed
+					if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
+					{
+						return;
+					}
+					// Set location locally before broadcast
+					group.setLocation(localGimp.getName(), gimLocation);
+					panel.updateGimpData(localGimp);
+					// Do not broadcast location at all if ghost mode is active
 					if (!config.ghostMode())
 					{
-						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
-						GimPlayer localGimp = group.getLocalGimp();
-						GimLocation lastLocation = localGimp.getLocation();
-						// Don't broadcast location if it hasn't changed
-						if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
-						{
-							return;
-						}
 						Map<String, Object> data = localGimp.getData();
 						data.put("location", gimLocation.getLocation());
 						gimBroadcastManager.broadcast(data);
@@ -353,16 +424,7 @@ public class GimPlugin extends Plugin
 					// If socket is not connected, fetch data (instead of waiting for broadcast)
 					if (!gimBroadcastManager.isSocketConnected())
 					{
-						Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
-						for (GimPlayer gimp : group.getGimps())
-						{
-							GimPlayer gimpData = gimData.get(gimp.getName());
-							if (gimpData != null)
-							{
-								group.update(gimpData);
-								panel.updateGimpData(gimpData);
-							}
-						}
+						pingForUpdate();
 					}
 				}
 

@@ -24,6 +24,7 @@
  */
 package com.gimp.gimps;
 
+import com.gimp.GimPluginConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -61,6 +62,9 @@ public class Group
 	private ClientThread clientThread;
 
 	@Inject
+	public GimPluginConfig config;
+
+	@Inject
 	private WorldMapPointManager worldMapPointManager;
 
 	final private HiscoreClient hiscoreClient;
@@ -96,10 +100,33 @@ public class Group
 				int world = getCurrentWorld(name);
 				gimps.add(new GimPlayer(name, world));
 			}
-			initLocalGimp();
-			loaded = true;
-			loadingResult.complete(null);
+			// Load local gimp data, including hiscores
+			localLoad().whenCompleteAsync((result, ex) ->
+			{
+				loaded = true;
+				loadingResult.complete(null);
+			});
 			return true;
+
+		});
+		return loadingResult;
+	}
+
+	public CompletableFuture<Void> localLoad()
+	{
+		CompletableFuture<Void> loadingResult = new CompletableFuture<>();
+		Player localPlayer = client.getLocalPlayer();
+		GimPlayer localGimp = getLocalGimp();
+		// If no local player or gimp, complete load
+		if (localPlayer == null || localGimp == null)
+		{
+			loadingResult.cancel(true);
+			return loadingResult;
+		}
+		localUpdate();
+		setHiscores(localGimp.getName()).whenCompleteAsync((result, ext) ->
+		{
+			loadingResult.complete(null);
 		});
 		return loadingResult;
 	}
@@ -135,6 +162,11 @@ public class Group
 				if (gimpData.getCustomStatus() != null)
 				{
 					gimp.setCustomStatus(gimpData.getCustomStatus());
+				}
+				// Must set ghost mode before location!
+				if (gimpData.getGhostMode() != null)
+				{
+					setGhostMode(gimpName, gimpData.getGhostMode());
 				}
 				if (gimpData.getLocation() != null)
 				{
@@ -174,10 +206,10 @@ public class Group
 	}
 
 	/**
-	 * Initializes the local GimPlayer if that player exists using data
+	 * Updates the local GimPlayer if that player exists using data
 	 * available on the client.
 	 */
-	public void initLocalGimp()
+	public void localUpdate()
 	{
 		Player localPlayer = client.getLocalPlayer();
 		GimPlayer localGimp = getLocalGimp();
@@ -187,9 +219,9 @@ public class Group
 			localGimp.setMaxHp(client.getRealSkillLevel(Skill.HITPOINTS));
 			localGimp.setPrayer(client.getBoostedSkillLevel(Skill.PRAYER));
 			localGimp.setMaxPrayer(client.getRealSkillLevel(Skill.PRAYER));
-			GimLocation location = new GimLocation(localPlayer.getWorldLocation());
-			localGimp.setLocation(location);
-			getHiscores(localGimp.getName());
+			localGimp.setGhostMode(config.ghostMode());
+			setWorld(localGimp.getName(), client.getWorld());
+			setLocation(localGimp.getName(), new GimLocation(localPlayer.getWorldLocation()));
 		}
 	}
 
@@ -246,7 +278,7 @@ public class Group
 		// Set GimPlayer location to new location
 		gimp.setLocation(newGimLocation);
 		// Add point to world map (if not local player)
-		if (gimp != getLocalGimp() && gimp.getWorld() != OFFLINE_WORLD)
+		if (/*gimp != getLocalGimp() && */gimp.shouldIncludeLocation() && gimp.getWorld() != OFFLINE_WORLD)
 		{
 			worldMapPointManager.add(newGimLocation.getWorldMapPoint());
 		}
@@ -279,6 +311,31 @@ public class Group
 		}
 	}
 
+	public void setGhostMode(String name, boolean ghostMode)
+	{
+		GimPlayer gimp = getGimp(name);
+		if (gimp == null)
+		{
+			return;
+		}
+		gimp.setGhostMode(ghostMode);
+		GimLocation gimLocation = gimp.getLocation();
+		if (gimLocation != null)
+		{
+			// If ghost mode set to true, remove map point
+			if (ghostMode)
+			{
+				WorldMapPoint lastWorldMapPoint = gimLocation.getWorldMapPoint();
+				worldMapPointManager.removeIf(x -> x == lastWorldMapPoint);
+			}
+			// Otherwise, show the map point
+			else
+			{
+				worldMapPointManager.add(gimLocation.getWorldMapPoint());
+			}
+		}
+	}
+
 	/**
 	 * Gets the world of a player by name, returns 0 if the player
 	 * is offline.
@@ -300,11 +357,18 @@ public class Group
 		return OFFLINE_WORLD;
 	}
 
+	public CompletableFuture<HiscoreResult> setHiscores(String name)
+	{
+		GimPlayer gimp = getGimp(name);
+		return getHiscores(name).whenCompleteAsync((result, ext) ->
+		{
+			gimp.setHiscores(result);
+		});
+	}
+
 	public CompletableFuture<HiscoreResult> getHiscores(String name)
 	{
-		CompletableFuture<HiscoreResult> hiscoreResponse = new CompletableFuture<>();
-		GimPlayer gimp = getGimp(name);
-		hiscoreClient.lookupAsync(name, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
+		return hiscoreClient.lookupAsync(name, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
 		{
 			if (result == null || ex != null)
 			{
@@ -312,13 +376,8 @@ public class Group
 				{
 					log.warn("Error fetching Hiscore data " + ex.getMessage());
 				}
-				return;
 			}
-			// Successful hiscores lookup
-			gimp.setHiscores(result);
-			hiscoreResponse.complete(result);
 		});
-		return hiscoreResponse;
 	}
 
 	private boolean validateGimpName(String name)
