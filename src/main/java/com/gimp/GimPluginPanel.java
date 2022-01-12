@@ -37,6 +37,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.swing.BorderFactory;
@@ -114,6 +115,7 @@ public class GimPluginPanel extends PluginPanel
 	private final ProgressBar hpBar = new ProgressBar();
 	private final ProgressBar prayerBar = new ProgressBar();
 	private final JButton refreshButton = new JButton("Refresh");
+	private final JLabel activityLabel = new JLabel();
 
 	/* Container of all the selectable gimp tabs */
 	private MaterialTabGroup tabGroup;
@@ -294,7 +296,7 @@ public class GimPluginPanel extends PluginPanel
 		// Add icon and contents
 		final JPanel overallInfo = new JPanel();
 		overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		overallInfo.setLayout(new DynamicGridLayout(2, 1, 0, 4));
+		overallInfo.setLayout(new DynamicGridLayout(3, 1, 0, 4));
 		overallInfo.setBorder(new EmptyBorder(2, 10, 2, 10));
 
 		// Add title panel
@@ -343,6 +345,11 @@ public class GimPluginPanel extends PluginPanel
 		statusWrapper.add(hpWrapper);
 		statusWrapper.add(prayerWrapper);
 		overallInfo.add(statusWrapper);
+
+		// Add last activity label
+		activityLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		activityLabel.setFont(FontManager.getRunescapeFont());
+		overallInfo.add(activityLabel);
 
 		// Add overall info to the container
 		overallPanel.add(overallInfo);
@@ -472,6 +479,10 @@ public class GimPluginPanel extends PluginPanel
 				int maxPrayerValue = gimpData.getMaxPrayer() != null ? gimpData.getMaxPrayer() : gimp.getMaxPrayer();
 				setPrayerBar(selectedGimp, prayerValue, maxPrayerValue);
 			}
+			if (gimpData.getLastActivity() != null)
+			{
+				setLastActivity(selectedGimp, gimpData.getLastActivity(), gimp.getWorld());
+			}
 			// Update more gimp data...
 		}
 	}
@@ -496,6 +507,30 @@ public class GimPluginPanel extends PluginPanel
 		}
 	}
 
+	public void setLastActivity(String gimpName, String activity, int world)
+	{
+		if (selectedGimp.equals(gimpName))
+		{
+			String activityText;
+
+			// If activity is empty or reserved IN_GAME_ACTIVITY, use generic text
+			if (activity == null || activity.isEmpty() || activity.equals(GimPlayer.IN_GAME_ACTIVITY))
+			{
+				activityText = world == 0 ? "Last activity: inactive" : "Currently: in game";
+			}
+			// Select descriptor text based on whether gimp is logged in
+			else if (world == 0)
+			{
+				activityText = "Last activity: " + activity.toLowerCase(Locale.ROOT);
+			}
+			else
+			{
+				activityText = "Currently: training " + activity.toLowerCase(Locale.ROOT);
+			}
+			activityLabel.setText(activityText);
+		}
+	}
+
 	public void setWorld(String gimpName, int world)
 	{
 		if (selectedGimp.equals(gimpName))
@@ -515,6 +550,7 @@ public class GimPluginPanel extends PluginPanel
 		setWorld(gimpName, group.getCurrentWorld(gimpName));
 		setHpBar(gimpName, gimp.getHp(), gimp.getMaxHp());
 		setPrayerBar(gimpName, gimp.getPrayer(), gimp.getMaxPrayer());
+		setLastActivity(gimpName, gimp.getLastActivity(), gimp.getWorld());
 	}
 
 	/**

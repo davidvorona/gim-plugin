@@ -79,6 +79,12 @@ public class GimPlayer
 	@Getter
 	private Boolean ghostMode;
 
+	@Setter
+	@Getter
+	private String lastActivity = IN_GAME_ACTIVITY;
+
+	public static final String IN_GAME_ACTIVITY = "IN_GAME_ACTIVITY";
+
 	@Inject
 	public GimPlayer(String name, int world)
 	{
@@ -129,6 +135,7 @@ public class GimPlayer
 		{
 			gimpData.put("location", location.getLocation());
 		}
+		gimpData.put("lastActivity", lastActivity);
 		return gimpData;
 	}
 }

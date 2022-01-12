@@ -179,6 +179,10 @@ public class Group
 				{
 					setLocation(gimpName, gimpData.getLocation());
 				}
+				if (gimpData.getLastActivity() != null)
+				{
+					gimp.setLastActivity(gimpData.getLastActivity());
+				}
 			}
 		}
 	}

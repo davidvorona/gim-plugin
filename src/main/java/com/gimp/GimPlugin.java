@@ -191,6 +191,11 @@ public class GimPlugin extends Plugin
 				if (currentWorld != lastWorld)
 				{
 					updateWorld(gimp, currentWorld);
+					// If logging in or out, update last activity panel text
+					if (currentWorld == 0 || lastWorld == 0)
+					{
+						panel.setLastActivity(gimp.getName(), gimp.getLastActivity(), currentWorld);
+					}
 				}
 			}
 		}
@@ -203,32 +208,33 @@ public class GimPlugin extends Plugin
 		GimPlayer localGimp = group.getLocalGimp();
 		if (localGimp != null)
 		{
-			if (statChanged.getSkill() == Skill.HITPOINTS)
+			String activity = statChanged.getSkill().toString();
+			final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
+			final int currentMaxHp = client.getRealSkillLevel(Skill.HITPOINTS);
+			final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
+			final int currentMaxPrayer = client.getRealSkillLevel(Skill.PRAYER);
+			if (
+				// Except if the gimp's HP is going up/down
+				!(statChanged.getSkill() == Skill.HITPOINTS && currentHp != localGimp.getHp())
+					// or if the gimp's prayer is going up/down
+					&& !(statChanged.getSkill() == Skill.PRAYER && currentPrayer != localGimp.getPrayer())
+			)
 			{
-				final int currentMaxHp = client.getRealSkillLevel(Skill.HITPOINTS);
-				final int lastMaxHp = localGimp.getMaxHp();
 				// If max (real) HP value has changed, broadcast
-				if (currentMaxHp != lastMaxHp)
+				if (statChanged.getSkill() == Skill.HITPOINTS && currentMaxHp != localGimp.getMaxHp())
 				{
 					updateMaxHp(currentMaxHp);
 				}
-			}
-			if (statChanged.getSkill() == Skill.PRAYER)
-			{
-				final int currentMaxPrayer = client.getRealSkillLevel(Skill.PRAYER);
-				final int lastMaxPrayer = localGimp.getMaxPrayer();
 				// If max (real) prayer value has changed, broadcast
-				if (currentMaxPrayer != lastMaxPrayer)
+				else if (statChanged.getSkill() == Skill.PRAYER && currentMaxPrayer != localGimp.getMaxPrayer())
 				{
 					updateMaxPrayer(currentMaxPrayer);
 				}
-			}
-			// Process XP changed for last activity update
-			log.debug(String.valueOf(statChanged.getXp()));
-			log.debug(String.valueOf(client.getSkillExperience(statChanged.getSkill())));
-			if (statChanged.getXp() != client.getSkillExperience(statChanged.getSkill()))
-			{
-				log.debug("+" + (statChanged.getXp() - client.getSkillExperience(statChanged.getSkill())) + " " + statChanged.getSkill() + " XP");
+				// Process XP changed for last activity update (excepting HP/Prayer level up
+				else if (localGimp.getLastActivity() == null || !activity.equals(localGimp.getLastActivity()))
+				{
+					updateLastActivity(activity);
+				}
 			}
 		}
 	}
@@ -424,7 +430,10 @@ public class GimPlugin extends Plugin
 		for (GimPlayer gimp : group.getGimps())
 		{
 			GimPlayer gimpData = gimData.get(gimp.getName());
-			if (gimpData != null && gimp != group.getLocalGimp())
+			// TODO: Some data for the local gimp needs to come from the server, so
+			// we comment out this condition. Instead, we need to implement a method
+			// that hydrates empty data on a GimPlayer but does not overwrite existing.
+			if (gimpData != null/*  && gimp != group.getLocalGimp()*/)
 			{
 				handleUpdate(gimpData);
 			}
@@ -563,11 +572,11 @@ public class GimPlugin extends Plugin
 		GimPlayer localGimp = group.getLocalGimp();
 		if (localGimp != null)
 		{
+			// Set new ghost mode locally before broadcast
+			group.setGhostMode(localGimp.getName(), ghostMode);
 			Map<String, Object> ghostModeData = ghostMode
 				? localGimp.getData()
 				: localGimp.getGimpData(); // if ghostMode off, broadcast all data
-			// Set new ghost mode locally before broadcast
-			group.setGhostMode(localGimp.getName(), ghostMode);
 			ghostModeData.put("ghostMode", ghostMode);
 			gimBroadcastManager.broadcast(ghostModeData);
 		}
@@ -594,6 +603,20 @@ public class GimPlugin extends Plugin
 				data.put("location", gimLocation.getLocation());
 				gimBroadcastManager.broadcast(data);
 			}
+		}
+	}
+
+	private void updateLastActivity(String activity)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			// Set activity locally before broadcast
+			localGimp.setLastActivity(activity);
+			panel.updateGimpData(localGimp);
+			Map<String, Object> activityData = localGimp.getData();
+			activityData.put("lastActivity", activity);
+			gimBroadcastManager.broadcast(activityData);
 		}
 	}
 
