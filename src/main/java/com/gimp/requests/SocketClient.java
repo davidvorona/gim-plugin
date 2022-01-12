@@ -141,9 +141,9 @@ public class SocketClient extends RequestClient
 	}
 
 	/**
-	 * Sends a socket message to the ping listener. Excepts an acknowledgement
+	 * Sends a socket message to the ping listener. Expects an acknowledgement
 	 * from the server, and returns the JSON data in that acknowledgement. Times
-	 * out after seconds.
+	 * out after 2 seconds.
 	 *
 	 * @return acknowledgement data in JSON
 	 * @throws ExecutionException   for unexpected socket error
@@ -171,6 +171,7 @@ public class SocketClient extends RequestClient
 	/**
 	 * Sends a socket message to the broadcast listener. Passes the JSON data
 	 * as the data parameter and expects an acknowledgement from the server.
+	 * Times out after 2 seconds.
 	 *
 	 * @param dataJson emit data in JSON
 	 * @throws ExecutionException   for unexpected socket error
