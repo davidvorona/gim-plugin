@@ -22,3 +22,10 @@ Be sure to set the server address in the plugin config to wherever you've decide
 
 There is a public server in the works that any group can connect to. Performance *may* be affected
 because anyone can connect to it, but it should be good enough for most users.
+
+## It's Live!
+
+| Feature | Description |
+| :-------------: | :-------------: |
+| ![Map Point](https://i.imgur.com/5X6I9zw.png)  | Icons on the map will follow your companions around!  |
+| ![Panel](https://i.imgur.com/wp1WrOm.png)  | The side panel shows real-time info about your fellow gimps.  |
