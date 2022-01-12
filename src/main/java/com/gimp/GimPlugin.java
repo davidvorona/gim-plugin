@@ -190,7 +190,7 @@ public class GimPlugin extends Plugin
 				final int lastWorld = gimp.getWorld();
 				if (currentWorld != lastWorld)
 				{
-					updateWorld(currentWorld);
+					updateWorld(gimp, currentWorld);
 				}
 			}
 		}
@@ -222,6 +222,13 @@ public class GimPlugin extends Plugin
 				{
 					updateMaxPrayer(currentMaxPrayer);
 				}
+			}
+			// Process XP changed for last activity update
+			log.debug(String.valueOf(statChanged.getXp()));
+			log.debug(String.valueOf(client.getSkillExperience(statChanged.getSkill())));
+			if (statChanged.getXp() != client.getSkillExperience(statChanged.getSkill()))
+			{
+				log.debug("+" + (statChanged.getXp() - client.getSkillExperience(statChanged.getSkill())) + " " + statChanged.getSkill() + " XP");
 			}
 		}
 	}
@@ -534,18 +541,14 @@ public class GimPlugin extends Plugin
 	}
 
 	/**
-	 * Updates the local gimp world.
+	 * Updates the world of provided GimPlayer.
 	 *
-	 * @param world world number of local GimPlayer
+	 * @param world world number of GimPlayer
 	 */
-	private void updateWorld(int world)
+	private void updateWorld(GimPlayer gimp, int world)
 	{
-		GimPlayer localGimp = group.getLocalGimp();
-		if (localGimp != null)
-		{
-			group.setWorld(localGimp.getName(), world);
-			panel.setWorld(localGimp.getName(), world);
-		}
+		group.setWorld(gimp.getName(), world);
+		panel.setWorld(gimp.getName(), world);
 	}
 
 	/**
