@@ -465,27 +465,30 @@ public class GimPluginPanel extends PluginPanel
 
 	public void updateGimpData(GimPlayer gimpData)
 	{
-		if (selectedGimp.equals(gimpData.getName()))
+		SwingUtilities.invokeLater(() ->
 		{
-			GimPlayer gimp = group.getGimp(selectedGimp);
-			if (gimpData.getHp() != null || gimpData.getMaxHp() != null)
+			if (selectedGimp.equals(gimpData.getName()))
 			{
-				int hpValue = gimpData.getHp() != null ? gimpData.getHp() : gimp.getHp();
-				int maxHpValue = gimpData.getMaxHp() != null ? gimpData.getMaxHp() : gimp.getMaxHp();
-				setHpBar(selectedGimp, hpValue, maxHpValue);
+				GimPlayer gimp = group.getGimp(selectedGimp);
+				if (gimpData.getHp() != null || gimpData.getMaxHp() != null)
+				{
+					int hpValue = gimpData.getHp() != null ? gimpData.getHp() : gimp.getHp();
+					int maxHpValue = gimpData.getMaxHp() != null ? gimpData.getMaxHp() : gimp.getMaxHp();
+					setHpBar(selectedGimp, hpValue, maxHpValue);
+				}
+				if (gimpData.getPrayer() != null || gimpData.getMaxPrayer() != null)
+				{
+					int prayerValue = gimpData.getPrayer() != null ? gimpData.getPrayer() : gimp.getPrayer();
+					int maxPrayerValue = gimpData.getMaxPrayer() != null ? gimpData.getMaxPrayer() : gimp.getMaxPrayer();
+					setPrayerBar(selectedGimp, prayerValue, maxPrayerValue);
+				}
+				if (gimpData.getLastActivity() != null)
+				{
+					setLastActivity(selectedGimp, gimpData.getLastActivity(), gimp.getWorld());
+				}
+				// Update more gimp data...
 			}
-			if (gimpData.getPrayer() != null || gimpData.getMaxPrayer() != null)
-			{
-				int prayerValue = gimpData.getPrayer() != null ? gimpData.getPrayer() : gimp.getPrayer();
-				int maxPrayerValue = gimpData.getMaxPrayer() != null ? gimpData.getMaxPrayer() : gimp.getMaxPrayer();
-				setPrayerBar(selectedGimp, prayerValue, maxPrayerValue);
-			}
-			if (gimpData.getLastActivity() != null)
-			{
-				setLastActivity(selectedGimp, gimpData.getLastActivity(), gimp.getWorld());
-			}
-			// Update more gimp data...
-		}
+		});
 	}
 
 	public void setHpBar(String gimpName, Integer hp, Integer maxHp)

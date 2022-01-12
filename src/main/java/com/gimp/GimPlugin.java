@@ -230,8 +230,11 @@ public class GimPlugin extends Plugin
 				{
 					updateMaxPrayer(currentMaxPrayer);
 				}
-				// Process XP changed for last activity update (excepting HP/Prayer level up
-				else if (localGimp.getLastActivity() == null || !activity.equals(localGimp.getLastActivity()))
+				// Process XP changed for last activity update, except never Hitpoints
+				else if (
+					(localGimp.getLastActivity() == null || !activity.equals(localGimp.getLastActivity()))
+					&& statChanged.getSkill() != Skill.HITPOINTS
+				)
 				{
 					updateLastActivity(activity);
 				}
