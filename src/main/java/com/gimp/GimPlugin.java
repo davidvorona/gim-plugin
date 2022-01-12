@@ -121,6 +121,8 @@ public class GimPlugin extends Plugin
 		removePanel();
 	}
 
+	/* EVENTS */
+
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
@@ -170,38 +172,25 @@ public class GimPlugin extends Plugin
 			final int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
 			final int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
 			final int lastHp = localGimp.getHp();
-			// If HP value has changed, broadcast
+			// If HP value has changed, update
 			if (currentHp != lastHp)
 			{
-				// Set it locally first, to prevent loops
-				localGimp.setHp(currentHp);
-				panel.updateGimpData(localGimp);
-				// Broadcast new HP value
-				Map<String, Object> hpData = localGimp.getData();
-				hpData.put("hp", currentHp);
-				gimBroadcastManager.broadcast(hpData);
+				updateHp(currentHp);
 			}
 			final int lastPrayer = localGimp.getPrayer();
-			// If prayer value has changed, broadcast
+			// If prayer value has changed, update
 			if (currentPrayer != lastPrayer)
 			{
-				// Set it locally first, to prevent loops
-				localGimp.setPrayer(currentPrayer);
-				panel.updateGimpData(localGimp);
-				// Broadcast new prayer value
-				Map<String, Object> prayerData = localGimp.getData();
-				prayerData.put("prayer", currentPrayer);
-				gimBroadcastManager.broadcast(prayerData);
+				updatePrayer(currentPrayer);
 			}
-			// If any gimp world / online status has changed, update locally
+			// If any gimp world / online status has changed, update
 			for (GimPlayer gimp : group.getGimps())
 			{
 				final int currentWorld = group.getCurrentWorld(gimp.getName());
 				final int lastWorld = gimp.getWorld();
 				if (currentWorld != lastWorld)
 				{
-					group.setWorld(gimp.getName(), currentWorld);
-					panel.setWorld(gimp.getName(), currentWorld);
+					updateWorld(currentWorld);
 				}
 			}
 		}
@@ -221,13 +210,7 @@ public class GimPlugin extends Plugin
 				// If max (real) HP value has changed, broadcast
 				if (currentMaxHp != lastMaxHp)
 				{
-					// Set it locally first, to prevent loops
-					localGimp.setMaxHp(currentMaxHp);
-					panel.updateGimpData(localGimp);
-					// Broadcast new max HP value
-					Map<String, Object> hpData = localGimp.getData();
-					hpData.put("maxHp", currentMaxHp);
-					gimBroadcastManager.broadcast(hpData);
+					updateMaxHp(currentMaxHp);
 				}
 			}
 			if (statChanged.getSkill() == Skill.PRAYER)
@@ -237,13 +220,7 @@ public class GimPlugin extends Plugin
 				// If max (real) prayer value has changed, broadcast
 				if (currentMaxPrayer != lastMaxPrayer)
 				{
-					// Set it locally first, to prevent loops
-					localGimp.setMaxPrayer(currentMaxPrayer);
-					panel.updateGimpData(localGimp);
-					// Broadcast new max prayer value
-					Map<String, Object> prayerData = localGimp.getData();
-					prayerData.put("maxPrayer", currentMaxPrayer);
-					gimBroadcastManager.broadcast(prayerData);
+					updateMaxPrayer(currentMaxPrayer);
 				}
 			}
 		}
@@ -275,9 +252,11 @@ public class GimPlugin extends Plugin
 				&& configChanged.getKey().equals(GHOST_MODE)
 		)
 		{
-			handleGhostMode(config.ghostMode());
+			updateGhostMode(config.ghostMode());
 		}
 	}
+
+	/* PLUGIN PANEL */
 
 	private void addPanel()
 	{
@@ -301,35 +280,7 @@ public class GimPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 	}
 
-	private void pingForUpdate()
-	{
-		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
-		for (GimPlayer gimp : group.getGimps())
-		{
-			GimPlayer gimpData = gimData.get(gimp.getName());
-			if (gimpData != null && gimp != group.getLocalGimp())
-			{
-				group.update(gimpData);
-				panel.updateGimpData(gimpData);
-			}
-		}
-	}
-
-	private void handleGhostMode(boolean ghostMode)
-	{
-		Player localPlayer = client.getLocalPlayer();
-		GimPlayer localGimp = group.getLocalGimp();
-		if (localPlayer != null && localGimp != null)
-		{
-			Map<String, Object> ghostModeData = ghostMode
-				? localGimp.getData()
-				: localGimp.getGimpData(); // if ghostMode off, broadcast all data
-			// Set new ghost mode locally before broadcast
-			group.setGhostMode(localGimp.getName(), ghostMode);
-			ghostModeData.put("ghostMode", ghostMode);
-			gimBroadcastManager.broadcast(ghostModeData);
-		}
-	}
+	/* MAIN ACTIONS */
 
 	private void startBroadcast()
 	{
@@ -385,25 +336,15 @@ public class GimPlugin extends Plugin
 				@Override
 				public void run()
 				{
-
 					GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
 					GimPlayer localGimp = group.getLocalGimp();
 					GimLocation lastLocation = localGimp.getLocation();
-					// Don't broadcast location if it hasn't changed
+					// Don't update location if it hasn't changed
 					if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
 					{
 						return;
 					}
-					// Set location locally before broadcast
-					group.setLocation(localGimp.getName(), gimLocation);
-					panel.updateGimpData(localGimp);
-					// Do not broadcast location at all if ghost mode is active
-					if (!config.ghostMode())
-					{
-						Map<String, Object> data = localGimp.getData();
-						data.put("location", gimLocation.getLocation());
-						gimBroadcastManager.broadcast(data);
-					}
+					updateLocation(gimLocation);
 				}
 
 				@Override
@@ -453,11 +394,130 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	private void pingForUpdate()
+	{
+		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
+		for (GimPlayer gimp : group.getGimps())
+		{
+			GimPlayer gimpData = gimData.get(gimp.getName());
+			if (gimpData != null && gimp != group.getLocalGimp())
+			{
+				group.update(gimpData);
+				panel.updateGimpData(gimpData);
+			}
+		}
+	}
+
 	private void stopBroadcast()
 	{
 		log.debug("Stopping broadcast...");
 		taskManager.resetTasks();
 		gimBroadcastManager.stopListening();
+	}
+
+	/* UPDATE FUNCTIONS */
+
+	private void updateHp(int hp)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			// Set it locally first, to prevent loops
+			localGimp.setHp(hp);
+			panel.updateGimpData(localGimp);
+			// Broadcast new HP value
+			Map<String, Object> hpData = localGimp.getData();
+			hpData.put("hp", hp);
+			gimBroadcastManager.broadcast(hpData);
+		}
+	}
+
+	private void updateMaxHp(int maxHp)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			// Set it locally first, to prevent loops
+			localGimp.setMaxHp(maxHp);
+			panel.updateGimpData(localGimp);
+			// Broadcast new max HP value
+			Map<String, Object> hpData = localGimp.getData();
+			hpData.put("maxHp", maxHp);
+			gimBroadcastManager.broadcast(hpData);
+		}
+	}
+
+	private void updatePrayer(int prayer)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			// Set it locally first, to prevent loops
+			localGimp.setPrayer(prayer);
+			panel.updateGimpData(localGimp);
+			// Broadcast new prayer value
+			Map<String, Object> prayerData = localGimp.getData();
+			prayerData.put("prayer", prayer);
+			gimBroadcastManager.broadcast(prayerData);
+		}
+	}
+
+	private void updateMaxPrayer(int maxPrayer)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			// Set it locally first, to prevent loops
+			localGimp.setMaxPrayer(maxPrayer);
+			panel.updateGimpData(localGimp);
+			// Broadcast new max prayer value
+			Map<String, Object> prayerData = localGimp.getData();
+			prayerData.put("maxPrayer", maxPrayer);
+			gimBroadcastManager.broadcast(prayerData);
+		}
+	}
+
+	private void updateWorld(int world)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			group.setWorld(localGimp.getName(), world);
+			panel.setWorld(localGimp.getName(), world);
+		}
+	}
+
+	private void updateGhostMode(boolean ghostMode)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			Map<String, Object> ghostModeData = ghostMode
+				? localGimp.getData()
+				: localGimp.getGimpData(); // if ghostMode off, broadcast all data
+			// Set new ghost mode locally before broadcast
+			group.setGhostMode(localGimp.getName(), ghostMode);
+			ghostModeData.put("ghostMode", ghostMode);
+			gimBroadcastManager.broadcast(ghostModeData);
+		}
+	}
+
+	private void updateLocation(GimLocation gimLocation)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			// Set location locally before broadcast
+			group.setLocation(localGimp.getName(), gimLocation);
+			panel.updateGimpData(localGimp);
+			// Do not broadcast location at all if ghost mode is active
+			if (!config.ghostMode())
+			{
+				Map<String, Object> data = localGimp.getData();
+				data.put("location", gimLocation.getLocation());
+				gimBroadcastManager.broadcast(data);
+			}
+		}
 	}
 
 	@Provides
