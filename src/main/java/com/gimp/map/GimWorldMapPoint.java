@@ -26,6 +26,10 @@ package com.gimp.map;
 
 import com.gimp.gimps.GimLocation;
 import com.gimp.gimps.GimPlayer;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.util.LinkedList;
+import java.util.Queue;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 
@@ -38,15 +42,29 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
  */
 public class GimWorldMapPoint
 {
+	private final GimPlayer gimp;
 	private final WorldMapPoint worldMapPoint;
 	private double x;
 	private double y;
 
-	public GimWorldMapPoint(WorldMapPoint worldMapPoint)
+	private final Queue<WorldMapPoint> footsteps;
+	private final BufferedImage mmIcon;
+
+	public GimWorldMapPoint(GimPlayer gimp, WorldMapPoint worldMapPoint)
 	{
+		this.gimp = gimp;
 		this.worldMapPoint = worldMapPoint;
 		x = this.worldMapPoint.getWorldPoint().getX();
 		y = this.worldMapPoint.getWorldPoint().getY();
+		footsteps = new LinkedList<>();
+
+		// Initialize the footstep icon to be used
+		final BufferedImage icon = new BufferedImage(12, 12, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = icon.createGraphics();
+		g.setColor(gimp.getColor());
+		g.fillOval(0, 0, 12, 12);
+		mmIcon = icon;
+
 	}
 
 	public void setX(double x)
@@ -95,21 +113,19 @@ public class GimWorldMapPoint
 		}
 	}
 
-	public void moveTowardPlayer(GimPlayer gimp, boolean frameToggle)
+	public boolean moveTowardPlayer(boolean frameToggle)
 	{
-		final String name = gimp.getName();
 		final WorldPoint shownLocation = getWorldPoint();
 		final GimLocation targetLocation = gimp.getLocation();
 		if (shownLocation != null && targetLocation != null)
 		{
 			int dx = targetLocation.getX() - shownLocation.getX();
 			int dy = targetLocation.getY() - shownLocation.getY();
-			if (targetLocation.getPlane() != shownLocation.getPlane()
-				|| Math.abs(dx) > 30
-				|| Math.abs(dy) > 30)
+			if (Math.abs(dx) > 30 || Math.abs(dy) > 30)
 			{
-				// If the target location is too far (or in another plane), instantly change the map point
+				// If the target location is too far, instantly change the map point
 				setWorldPoint(targetLocation.toWorldPoint());
+				return true;
 			}
 			else if (dx != 0 || dy != 0)
 			{
@@ -119,8 +135,41 @@ public class GimWorldMapPoint
 				{
 					// Only move by a max of 1 tile in a given axis (keeps it consistent/smooth)
 					move(Math.min(1, Math.max(dx, -1)), Math.min(1, Math.max(dy, -1)));
+					// If the plane has changed, update it while preserving the shown x/y coordinates
+					if (shownLocation.getPlane() != targetLocation.getPlane())
+					{
+						setWorldPoint(new WorldPoint(shownLocation.getX(), shownLocation.getY(), targetLocation.getPlane()));
+					}
+					return true;
 				}
 			}
 		}
+		return false;
+	}
+
+	public void addFootstep(GimWorldMapPointManager gimWorldMapPointManager, int maxLength)
+	{
+		final WorldPoint worldPoint = worldMapPoint.getWorldPoint().dx(0);
+
+		if (maxLength > 0) {
+			// Optimization to reuse the tail WMP as the head WMP (since altering the underlying WMP ArrayList is expensive)
+			if (footsteps.size() == maxLength) {
+				final WorldMapPoint popped = footsteps.remove();
+				popped.setWorldPoint(worldPoint);
+				footsteps.add(popped);
+				return;
+			}
+
+			final WorldMapPoint worldMapPoint = new WorldMapPoint(worldPoint, mmIcon);
+			gimWorldMapPointManager.addAssociatedPoint(gimp.getName(), worldMapPoint);
+			footsteps.add(worldMapPoint);
+		}
+
+		while (footsteps.size() > maxLength)
+		{
+			final WorldMapPoint popped = footsteps.remove();
+			gimWorldMapPointManager.removeAssociatedPoint(gimp.getName(), popped);
+		}
+
 	}
 }

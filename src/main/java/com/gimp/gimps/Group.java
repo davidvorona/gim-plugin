@@ -26,6 +26,7 @@ package com.gimp.gimps;
 
 import com.gimp.GimPlugin;
 import com.gimp.GimPluginConfig;
+import java.awt.Color;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -47,6 +48,15 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class Group
 {
+	// TODO: Let the player choose their own color?
+	private final static Color[] GIMP_COLORS = new Color[] {
+		new Color(48, 227, 192),
+		new Color(241, 120, 68),
+		new Color(78, 54, 236),
+		new Color(239, 208, 21),
+		new Color(201, 21, 217)
+	};
+
 	@Getter
 	final private List<GimPlayer> gimps = new ArrayList<>();
 
@@ -95,11 +105,12 @@ public class Group
 			}
 			name = gimClanSettings.getName();
 			List<ClanMember> clanMembers = gimClanSettings.getMembers();
-			for (ClanMember member : clanMembers)
+			for (int i = 0; i < clanMembers.size(); i++)
 			{
+				final ClanMember member = clanMembers.get(i);
 				String name = member.getName();
 				int world = getCurrentWorld(name);
-				gimps.add(new GimPlayer(name, world));
+				gimps.add(new GimPlayer(name, world, GIMP_COLORS[i]));
 			}
 			// Load local gimp data, including hiscores
 			localLoad().whenCompleteAsync((result, ex) ->

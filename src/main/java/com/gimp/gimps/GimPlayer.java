@@ -24,6 +24,7 @@
  */
 package com.gimp.gimps;
 
+import java.awt.Color;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -94,11 +95,15 @@ public class GimPlayer
 	 */
 	private long locationTimestamp;
 
+	@Getter
+	private final Color color;
+
 	@Inject
-	public GimPlayer(String name, int world)
+	public GimPlayer(String name, int world, Color color)
 	{
 		this.name = name;
 		this.world = world;
+		this.color = color;
 	}
 
 	public void setLocation(GimLocation location)
