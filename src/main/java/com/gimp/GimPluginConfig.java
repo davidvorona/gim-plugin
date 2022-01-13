@@ -27,6 +27,7 @@ package com.gimp;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup("gimp")
 public interface GimPluginConfig extends Config
@@ -34,9 +35,10 @@ public interface GimPluginConfig extends Config
 	String PUBLIC_SERVER_ADDRESS = "https://gimp-server.herokuapp.com";
 
 	@ConfigItem(
+		position = 0,
 		keyName = "serverAddress",
 		name = "Server Address",
-		description = "Address of the remote GIMP server. Reset to default to use public server."
+		description = "Address of the remote GIMP server, reset to default to use public server"
 	)
 	default String serverAddress()
 	{
@@ -44,16 +46,26 @@ public interface GimPluginConfig extends Config
 	}
 
 	@ConfigItem(
+		position = 1,
 		keyName = "ghostMode",
 		name = "Ghost Mode",
-		description = "Hides your location from your fellow gimps."
+		description = "Hide your location from your fellow gimps"
 	)
 	default boolean ghostMode()
 	{
 		return false;
 	}
 
+	@ConfigSection(
+		position = 2,
+		name = "Developer",
+		description = "Developer settings"
+	)
+	String developerSection = "developerSection";
+
 	@ConfigItem(
+		position = 3,
+		section = developerSection,
 		keyName = "showSelf",
 		name = "Show Self",
 		description = "Show yourself on the map"
