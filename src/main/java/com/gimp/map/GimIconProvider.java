@@ -22,8 +22,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.gimp;
+package com.gimp.map;
 
+import com.gimp.GimPlugin;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageUtil;
 
@@ -34,6 +35,9 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utility for constructing and caching GIM world map icons.
+ */
 public class GimIconProvider
 {
 	final static Font FONT = FontManager.getRunescapeBoldFont();
