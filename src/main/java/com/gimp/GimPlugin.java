@@ -442,11 +442,14 @@ public class GimPlugin extends Plugin
 					frameToggle = !frameToggle;
 					for (GimPlayer gimp : group.getGimps())
 					{
-						if (gimp != null && gimWorldMapPointManager.hasPoint(gimp.getName()))
+						if (gimp != null)
 						{
-							final GimWorldMapPoint gimWorldMapPoint = gimWorldMapPointManager.getPoint(gimp.getName());
-							gimWorldMapPoint.moveTowardPlayer(gimp, frameToggle);
 							refreshMapPointVisibility(gimp);
+							if (gimWorldMapPointManager.hasPoint(gimp.getName()))
+							{
+								final GimWorldMapPoint gimWorldMapPoint = gimWorldMapPointManager.getPoint(gimp.getName());
+								gimWorldMapPoint.moveTowardPlayer(gimp, frameToggle);
+							}
 						}
 					}
 				}
