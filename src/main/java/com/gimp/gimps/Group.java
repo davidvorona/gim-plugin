@@ -26,8 +26,10 @@ package com.gimp.gimps;
 
 import com.gimp.GimPlugin;
 import com.gimp.GimPluginConfig;
+import com.gimp.GimSkillsProcessor;
 import java.awt.Color;
 import java.io.IOException;
+import java.util.Map;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -38,8 +40,6 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.hiscore.HiscoreEndpoint;
 import net.runelite.client.hiscore.HiscoreManager;
 import net.runelite.client.hiscore.HiscoreResult;
-import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,10 +67,10 @@ public class Group
 	private ClientThread clientThread;
 
 	@Inject
-	public GimPluginConfig config;
+	private GimPluginConfig config;
 
 	@Inject
-	private WorldMapPointManager worldMapPointManager;
+	private GimSkillsProcessor skillsProcessor;
 
 	@Inject
 	private HiscoreManager hiscoreManager;
@@ -187,6 +187,10 @@ public class Group
 				{
 					gimp.setLastActivity(gimpData.getLastActivity());
 				}
+				if (gimpData.getSkillsXp() != null)
+				{
+					setSkillsXp(gimpName, gimpData.getSkillsXp());
+				}
 			}
 		}
 	}
@@ -234,8 +238,9 @@ public class Group
 			localGimp.setPrayer(client.getBoostedSkillLevel(Skill.PRAYER));
 			localGimp.setMaxPrayer(client.getRealSkillLevel(Skill.PRAYER));
 			localGimp.setGhostMode(config.ghostMode());
-			setWorld(localGimp.getName(), client.getWorld());
-			setLocation(localGimp.getName(), new GimLocation(localPlayer.getWorldLocation()));
+			localGimp.setWorld(client.getWorld());
+			localGimp.setLocation(new GimLocation(localPlayer.getWorldLocation()));
+			localGimp.setSkillsXp(skillsProcessor.initSkillsXp(client.getSkillExperiences()));
 		}
 	}
 
@@ -250,9 +255,7 @@ public class Group
 	}
 
 	/**
-	 * Sets a GimPlayer's location using the provided location data and
-	 * updates its icon on the world map if the gimp is online and doesn't
-	 * have ghost mode enabled.
+	 * Sets a GimPlayer's location using the provided location data.
 	 *
 	 * @param name     GimPlayer name
 	 * @param location GimPlayer location data
@@ -274,9 +277,19 @@ public class Group
 		gimp.setLocation(newGimLocation);
 	}
 
+	public void setSkillsXp(String name, Map<Skill, Integer> skillsXp)
+	{
+		GimPlayer gimp = getGimp(name);
+		if (gimp == null)
+		{
+			return;
+		}
+		// Sets new skill XP values in place
+		skillsProcessor.applySkillsXp(gimp.getSkillsXp(), skillsXp);
+	}
+
 	/**
-	 * Sets the world number of the GimPlayer by name and removes
-	 * the map point if the world number is 0, e.g. the player is offline.
+	 * Sets the world number of the GimPlayer by name.
 	 *
 	 * @param name  GimPlayer name
 	 * @param world world number
@@ -292,9 +305,7 @@ public class Group
 	}
 
 	/**
-	 * Sets the ghost mode value of the GimPlayer by name. If the GimPlayer
-	 * has a location stored, either removes the corresponding map point or
-	 * creates one, depending on the new ghost mode setting.
+	 * Sets the ghost mode value of the GimPlayer by name.
 	 *
 	 * @param name      GimPlayer name
 	 * @param ghostMode ghost mode setting

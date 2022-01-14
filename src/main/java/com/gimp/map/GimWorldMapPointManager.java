@@ -100,20 +100,27 @@ public class GimWorldMapPointManager
 	public void addPoint(GimPlayer gimp)
 	{
 		final String name = gimp.getName();
-		final WorldPoint p = new WorldPoint(gimp.getLocation().getX(),
-			gimp.getLocation().getY(),
-			gimp.getLocation().getPlane());
-		final WorldMapPoint worldMapPoint = new WorldMapPoint(p, iconProvider.getIcon(name));
-		// Configure world map point
-		worldMapPoint.setTarget(p);
-		// Snaps to edge if outside of current map frame
-		worldMapPoint.setSnapToEdge(true);
-		// Jumps to location if clicked on
-		worldMapPoint.setJumpOnClick(true);
-		// Name is necessary for jumpOnClick behavior
-		worldMapPoint.setName(name);
+		if (gimp.getLocation() != null)
+		{
+			final WorldPoint p = new WorldPoint(gimp.getLocation().getX(),
+				gimp.getLocation().getY(),
+				gimp.getLocation().getPlane());
+			final WorldMapPoint worldMapPoint = new WorldMapPoint(p, iconProvider.getIcon(name));
+			// Configure world map point
+			worldMapPoint.setTarget(p);
+			// Snaps to edge if outside of current map frame
+			worldMapPoint.setSnapToEdge(true);
+			// Jumps to location if clicked on
+			worldMapPoint.setJumpOnClick(true);
+			// Name is necessary for jumpOnClick behavior
+			worldMapPoint.setName(name);
 
+<<<<<<< HEAD
 		addPoint(name, new GimWorldMapPoint(gimp, worldMapPoint));
+=======
+			addPoint(name, new GimWorldMapPoint(worldMapPoint));
+		}
+>>>>>>> Add skill XP updates and processing
 	}
 
 	public void removePoint(String gimpName)

@@ -99,6 +99,9 @@ public class GimPlugin extends Plugin
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
 
+	@Inject
+	private GimSkillsProcessor gimSkillsProcessor;
+
 	private GimBroadcastManager gimBroadcastManager;
 
 	private GimPluginPanel panel;
@@ -288,6 +291,8 @@ public class GimPlugin extends Plugin
 				{
 					updateLastActivity(activity);
 				}
+				// Process XP diff, broadcast new XP
+				updateSkillsXp(statChanged.getSkill(), statChanged.getXp());
 			}
 		}
 	}
@@ -559,14 +564,31 @@ public class GimPlugin extends Plugin
 
 	/**
 	 * Handles an update from the server, maps gimp data to the
-	 * corresponding gimp and updates the panel.
+	 * corresponding gimp, updates the panel.
 	 *
 	 * @param gimpData GimPlayer data
 	 */
 	private void handleUpdate(GimPlayer gimpData)
 	{
+		handleXpUpdate(gimpData.getName(), gimpData.getSkillsXp());
 		group.update(gimpData);
 		panel.updateGimpData(gimpData);
+	}
+
+	private void handleXpUpdate(String gimpName, Map<Skill, Integer> xpUpdate)
+	{
+		if (xpUpdate != null)
+		{
+			GimPlayer gimp = group.getGimp(gimpName);
+			// Process diff first before updating locally
+			Map<Skill, Integer> xpDiff = gimSkillsProcessor.processXpDiff(gimp.getSkillsXp(), xpUpdate);
+			if (gimWorldMapPointManager.hasPoint(gimp.getName()))
+			{
+				final GimWorldMapPoint gimWorldMapPoint = gimWorldMapPointManager.getPoint(gimp.getName());
+				/* Show on map here */
+				log.debug("XP diff to show on map: " + xpDiff);
+			}
+		}
 	}
 
 	/**
@@ -723,6 +745,23 @@ public class GimPlugin extends Plugin
 			gimBroadcastManager.broadcast(activityData);
 		}
 	}
+
+	private void updateSkillsXp(Skill skill, int xp)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			Map<Skill, Integer> xpUpdate = gimSkillsProcessor.createXpUpdate(skill, xp);
+			// Show diff on map next to gimp map point
+			handleXpUpdate(localGimp.getName(), xpUpdate);
+			// Set skillsXp locally before broadcast
+			group.setSkillsXp(localGimp.getName(), xpUpdate);
+			Map<String, Object> skillsXpData = localGimp.getData();
+			skillsXpData.put("skillsXp", xpUpdate);
+			gimBroadcastManager.broadcast(skillsXpData);
+		}
+	}
+
 
 	/**
 	 * Determine if the given player's world map point should be displayed or not,

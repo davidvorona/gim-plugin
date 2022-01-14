@@ -28,10 +28,9 @@ import java.awt.Color;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Skill;
 import net.runelite.client.hiscore.HiscoreResult;
-
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,6 +59,10 @@ public class GimPlayer
 	@Setter
 	@Getter
 	private HiscoreResult hiscores;
+
+	@Getter
+	@Setter
+	private Map<Skill, Integer> skillsXp;
 
 	@Setter
 	@Getter
@@ -98,7 +101,6 @@ public class GimPlayer
 	@Getter
 	private final Color color;
 
-	@Inject
 	public GimPlayer(String name, int world, Color color)
 	{
 		this.name = name;
@@ -164,6 +166,7 @@ public class GimPlayer
 			gimpData.put("location", location.getLocation());
 		}
 		gimpData.put("lastActivity", lastActivity);
+		gimpData.put("skillsXp", skillsXp);
 		return gimpData;
 	}
 }
