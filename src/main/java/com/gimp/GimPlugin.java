@@ -29,6 +29,7 @@ import com.gimp.gimps.GimPlayer;
 import com.gimp.gimps.Group;
 import com.gimp.map.GimWorldMapPoint;
 import com.gimp.map.GimWorldMapPointManager;
+import com.gimp.map.GimWorldMapXpManager;
 import com.gimp.tasks.Task;
 import com.gimp.tasks.TaskManager;
 import com.google.gson.Gson;
@@ -98,6 +99,9 @@ public class GimPlugin extends Plugin
 
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
+
+	@Inject
+	private GimWorldMapXpManager gimWorldMapXpManager;
 
 	@Inject
 	private GimSkillsProcessor gimSkillsProcessor;
@@ -564,7 +568,7 @@ public class GimPlugin extends Plugin
 
 	/**
 	 * Handles an update from the server, maps gimp data to the
-	 * corresponding gimp, updates the panel.
+	 * corresponding gimp, updates the panel and other UI.
 	 *
 	 * @param gimpData GimPlayer data
 	 */
@@ -580,13 +584,12 @@ public class GimPlugin extends Plugin
 		if (xpUpdate != null)
 		{
 			GimPlayer gimp = group.getGimp(gimpName);
-			// Process diff first before updating locally
+			// Process diff and pass result to map point manager for display
 			Map<Skill, Integer> xpDiff = gimSkillsProcessor.processXpDiff(gimp.getSkillsXp(), xpUpdate);
 			if (gimWorldMapPointManager.hasPoint(gimp.getName()))
 			{
 				final GimWorldMapPoint gimWorldMapPoint = gimWorldMapPointManager.getPoint(gimp.getName());
-				/* Show on map here */
-				log.debug("XP diff to show on map: " + xpDiff);
+				gimWorldMapXpManager.spawnOn(gimWorldMapPoint.getWorldPoint(), xpDiff);
 			}
 		}
 	}

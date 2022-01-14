@@ -115,12 +115,8 @@ public class GimWorldMapPointManager
 			// Name is necessary for jumpOnClick behavior
 			worldMapPoint.setName(name);
 
-<<<<<<< HEAD
-		addPoint(name, new GimWorldMapPoint(gimp, worldMapPoint));
-=======
-			addPoint(name, new GimWorldMapPoint(worldMapPoint));
+			addPoint(name, new GimWorldMapPoint(gimp, worldMapPoint));
 		}
->>>>>>> Add skill XP updates and processing
 	}
 
 	public void removePoint(String gimpName)
