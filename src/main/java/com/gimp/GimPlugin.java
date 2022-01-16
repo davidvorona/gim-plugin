@@ -496,6 +496,7 @@ public class GimPlugin extends Plugin
 		if (gimBroadcastManager != null)
 		{
 			gimBroadcastManager.stopListening();
+			gimBroadcastManager.disconnectSocketClient();
 		}
 	}
 
