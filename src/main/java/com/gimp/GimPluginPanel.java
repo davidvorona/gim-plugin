@@ -475,7 +475,7 @@ public class GimPluginPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			if (selectedGimp.equals(gimpData.getName()))
+			if (selectedGimp != null && selectedGimp.equals(gimpData.getName()))
 			{
 				GimPlayer gimp = group.getGimp(selectedGimp);
 				if (gimpData.getHp() != null || gimpData.getMaxHp() != null)
@@ -501,7 +501,7 @@ public class GimPluginPanel extends PluginPanel
 
 	public void setHpBar(String gimpName, Integer hp, Integer maxHp)
 	{
-		if (selectedGimp.equals(gimpName))
+		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
 			hpBar.setValue(formatStatusValue(hp));
 			hpBar.setMaximumValue(formatStatusValue(maxHp));
@@ -511,7 +511,7 @@ public class GimPluginPanel extends PluginPanel
 
 	public void setPrayerBar(String gimpName, Integer prayer, Integer maxPrayer)
 	{
-		if (selectedGimp.equals(gimpName))
+		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
 			prayerBar.setValue(formatStatusValue(prayer));
 			prayerBar.setMaximumValue(formatStatusValue(maxPrayer));
@@ -521,7 +521,7 @@ public class GimPluginPanel extends PluginPanel
 
 	public void setLastActivity(String gimpName, String activity, int world)
 	{
-		if (selectedGimp.equals(gimpName))
+		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
 			String activityText;
 
@@ -545,7 +545,7 @@ public class GimPluginPanel extends PluginPanel
 
 	public void setWorld(String gimpName, int world)
 	{
-		if (selectedGimp.equals(gimpName))
+		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
 			worldLabel.setText(world != 0 ? "W" + world : "Offline");
 			worldLabel.setForeground(world != 0 ? Color.GREEN : Color.RED);
