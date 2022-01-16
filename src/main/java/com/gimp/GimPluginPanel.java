@@ -51,9 +51,9 @@ import javax.swing.border.EmptyBorder;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Experience;
+import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
@@ -98,9 +98,6 @@ public class GimPluginPanel extends PluginPanel
 	@Inject
 	private Client client;
 
-	@Inject
-	private ClientThread clientThread;
-
 	// Not an EnumMap because we need null keys for combat
 	private final Map<HiscoreSkill, JLabel> skillLabels = new HashMap<>();
 
@@ -119,6 +116,9 @@ public class GimPluginPanel extends PluginPanel
 
 	/* Container of all the selectable gimp tabs */
 	private MaterialTabGroup tabGroup;
+
+	/* Index of the local gimp's tab or 0 */
+	private int defaultTab;
 
 	/* The currently selected gimp */
 	private String selectedGimp;
@@ -144,6 +144,7 @@ public class GimPluginPanel extends PluginPanel
 
 	public void load()
 	{
+		final Player localPlayer = client.getLocalPlayer();
 		List<String> gimps = group.getNames();
 		try
 		{
@@ -171,6 +172,7 @@ public class GimPluginPanel extends PluginPanel
 				tabGroup = new MaterialTabGroup();
 				tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
 
+				int tabIdx = 0;
 				for (String username : gimps)
 				{
 					MaterialTab tab = new MaterialTab(GIMP_ICON_SMALL, tabGroup, null);
@@ -188,7 +190,7 @@ public class GimPluginPanel extends PluginPanel
 						return true;
 					});
 					// Adding the lookup method to a mouseListener instead of the above onSelectedEvent
-					// Because sometimes you might want to switch the tab, without calling for lookup
+					// because sometimes you might want to switch the tab, without calling for lookup
 					tab.addMouseListener(new MouseAdapter()
 					{
 						@Override
@@ -201,10 +203,16 @@ public class GimPluginPanel extends PluginPanel
 							loadGimpData();
 						}
 					});
+					// Set tab of local gimp, if none is defined yet will default to first
+					if (localPlayer != null && username.equals(localPlayer.getName()))
+					{
+						defaultTab = tabIdx;
+					}
 					tabGroup.addTab(tab);
+					tabIdx++;
 				}
 
-				// Default selected tab is first gimp (or should it be you?)
+				// Default selected tab is you
 				resetSelectedTab();
 
 				container.add(tabGroup, c);
@@ -852,8 +860,7 @@ public class GimPluginPanel extends PluginPanel
 
 	private void resetSelectedTab()
 	{
-		int firstGimpIdx = 0;
-		tabGroup.select(tabGroup.getTab(firstGimpIdx));
+		tabGroup.select(tabGroup.getTab(defaultTab));
 	}
 
 	private static String sanitize(String lookup)

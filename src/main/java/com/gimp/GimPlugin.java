@@ -76,6 +76,7 @@ public class GimPlugin extends Plugin
 	private TaskManager taskManager;
 
 	@Inject
+	@Getter
 	private Client client;
 
 	@Inject
