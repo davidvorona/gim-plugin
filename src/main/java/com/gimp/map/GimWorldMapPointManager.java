@@ -26,7 +26,9 @@ package com.gimp.map;
 
 import com.gimp.gimps.GimPlayer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.WorldPoint;
@@ -44,11 +46,13 @@ public class GimWorldMapPointManager
 	private WorldMapPointManager _worldMapPointManager;
 
 	private final Map<String, GimWorldMapPoint> points;
+	private final Map<String, Set<WorldMapPoint>> associatedPoints;
 	private final GimIconProvider iconProvider;
 
 	public GimWorldMapPointManager()
 	{
 		points = new HashMap<>();
+		associatedPoints = new HashMap<>();
 		iconProvider = new GimIconProvider();
 	}
 
@@ -77,6 +81,7 @@ public class GimWorldMapPointManager
 		if (!points.containsKey(gimpName))
 		{
 			points.put(gimpName, worldMapPoint);
+			associatedPoints.put(gimpName, new HashSet<>());
 			_worldMapPointManager.add(worldMapPoint.getWorldMapPoint());
 			log.info("Add world map point for " + gimpName);
 		}
@@ -107,21 +112,42 @@ public class GimWorldMapPointManager
 		// Name is necessary for jumpOnClick behavior
 		worldMapPoint.setName(name);
 
-		addPoint(name, new GimWorldMapPoint(worldMapPoint));
+		addPoint(name, new GimWorldMapPoint(gimp, worldMapPoint));
 	}
 
 	public void removePoint(String gimpName)
 	{
 		if (points.containsKey(gimpName))
 		{
+			// Remove the user's primary WMP
 			_worldMapPointManager.remove(points.get(gimpName).getWorldMapPoint());
 			points.remove(gimpName);
+
+			// Remove the user's associated WMPs
+			for (WorldMapPoint point : associatedPoints.get(gimpName)) {
+				_worldMapPointManager.remove(point);
+			}
+			associatedPoints.remove(gimpName);
+
 			log.info("Remove map point for " + gimpName);
 		}
 		else
 		{
 			throw new IllegalStateException("Cannot remove nonexistent WorldMapPoint for user " + gimpName);
 		}
+	}
+
+	public void addAssociatedPoint(String gimpName, WorldMapPoint associatedPoint) {
+		associatedPoints.get(gimpName).add(associatedPoint);
+		_worldMapPointManager.add(associatedPoint);
+		// Re-add the gimp's WMP to ensure it's rendered on top (this might be expensive, so avoid if possible)
+		_worldMapPointManager.remove(points.get(gimpName).getWorldMapPoint());
+		_worldMapPointManager.add(points.get(gimpName).getWorldMapPoint());
+	}
+
+	public void removeAssociatedPoint(String gimpName, WorldMapPoint worldMapPoint) {
+		associatedPoints.get(gimpName).remove(worldMapPoint);
+		_worldMapPointManager.remove(worldMapPoint);
 	}
 
 	public void clear()

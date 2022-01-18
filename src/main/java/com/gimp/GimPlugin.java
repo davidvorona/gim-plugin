@@ -449,7 +449,11 @@ public class GimPlugin extends Plugin
 							if (gimWorldMapPointManager.hasPoint(gimp.getName()))
 							{
 								final GimWorldMapPoint gimWorldMapPoint = gimWorldMapPointManager.getPoint(gimp.getName());
-								gimWorldMapPoint.moveTowardPlayer(gimp, frameToggle);
+								final boolean moved = gimWorldMapPoint.moveTowardPlayer(frameToggle);
+								if (moved)
+								{
+									gimWorldMapPoint.addFootstep(gimWorldMapPointManager, config.showFootsteps());
+								}
 							}
 						}
 					}
@@ -491,7 +495,7 @@ public class GimPlugin extends Plugin
 	 */
 	private void stopBroadcast()
 	{
-		log.info("Stopping broadcast...");
+		log.debug("Stopping broadcast...");
 		taskManager.resetTasks();
 		if (gimBroadcastManager != null)
 		{

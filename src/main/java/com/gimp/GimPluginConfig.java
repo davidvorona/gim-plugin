@@ -56,15 +56,26 @@ public interface GimPluginConfig extends Config
 		return false;
 	}
 
-	@ConfigSection(
+	@ConfigItem(
 		position = 2,
+		keyName = "showFootsteps",
+		name = "Show Footsteps",
+		description = "How many footsteps to show on the map."
+	)
+	default int showFootsteps()
+	{
+		return 0;
+	}
+
+	@ConfigSection(
+		position = 3,
 		name = "Developer",
 		description = "Developer settings"
 	)
 	String developerSection = "developerSection";
 
 	@ConfigItem(
-		position = 3,
+		position = 4,
 		section = developerSection,
 		keyName = "showSelf",
 		name = "Show Self",

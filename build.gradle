@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 repositories {
@@ -12,8 +13,15 @@ repositories {
 
 def runeLiteVersion = '1.8.9'
 
+// Test locally via Gradle: "./gradlew run -DgimpDev=true"
+final boolean isGimpDev = Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("gimpDev"));
+
 dependencies {
-    compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+    if (isGimpDev) {
+        compile group: 'net.runelite', name: 'client', version: runeLiteVersion
+    } else {
+        compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+    }
 
     compileOnly 'org.projectlombok:lombok:1.18.20'
     annotationProcessor 'org.projectlombok:lombok:1.18.20'
@@ -29,8 +37,17 @@ dependencies {
 
 group = 'com.gimp'
 version = '2.0'
-sourceCompatibility = '1.8'
+sourceCompatibility = isGimpDev ? '11' : '1.8';
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+}
+
+// Allows us to use the plugin via the Gradle "run" task
+application {
+    mainClassName = 'com.gimp.GimPlugin'
+}
+
+run {
+    enableAssertions = true
 }
