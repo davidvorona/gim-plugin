@@ -154,10 +154,10 @@ public class GimPlugin extends Plugin
 				|| gameState == GameState.CONNECTION_LOST
 		)
 		{
+			stopBroadcast();
 			gimWorldMapPointManager.clear();
 			panel.unload();
 			group.unload();
-			stopBroadcast();
 		}
 	}
 
