@@ -151,9 +151,11 @@ public class GimWorldMapPoint
 	{
 		final WorldPoint worldPoint = worldMapPoint.getWorldPoint().dx(0);
 
-		if (maxLength > 0) {
+		if (maxLength > 0)
+		{
 			// Optimization to reuse the tail WMP as the head WMP (since altering the underlying WMP ArrayList is expensive)
-			if (footsteps.size() == maxLength) {
+			if (footsteps.size() == maxLength)
+			{
 				final WorldMapPoint popped = footsteps.remove();
 				popped.setWorldPoint(worldPoint);
 				footsteps.add(popped);

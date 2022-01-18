@@ -124,7 +124,8 @@ public class GimWorldMapPointManager
 			points.remove(gimpName);
 
 			// Remove the user's associated WMPs
-			for (WorldMapPoint point : associatedPoints.get(gimpName)) {
+			for (WorldMapPoint point : associatedPoints.get(gimpName))
+			{
 				_worldMapPointManager.remove(point);
 			}
 			associatedPoints.remove(gimpName);
@@ -137,7 +138,8 @@ public class GimWorldMapPointManager
 		}
 	}
 
-	public void addAssociatedPoint(String gimpName, WorldMapPoint associatedPoint) {
+	public void addAssociatedPoint(String gimpName, WorldMapPoint associatedPoint)
+	{
 		associatedPoints.get(gimpName).add(associatedPoint);
 		_worldMapPointManager.add(associatedPoint);
 		// Re-add the gimp's WMP to ensure it's rendered on top (this might be expensive, so avoid if possible)
@@ -145,7 +147,8 @@ public class GimWorldMapPointManager
 		_worldMapPointManager.add(points.get(gimpName).getWorldMapPoint());
 	}
 
-	public void removeAssociatedPoint(String gimpName, WorldMapPoint worldMapPoint) {
+	public void removeAssociatedPoint(String gimpName, WorldMapPoint worldMapPoint)
+	{
 		associatedPoints.get(gimpName).remove(worldMapPoint);
 		_worldMapPointManager.remove(worldMapPoint);
 	}

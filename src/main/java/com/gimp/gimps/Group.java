@@ -49,7 +49,7 @@ import java.util.concurrent.CompletableFuture;
 public class Group
 {
 	// TODO: Let the player choose their own color?
-	private final static Color[] GIMP_COLORS = new Color[] {
+	private final static Color[] GIMP_COLORS = new Color[]{
 		new Color(48, 227, 192),
 		new Color(241, 120, 68),
 		new Color(78, 54, 236),

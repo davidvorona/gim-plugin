@@ -60,7 +60,7 @@ public interface GimPluginConfig extends Config
 		position = 2,
 		keyName = "showFootsteps",
 		name = "Show Footsteps",
-		description = "How many footsteps to show on the map."
+		description = "Choose how many footsteps to show on the map"
 	)
 	default int showFootsteps()
 	{

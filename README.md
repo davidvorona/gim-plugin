@@ -13,9 +13,9 @@ feature for showing your companions' locations on the map, with plenty of other 
 GIMP has two parts: a client-side plugin, and a basic server. A simple Node server can be found
 [here](https://github.com/davidvorona/gimp-server). Otherwise, a public server can be used (in development).
 
-### My Node.js server
+### Our Node.js server
 
-To set up my server, simply follow the instructions in its [README](https://github.com/davidvorona/gimp-server).
+To set up our server, simply follow the instructions in its [README](https://github.com/davidvorona/gimp-server).
 Be sure to set the server address in the plugin config to wherever you've decided to run your server.
 
 ### Public server (in development)
@@ -27,5 +27,5 @@ because anyone can connect to it, but it should be good enough for most users.
 
 | Feature | Description |
 | :-------------: | :-------------: |
-| ![Map Point](https://i.imgur.com/5X6I9zw.png)  | Icons on the map will follow your companions around!  |
+| ![Map Point](https://i.imgur.com/vaD8z90.png)  | Icons on the map will follow your companions around, with the option to enable our patented Marauder's Map<sup>TM</sup> technology!  |
 | ![Panel](https://i.imgur.com/wp1WrOm.png)  | The side panel shows real-time info about your fellow gimps.  |
