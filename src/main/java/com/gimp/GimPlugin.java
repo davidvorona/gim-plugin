@@ -384,7 +384,8 @@ public class GimPlugin extends Plugin
 				public void run()
 				{
 					final GimPlayer localGimp = group.getLocalGimp();
-					if (localGimp != null) {
+					if (localGimp != null)
+					{
 						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
 						GimLocation lastLocation = localGimp.getLocation();
 						// Don't update location if it hasn't changed
