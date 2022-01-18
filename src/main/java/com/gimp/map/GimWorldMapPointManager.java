@@ -126,7 +126,7 @@ public class GimWorldMapPointManager
 			// Remove the user's associated WMPs
 			for (WorldMapPoint point : associatedPoints.get(gimpName))
 			{
-				_worldMapPointManager.remove(point);
+				_worldMapPointManager.removeIf(wmp -> wmp == point);
 			}
 			associatedPoints.remove(gimpName);
 
@@ -150,7 +150,7 @@ public class GimWorldMapPointManager
 	public void removeAssociatedPoint(String gimpName, WorldMapPoint worldMapPoint)
 	{
 		associatedPoints.get(gimpName).remove(worldMapPoint);
-		_worldMapPointManager.remove(worldMapPoint);
+		_worldMapPointManager.removeIf(wmp -> wmp == worldMapPoint);
 	}
 
 	public void clear()
