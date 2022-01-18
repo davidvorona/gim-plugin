@@ -37,7 +37,7 @@ dependencies {
 
 group = 'com.gimp'
 version = '2.0'
-sourceCompatibility = isGimpDev ? '11' : '8';
+sourceCompatibility = isGimpDev ? '11' : '1.8';
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
