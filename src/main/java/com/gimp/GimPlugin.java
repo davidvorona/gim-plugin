@@ -383,15 +383,17 @@ public class GimPlugin extends Plugin
 				@Override
 				public void run()
 				{
-					GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
-					GimPlayer localGimp = group.getLocalGimp();
-					GimLocation lastLocation = localGimp.getLocation();
-					// Don't update location if it hasn't changed
-					if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
-					{
-						return;
+					final GimPlayer localGimp = group.getLocalGimp();
+					if (localGimp != null) {
+						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
+						GimLocation lastLocation = localGimp.getLocation();
+						// Don't update location if it hasn't changed
+						if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
+						{
+							return;
+						}
+						updateLocation(gimLocation);
 					}
-					updateLocation(gimLocation);
 				}
 
 				@Override

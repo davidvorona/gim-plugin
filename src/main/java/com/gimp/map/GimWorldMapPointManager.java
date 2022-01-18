@@ -25,10 +25,11 @@
 package com.gimp.map;
 
 import com.gimp.gimps.GimPlayer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.WorldPoint;
@@ -46,7 +47,7 @@ public class GimWorldMapPointManager
 	private WorldMapPointManager _worldMapPointManager;
 
 	private final Map<String, GimWorldMapPoint> points;
-	private final Map<String, Set<WorldMapPoint>> associatedPoints;
+	private final Map<String, Collection<WorldMapPoint>> associatedPoints;
 	private final GimIconProvider iconProvider;
 
 	public GimWorldMapPointManager()
@@ -81,7 +82,7 @@ public class GimWorldMapPointManager
 		if (!points.containsKey(gimpName))
 		{
 			points.put(gimpName, worldMapPoint);
-			associatedPoints.put(gimpName, new HashSet<>());
+			associatedPoints.put(gimpName, new LinkedList<>());
 			_worldMapPointManager.add(worldMapPoint.getWorldMapPoint());
 			log.info("Add world map point for " + gimpName);
 		}
@@ -149,15 +150,21 @@ public class GimWorldMapPointManager
 
 	public void removeAssociatedPoint(String gimpName, WorldMapPoint worldMapPoint)
 	{
-		associatedPoints.get(gimpName).remove(worldMapPoint);
+		associatedPoints.get(gimpName).removeIf(wmp -> wmp == worldMapPoint);
 		_worldMapPointManager.removeIf(wmp -> wmp == worldMapPoint);
 	}
 
 	public void clear()
 	{
-		for (String gimpName : points.keySet())
+		// Use key collection rather than iterator to avoid concurrent modification
+		final Collection<String> gimpNames = new ArrayList<>(points.keySet());
+
+		for (String gimpName : gimpNames)
 		{
-			removePoint(gimpName);
+			if (hasPoint(gimpName))
+			{
+				removePoint(gimpName);
+			}
 		}
 	}
 }
