@@ -1,3 +1,7 @@
+**NOTE:** *V2, WHICH INCLUDES MUCH OF THE PLUGIN'S FEATURES, IS CURRENTLY IN THE HANDS OF THE RUNELITE
+DEVS. PLEASE BE PATIENT WHILE THE [PR AWAITS APPROVAL](https://github.com/runelite/plugin-hub/pull/2314).
+THE VERSION ON THE PLUGIN HUB INCLUDES MAP TRACKING ONLY.*
+
 # GIMP (Group Ironman Plugin)
 
 A plugin for a better group ironman experience.
