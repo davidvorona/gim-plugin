@@ -32,17 +32,15 @@ import net.runelite.client.config.ConfigSection;
 @ConfigGroup("gimp")
 public interface GimPluginConfig extends Config
 {
-	String PUBLIC_SERVER_ADDRESS = "https://gimp-server.herokuapp.com";
-
 	@ConfigItem(
 		position = 0,
 		keyName = "serverAddress",
 		name = "Server Address",
-		description = "Address of the remote GIMP server, reset to default to use public server"
+		description = "Address of the remote GIMP server, check the GitHub for a public server address"
 	)
 	default String serverAddress()
 	{
-		return PUBLIC_SERVER_ADDRESS;
+		return "";
 	}
 
 	@ConfigItem(
