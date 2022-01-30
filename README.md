@@ -17,15 +17,20 @@ feature for showing your companions' locations on the map, with plenty of other 
 GIMP has two parts: a client-side plugin, and a basic server. A simple Node server can be found
 [here](https://github.com/davidvorona/gimp-server). Otherwise, a public server can be used (in development).
 
-### Our Node.js server
-
-To set up our server, simply follow the instructions in its [README](https://github.com/davidvorona/gimp-server).
-Be sure to set the server address in the plugin config to wherever you've decided to run your server.
-
 ### Public server (in development)
 
 There is a public server in the works that any group can connect to. Performance *may* be affected
 because anyone can connect to it, but it should be good enough for most users.
+
+The address for the public server is https://gimp-server.herokuapp.com; simply copy it into the server address config
+field and you're all set!
+
+*DISCLAIMER: using our public server involves submitting your IP address to a 3rd party server maintained by myself. The server keeps a copy of relevant character data and that's it--if this is unacceptable to you, the server is open-source and you are welcome to host it yourself (see below).*
+
+### Our Node.js server
+
+To set up our server, simply follow the instructions in its [README](https://github.com/davidvorona/gimp-server).
+Be sure to set the server address in the plugin config to wherever you've decided to run your server.
 
 ## It's Live!
 
