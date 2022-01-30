@@ -18,7 +18,7 @@ final boolean isGimpDev = Boolean.TRUE.toString().equalsIgnoreCase(System.getPro
 
 dependencies {
     if (isGimpDev) {
-        compile group: 'net.runelite', name: 'client', version: runeLiteVersion
+        implementation group: 'net.runelite', name: 'client', version: runeLiteVersion
     } else {
         compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
     }
