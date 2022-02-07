@@ -48,8 +48,11 @@ public class GimBroadcastManager
 
 	private final SocketClient socketClient;
 
-	public GimBroadcastManager(String groupName, GimPluginConfig config)
+	private final Gson gson;
+
+	public GimBroadcastManager(String groupName, GimPluginConfig config, Gson gson)
 	{
+		this.gson = gson;
 		httpClient = new HttpClient(groupName, config);
 		socketClient = new SocketClient(groupName, config);
 	}
@@ -60,9 +63,8 @@ public class GimBroadcastManager
 	 * @param dataJson JSON string of ping data
 	 * @return map: name => GimPlayer
 	 */
-	static Map<String, GimPlayer> parsePingData(String dataJson)
+	private Map<String, GimPlayer> parsePingData(String dataJson)
 	{
-		Gson gson = new Gson();
 		return gson.fromJson(dataJson, pingDataTypeForJson);
 	}
 
@@ -72,9 +74,8 @@ public class GimBroadcastManager
 	 * @param dataJson JSON string of broadcast data
 	 * @return GimPlayer
 	 */
-	static GimPlayer parseBroadcastData(String dataJson)
+	public GimPlayer parseBroadcastData(String dataJson)
 	{
-		Gson gson = new Gson();
 		return gson.fromJson(dataJson, GimPlayer.class);
 	}
 
@@ -165,7 +166,6 @@ public class GimBroadcastManager
 		try
 		{
 			RequestClient requestClient = getRequestClient();
-			Gson gson = new Gson();
 			String dataJson = gson.toJson(data);
 			requestClient.broadcast(dataJson);
 		}
@@ -186,7 +186,7 @@ public class GimBroadcastManager
 		{
 			RequestClient requestClient = getRequestClient();
 			String dataJson = requestClient.ping();
-			return GimBroadcastManager.parsePingData(dataJson);
+			return parsePingData(dataJson);
 		}
 		catch (Exception e)
 		{
