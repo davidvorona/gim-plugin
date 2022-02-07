@@ -31,6 +31,7 @@ import com.gimp.map.GimWorldMapPoint;
 import com.gimp.map.GimWorldMapPointManager;
 import com.gimp.tasks.Task;
 import com.gimp.tasks.TaskManager;
+import com.google.gson.Gson;
 import com.google.inject.Provides;
 import io.socket.emitter.Emitter;
 import java.awt.image.BufferedImage;
@@ -91,6 +92,9 @@ public class GimPlugin extends Plugin
 	@Inject
 	@Getter
 	private Group group;
+
+	@Inject
+	private Gson gson;
 
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
@@ -211,7 +215,7 @@ public class GimPlugin extends Plugin
 				{
 					updateWorld(gimp, currentWorld);
 					// If logging in or out, update last activity panel text
-					if (currentWorld == 0 || lastWorld == 0)
+					if (currentWorld == OFFLINE_WORLD || lastWorld == OFFLINE_WORLD)
 					{
 						panel.setLastActivity(gimp.getName(), gimp.getLastActivity(), currentWorld);
 					}
@@ -323,7 +327,7 @@ public class GimPlugin extends Plugin
 	private void startBroadcast()
 	{
 		log.debug("Starting broadcast...");
-		gimBroadcastManager = new GimBroadcastManager(group.getName(), config);
+		gimBroadcastManager = new GimBroadcastManager(group.getName(), config, gson);
 		gimBroadcastManager.connectSocketClient();
 		// Send out initial broadcast
 		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
@@ -348,7 +352,7 @@ public class GimPlugin extends Plugin
 			{
 				JSONObject dataJson = (JSONObject) args[0];
 				log.debug(dataJson.toString());
-				GimPlayer gimpData = GimBroadcastManager.parseBroadcastData(dataJson.toString());
+				GimPlayer gimpData = gimBroadcastManager.parseBroadcastData(dataJson.toString());
 				handleUpdate(gimpData);
 			}
 		});
