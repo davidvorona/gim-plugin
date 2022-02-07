@@ -339,6 +339,13 @@ public class Group
 		});
 	}
 
+	/**
+	 * Fetches player hiscores via HiscoreManager, caching the result
+	 * and returning the pending result to the invoker.
+	 *
+	 * @param name GimPlayer name
+	 * @return player hiscores result
+	 */
 	public CompletableFuture<HiscoreResult> getHiscores(String name)
 	{
 		CompletableFuture<HiscoreResult> hiscoreResult = new CompletableFuture<>();
@@ -352,7 +359,9 @@ public class Group
 					log.warn("Could not find hiscore data for " + name);
 				}
 				hiscoreResult.complete(result);
-			} catch (IOException e) {
+			}
+			catch (IOException e)
+			{
 				log.error("Error fetching hiscores: " + e);
 				hiscoreResult.completeExceptionally(e);
 			}
