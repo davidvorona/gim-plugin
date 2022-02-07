@@ -27,6 +27,7 @@ package com.gimp.gimps;
 import com.gimp.GimPlugin;
 import com.gimp.GimPluginConfig;
 import java.awt.Color;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -34,11 +35,10 @@ import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.clan.*;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.hiscore.HiscoreClient;
 import net.runelite.client.hiscore.HiscoreEndpoint;
+import net.runelite.client.hiscore.HiscoreManager;
 import net.runelite.client.hiscore.HiscoreResult;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-import okhttp3.OkHttpClient;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -72,19 +72,14 @@ public class Group
 	@Inject
 	private WorldMapPointManager worldMapPointManager;
 
-	final private HiscoreClient hiscoreClient;
+	@Inject
+	private HiscoreManager hiscoreManager;
 
 	@Getter
 	private boolean loaded = false;
 
 	@Getter
 	private String name;
-
-	public Group()
-	{
-		OkHttpClient okHttpClient = new OkHttpClient();
-		hiscoreClient = new HiscoreClient(okHttpClient);
-	}
 
 	/**
 	 * Loads player data to the Group once the client has finished loading clan
@@ -346,16 +341,23 @@ public class Group
 
 	public CompletableFuture<HiscoreResult> getHiscores(String name)
 	{
-		return hiscoreClient.lookupAsync(name, HiscoreEndpoint.NORMAL).whenCompleteAsync((result, ex) ->
+		CompletableFuture<HiscoreResult> hiscoreResult = new CompletableFuture<>();
+		clientThread.invokeLater(() ->
 		{
-			if (result == null || ex != null)
+			try
 			{
-				if (ex != null)
+				HiscoreResult result = hiscoreManager.lookup(name, HiscoreEndpoint.NORMAL);
+				if (result == null)
 				{
-					log.warn("Error fetching Hiscore data " + ex.getMessage());
+					log.warn("Could not find hiscore data for " + name);
 				}
+				hiscoreResult.complete(result);
+			} catch (IOException e) {
+				log.error("Error fetching hiscores: " + e);
+				hiscoreResult.completeExceptionally(e);
 			}
 		});
+		return hiscoreResult;
 	}
 
 	private boolean validateGimpName(String name)
