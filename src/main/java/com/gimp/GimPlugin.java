@@ -113,16 +113,43 @@ public class GimPlugin extends Plugin
 	 */
 	private boolean frameToggle;
 
+	final private Emitter.Listener onBroadcastConnect = new Emitter.Listener()
+	{
+		@Override
+		public void call(Object... args)
+		{
+			clientThread.invokeLater(() ->
+			{
+				// Set connection status to connected
+				panel.setConnectionStatus(true);
+			});
+		}
+	};
+
+	final private Emitter.Listener onBroadcastDisconnect = new Emitter.Listener()
+	{
+		@Override
+		public void call(Object... args)
+		{
+			clientThread.invokeLater(() ->
+			{
+				// Set connection status to disconnected
+				panel.setConnectionStatus(false);
+			});
+		}
+	};
+
 	final private Emitter.Listener onBroadcastReconnect = new Emitter.Listener()
 	{
 		@Override
 		public void call(Object... args)
 		{
-			// Update local gimp
-			group.localUpdate();
-			// Must be invoked later or it blocks this thread
 			clientThread.invokeLater(() ->
 			{
+				// Update panel connection status
+				panel.setConnectionStatus(true);
+				// Update local gimp
+				group.localUpdate();
 				// Send out broadcast
 				gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
 				// Ping for initial gimp data
@@ -329,6 +356,7 @@ public class GimPlugin extends Plugin
 		log.debug("Starting broadcast...");
 		gimBroadcastManager = new GimBroadcastManager(group.getName(), config, gson);
 		gimBroadcastManager.connectSocketClient();
+		setConnectionListeners(false);
 		// Send out initial broadcast
 		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
 		// Ping for initial gimp data
@@ -337,6 +365,22 @@ public class GimPlugin extends Plugin
 		listenForBroadcast();
 		// Start interval-based broadcast tasks
 		startIntervalTasks();
+	}
+
+	/**
+	 * Sets connection status and calls other side effects based on
+	 * connection event.
+	 *
+	 * @param onReconnect whether connection is to reconnect
+	 */
+	private void setConnectionListeners(boolean onReconnect)
+	{
+		Emitter.Listener onConnect = onReconnect ? onBroadcastReconnect : onBroadcastConnect;
+		gimBroadcastManager.onBroadcastConnect(onConnect);
+		// Use disconnect handler for connect error event b/c we just
+		// want to set connection status to disconnected
+		gimBroadcastManager.onBroadcastConnectError(onBroadcastDisconnect);
+		gimBroadcastManager.onBroadcastDisconnect(onBroadcastDisconnect);
 	}
 
 	/**
@@ -378,7 +422,7 @@ public class GimPlugin extends Plugin
 					if (!gimBroadcastManager.isSocketConnected())
 					{
 						gimBroadcastManager.connectSocketClient();
-						gimBroadcastManager.onBroadcastConnect(onBroadcastReconnect);
+						setConnectionListeners(true);
 					}
 				}
 			};

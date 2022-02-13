@@ -106,7 +106,10 @@ public class GimPluginPanel extends PluginPanel
 	private static final Color PRAYER_FG = new Color(0, 149, 151);
 	private static final Color PRAYER_BG = Color.black;
 
+	private static final String CONNECTING_TEXT = "Trying to connect...";
+
 	private final JLabel noDataLabel = new JLabel();
+	private final JLabel connectionLabel = new JLabel();
 	private final JLabel usernameLabel = new JLabel();
 	private final JLabel worldLabel = new JLabel();
 	private final ProgressBar hpBar = new ProgressBar();
@@ -166,6 +169,11 @@ public class GimPluginPanel extends PluginPanel
 				c.weightx = 1;
 				c.weighty = 0;
 				c.insets = new Insets(0, 0, 10, 0);
+
+				// Add connection status panel
+				final JPanel statusPanel = makeStatusPanel();
+				container.add(statusPanel, c);
+				c.gridy++;
 
 				// Add tabs for each gimp
 				int gimpCount = gimps.size();
@@ -286,6 +294,24 @@ public class GimPluginPanel extends PluginPanel
 		noDataLabel.setText("<html><body style='text-align:center;'>You must be logged in to a group ironman to see GIMP data.</body></html>");
 		container.add(noDataLabel);
 		return container;
+	}
+
+	private JPanel makeStatusPanel()
+	{
+		assert SwingUtilities.isEventDispatchThread();
+
+		// Create a panel to hold plugin status info
+		final JPanel statusPanel = new JPanel();
+		statusPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		statusPanel.setLayout(new DynamicGridLayout(1, 1, 0, 0));
+		statusPanel.setBorder(new EmptyBorder(2, 8, 2, 8));
+		// Add connection status
+		connectionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		connectionLabel.setFont(FontManager.getRunescapeFont());
+		connectionLabel.setText(CONNECTING_TEXT);
+		statusPanel.add(connectionLabel);
+
+		return statusPanel;
 	}
 
 	private JPanel makeInfoPanel()
@@ -497,6 +523,20 @@ public class GimPluginPanel extends PluginPanel
 				// Update more gimp data...
 			}
 		});
+	}
+
+	public void setConnectionStatus(boolean status)
+	{
+		String statusText = status ? "Connected" : "Disconnected";
+		String openingTags = "<html><body style = 'padding: 5px;color:#989898'>";
+		String closingTags = "</body></html>";
+		String tooltipText = "<p><span style = 'color:white'>" + "You are currently "
+			+ statusText.toLowerCase(Locale.ROOT) + "." + "</span></p>";
+		String helpText = "<p><span style = 'color:white'>" + "To connect, please follow "
+			+ "the instructions on the plugin help page." + "</span></p>";
+		connectionLabel.setText(statusText);
+		connectionLabel.setForeground(status ? Color.CYAN : ColorScheme.LIGHT_GRAY_COLOR);
+		connectionLabel.setToolTipText(openingTags + tooltipText + (status ? "" : " " + helpText) + closingTags);
 	}
 
 	public void setHpBar(String gimpName, Integer hp, Integer maxHp)

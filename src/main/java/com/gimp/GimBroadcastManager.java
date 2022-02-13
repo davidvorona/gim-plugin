@@ -109,6 +109,28 @@ public class GimBroadcastManager
 	}
 
 	/**
+	 * Registers a "disconnect" listener.
+	 *
+	 * @param handleDisconnect listener for the disconnect event
+	 */
+	public void onBroadcastDisconnect(Emitter.Listener handleDisconnect)
+	{
+		Socket client = socketClient.getClient();
+		client.on(Socket.EVENT_DISCONNECT, handleDisconnect);
+	}
+
+	/**
+	 * Registers a "connect_error" listener.
+	 *
+	 * @param handleError listener for the connect_error event
+	 */
+	public void onBroadcastConnectError(Emitter.Listener handleError)
+	{
+		Socket client = socketClient.getClient();
+		client.on(Socket.EVENT_CONNECT_ERROR, handleError);
+	}
+
+	/**
 	 * Disconnects socket client from the server.
 	 */
 	public void disconnectSocketClient()
