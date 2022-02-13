@@ -1,7 +1,3 @@
-**NOTE:** *V2, WHICH INCLUDES MUCH OF THE PLUGIN'S FEATURES, IS CURRENTLY IN THE HANDS OF THE RUNELITE
-DEVS. PLEASE BE PATIENT WHILE THE [PR AWAITS APPROVAL](https://github.com/runelite/plugin-hub/pull/2314).
-THE VERSION ON THE PLUGIN HUB INCLUDES MAP TRACKING ONLY.*
-
 # GIMP (Group Ironman Plugin)
 
 A plugin for a better group ironman experience.
@@ -10,22 +6,25 @@ A plugin for a better group ironman experience.
 
 GIMP, or Group Ironman Plugin, provides a feature set for group ironmen to improve the experience
 and make it easier to track the progress of your fellow gimps. Currently, it includes a map tracking
-feature for showing your companions' locations on the map, with plenty of other features incoming!
+feature for showing your companions' locations on the map as well as a side panel with real-time stats
+and other info!
 
 ## Usage
 
 GIMP has two parts: a client-side plugin, and a basic server. A simple Node server can be found
-[here](https://github.com/davidvorona/gimp-server). Otherwise, a public server can be used (in development).
+[here](https://github.com/davidvorona/gimp-server). Otherwise, a public server can be used.
 
-### Public server (in development)
+### Public server
 
-There is a public server in the works that any group can connect to. Performance *may* be affected
+There is now a public server that any group can connect to! Performance *may* be affected
 because anyone can connect to it, but it should be good enough for most users.
 
-The address for the public server is https://gimp-server.herokuapp.com; simply copy it into the server address config
-field and you're all set!
+**The address for the public server is https://gimp-server.herokuapp.com; simply copy it into the server address config
+field, and you're all set!**
 
-*DISCLAIMER: using our public server involves submitting your IP address to a 3rd party server maintained by myself. The server keeps a copy of relevant character data and that's it--if this is unacceptable to you, the server is open-source and you are welcome to host it yourself (see below).*
+*DISCLAIMER: using our public server involves submitting your IP address to a 3rd party server maintained by myself.
+The server keeps a copy of relevant character data and that's it--if this is unacceptable to you, the server is open-source,
+and you are welcome to host it yourself (see below).*
 
 ### Our Node.js server
 
