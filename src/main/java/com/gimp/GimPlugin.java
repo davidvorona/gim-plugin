@@ -163,13 +163,42 @@ public class GimPlugin extends Plugin
 	{
 		log.debug("GIMP started!");
 		addPanel();
+		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
+		// If logged into ironman account, load gimp data and start broadcasting
+		if (gimClanChannel != null && client.getGameState() == GameState.LOGGED_IN)
+		{
+			load();
+		}
+		// Otherwise, do nothing and display the unloaded panel
+		else
+		{
+			panel.unload();
+		}
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		log.debug("GIMP stopped!");
+		unload();
 		removePanel();
+	}
+
+	private void load()
+	{
+		group.load().whenCompleteAsync((result, ex) ->
+		{
+			panel.load();
+			startBroadcast();
+		});
+	}
+
+	private void unload()
+	{
+		stopBroadcast();
+		gimWorldMapPointManager.clear();
+		panel.unload();
+		group.unload();
 	}
 
 	/* EVENTS */
@@ -185,10 +214,7 @@ public class GimPlugin extends Plugin
 				|| gameState == GameState.CONNECTION_LOST
 		)
 		{
-			stopBroadcast();
-			gimWorldMapPointManager.clear();
-			panel.unload();
-			group.unload();
+			unload();
 		}
 	}
 
@@ -205,11 +231,7 @@ public class GimPlugin extends Plugin
 				String gimClanChannelName = gimClanChannel.getName();
 				log.debug("GIM clan joined: " + gimClanChannelName);
 				// Once group is loaded, we can display panel and start the broadcast
-				group.load().whenCompleteAsync((result, ex) ->
-				{
-					panel.load();
-					startBroadcast();
-				});
+				load();
 			}
 		}
 	}

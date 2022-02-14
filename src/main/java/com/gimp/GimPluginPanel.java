@@ -151,8 +151,7 @@ public class GimPluginPanel extends PluginPanel
 		List<String> gimps = group.getNames();
 		try
 		{
-			// invokeAndWait so we can call loadGimpData() after the UI has loaded
-			SwingUtilities.invokeAndWait(() ->
+			SwingUtilities.invokeLater(() ->
 			{
 				// Remove noData text
 				removeAll();
@@ -260,8 +259,10 @@ public class GimPluginPanel extends PluginPanel
 				// Revalidate layout and repaint
 				revalidate();
 				repaint();
+
+				// Load gimp data into panel
+				loadGimpData();
 			});
-			loadGimpData();
 		}
 		catch (Exception e)
 		{
