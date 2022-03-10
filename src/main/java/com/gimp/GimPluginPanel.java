@@ -458,8 +458,9 @@ public class GimPluginPanel extends PluginPanel
 
 		loading = true;
 
-		// Display gimp data
-		GimPlayer gimp = group.getGimp(gimpName);
+		// Display gimp data; we must use the un-sanitized string of the gimp name,
+		// so it matches the key in the group Map (which we do not sanitize)
+		GimPlayer gimp = group.getGimp(selectedGimp);
 		SwingUtilities.invokeLater(() ->
 		{
 			applyGimpData(gimp);
