@@ -197,11 +197,21 @@ public class Group
 		loaded = false;
 	}
 
+	private static String sanitize(String lookup)
+	{
+		return lookup.replace('\u00A0', ' ');
+	}
+
 	public GimPlayer getGimp(String name)
 	{
 		for (GimPlayer gimp : gimps)
 		{
-			if (gimp.getName().equals(name))
+			// TEMP: We need to check that the sanitized name matches the argument b/c
+			// of how spaces are handled
+			// TODO: Figure out a more robust way of formatting name strings so we don't
+			// need to check on-the-fly like this
+			String sanitizedName = sanitize(gimp.getName());
+			if (gimp.getName().equals(name) || sanitizedName.equals(name))
 			{
 				return gimp;
 			}
