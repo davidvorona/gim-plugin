@@ -211,7 +211,8 @@ public class GimPluginPanel extends PluginPanel
 						}
 					});
 					// Set tab of local gimp, if none is defined yet will default to first
-					if (localPlayer != null && username.equals(localPlayer.getName()))
+					// TEMP: Need to sanitize the username for reasons I do not fully understand tbh
+					if (localPlayer != null && sanitize(username).equals(localPlayer.getName()))
 					{
 						defaultTab = tabIdx;
 					}
