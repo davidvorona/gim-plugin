@@ -211,8 +211,7 @@ public class GimPluginPanel extends PluginPanel
 						}
 					});
 					// Set tab of local gimp, if none is defined yet will default to first
-					// TEMP: Need to sanitize the username for reasons I do not fully understand tbh
-					if (localPlayer != null && sanitize(username).equals(localPlayer.getName()))
+					if (localPlayer != null && username.equals(localPlayer.getName()))
 					{
 						defaultTab = tabIdx;
 					}
@@ -447,8 +446,6 @@ public class GimPluginPanel extends PluginPanel
 			resetSelectedTab();
 		}
 
-		final String gimpName = sanitize(selectedGimp);
-
 		// Sanity check, GIM clan channel definitely loaded by now
 		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
 		if (gimClanChannel == null)
@@ -459,8 +456,7 @@ public class GimPluginPanel extends PluginPanel
 
 		loading = true;
 
-		// Display gimp data; we must use the un-sanitized string of the gimp name,
-		// so it matches the key in the group Map (which we do not sanitize)
+		// Display gimp data
 		GimPlayer gimp = group.getGimp(selectedGimp);
 		SwingUtilities.invokeLater(() ->
 		{
@@ -478,10 +474,10 @@ public class GimPluginPanel extends PluginPanel
 			}
 		});
 
-		group.getHiscores(gimpName).whenCompleteAsync((result, ex) ->
+		group.getHiscores(selectedGimp).whenCompleteAsync((result, ex) ->
 			SwingUtilities.invokeLater(() ->
 			{
-				if (!sanitize(selectedGimp).equals(gimpName))
+				if (!selectedGimp.equals(selectedGimp))
 				{
 					// Selected gimp has changed in the meantime
 					return;
@@ -904,11 +900,6 @@ public class GimPluginPanel extends PluginPanel
 	private void resetSelectedTab()
 	{
 		tabGroup.select(tabGroup.getTab(defaultTab));
-	}
-
-	private static String sanitize(String lookup)
-	{
-		return lookup.replace('\u00A0', ' ');
 	}
 
 	private static int formatStatusValue(Integer statusValue)
