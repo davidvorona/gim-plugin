@@ -103,7 +103,9 @@ public class Group
 			for (int i = 0; i < clanMembers.size(); i++)
 			{
 				final ClanMember member = clanMembers.get(i);
-				String name = member.getName();
+				// For some reason, clan member names with spaces use the no-break
+				// space character, so we must sanitize it
+				String name = sanitize(member.getName());
 				int world = getCurrentWorld(name);
 				gimps.add(new GimPlayer(name, world, GIMP_COLORS[i]));
 			}
@@ -197,21 +199,11 @@ public class Group
 		loaded = false;
 	}
 
-	private static String sanitize(String lookup)
-	{
-		return lookup.replace('\u00A0', ' ');
-	}
-
 	public GimPlayer getGimp(String name)
 	{
 		for (GimPlayer gimp : gimps)
 		{
-			// TEMP: We need to check that the sanitized name matches the argument b/c
-			// of how spaces are handled
-			// TODO: Figure out a more robust way of formatting name strings so we don't
-			// need to check on-the-fly like this
-			String sanitizedName = sanitize(gimp.getName());
-			if (gimp.getName().equals(name) || sanitizedName.equals(name))
+			if (gimp.getName().equals(name))
 			{
 				return gimp;
 			}
@@ -377,6 +369,11 @@ public class Group
 			}
 		});
 		return hiscoreResult;
+	}
+
+	private static String sanitize(String lookup)
+	{
+		return lookup.replace('\u00A0', ' ');
 	}
 
 	private boolean validateGimpName(String name)
