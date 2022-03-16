@@ -446,6 +446,8 @@ public class GimPluginPanel extends PluginPanel
 			resetSelectedTab();
 		}
 
+		final String gimpName = selectedGimp;
+
 		// Sanity check, GIM clan channel definitely loaded by now
 		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
 		if (gimClanChannel == null)
@@ -457,7 +459,7 @@ public class GimPluginPanel extends PluginPanel
 		loading = true;
 
 		// Display gimp data
-		GimPlayer gimp = group.getGimp(selectedGimp);
+		GimPlayer gimp = group.getGimp(gimpName);
 		SwingUtilities.invokeLater(() ->
 		{
 			applyGimpData(gimp);
@@ -474,10 +476,10 @@ public class GimPluginPanel extends PluginPanel
 			}
 		});
 
-		group.getHiscores(selectedGimp).whenCompleteAsync((result, ex) ->
+		group.getHiscores(gimpName).whenCompleteAsync((result, ex) ->
 			SwingUtilities.invokeLater(() ->
 			{
-				if (!selectedGimp.equals(selectedGimp))
+				if (!gimpName.equals(selectedGimp))
 				{
 					// Selected gimp has changed in the meantime
 					return;
