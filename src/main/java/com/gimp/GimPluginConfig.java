@@ -65,6 +65,25 @@ public interface GimPluginConfig extends Config
 		return 0;
 	}
 
+	@ConfigItem(
+		keyName = "pings",
+		name = "Pings",
+		description = "Enables party pings (shift + left-click)",
+		position = 3
+	)
+	default boolean pings() { return true;	}
+
+	@ConfigItem(
+		keyName = "sounds",
+		name = "Sound on ping",
+		description = "Enables sound notification on party ping",
+		position = 4
+	)
+	default boolean sounds()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		position = 3,
 		name = "Developer",
