@@ -34,21 +34,21 @@ import com.gimp.tasks.TaskManager;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import io.socket.emitter.Emitter;
+
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.Player;
-import net.runelite.api.Skill;
+import net.runelite.api.*;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
-import net.runelite.api.events.ClanChannelChanged;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.StatChanged;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.RuneLite;
@@ -59,8 +59,11 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.party.data.PartyTilePingData;
+import net.runelite.client.plugins.party.messages.TilePing;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import org.json.JSONObject;
 
@@ -90,11 +93,20 @@ public class GimPlugin extends Plugin
 	private GimPluginConfig config;
 
 	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	@Getter
 	private Group group;
 
 	@Inject
 	private Gson gson;
+
+	@Inject
+	private GimPingOverlay partyPingOverlay;
+
+	@Getter
+	private final List<PartyTilePingData> pendingTilePings = Collections.synchronizedList(new ArrayList<>());
 
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
@@ -174,6 +186,8 @@ public class GimPlugin extends Plugin
 		{
 			panel.unload();
 		}
+
+		overlayManager.add(partyPingOverlay);
 	}
 
 	@Override
@@ -339,6 +353,71 @@ public class GimPlugin extends Plugin
 		)
 		{
 			updateGhostMode(config.ghostMode());
+		}
+	}
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		if (!client.isKeyPressed(KeyCode.KC_SHIFT) || client.isMenuOpen() || group.getGimps().isEmpty() || !config.pings())
+		{
+			return;
+		}
+
+		Tile selectedSceneTile = client.getSelectedSceneTile();
+		if (selectedSceneTile == null)
+		{
+			return;
+		}
+
+		boolean isOnCanvas = false;
+
+		for (MenuEntry menuEntry : client.getMenuEntries())
+		{
+			if (menuEntry == null)
+			{
+				continue;
+			}
+
+			if ("walk here".equalsIgnoreCase(menuEntry.getOption()))
+			{
+				isOnCanvas = true;
+			}
+		}
+
+		if (!isOnCanvas)
+		{
+			return;
+		}
+
+		event.consume();
+		final TilePing tilePing = new TilePing(selectedSceneTile.getWorldLocation());
+		onTilePing(tilePing);
+		tilePing.setMemberId(group.getLocalGimp().getUuid());
+		Map<String, Object> tilePingData = group.getLocalGimp().getData();
+		tilePingData.put("tilePing", tilePing);
+		gimBroadcastManager.broadcast(tilePingData);
+	}
+
+	@Subscribe
+	public void onTilePing(TilePing tilePing)
+	{
+		if (config.pings())
+		{
+			final GimPlayer playerData = group.getGimp(tilePing.getMemberId());
+			final Color color = playerData != null ? playerData.getColor() : Color.RED;
+			pendingTilePings.add(new PartyTilePingData(tilePing.getPoint(), color));
+		}
+
+		if (config.sounds())
+		{
+			WorldPoint point = tilePing.getPoint();
+
+			if (point.getPlane() != client.getPlane() || !WorldPoint.isInScene(client, point.getX(), point.getY()))
+			{
+				return;
+			}
+
+			clientThread.invoke(() -> client.playSoundEffect(SoundEffectID.SMITH_ANVIL_TINK));
 		}
 	}
 
@@ -589,6 +668,10 @@ public class GimPlugin extends Plugin
 	{
 		group.update(gimpData);
 		panel.updateGimpData(gimpData);
+		if (gimpData.getTilePing() != null)
+		{
+			onTilePing(gimpData.getTilePing());
+		}
 	}
 
 	/**
