@@ -384,6 +384,8 @@ public class Group
 		return hiscoreResult;
 	}
 
+	public boolean isEmpty() { return gimps.isEmpty(); }
+
 	private static String sanitize(String lookup)
 	{
 		return lookup.replace('\u00A0', ' ');

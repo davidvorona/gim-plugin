@@ -85,14 +85,14 @@ public interface GimPluginConfig extends Config
 	}
 
 	@ConfigSection(
-		position = 3,
+		position = 5,
 		name = "Developer",
 		description = "Developer settings"
 	)
 	String developerSection = "developerSection";
 
 	@ConfigItem(
-		position = 4,
+		position = 6,
 		section = developerSection,
 		keyName = "showSelf",
 		name = "Show Self",
