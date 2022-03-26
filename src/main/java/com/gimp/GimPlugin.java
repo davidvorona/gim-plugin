@@ -194,6 +194,7 @@ public class GimPlugin extends Plugin
 	protected void shutDown()
 	{
 		log.debug("GIMP stopped!");
+		overlayManager.remove(partyPingOverlay);
 		unload();
 		removePanel();
 	}
@@ -391,11 +392,11 @@ public class GimPlugin extends Plugin
 
 		event.consume();
 		final TilePing tilePing = new TilePing(selectedSceneTile.getWorldLocation());
-		onTilePing(tilePing);
 		tilePing.setMemberId(group.getLocalGimp().getUuid());
 		Map<String, Object> tilePingData = group.getLocalGimp().getData();
 		tilePingData.put("tilePing", tilePing);
 		gimBroadcastManager.broadcast(tilePingData);
+		onTilePing(tilePing);
 	}
 
 	@Subscribe

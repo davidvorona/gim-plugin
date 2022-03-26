@@ -52,9 +52,9 @@ class GimPingOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		//if (plugin.getPartyDataMap().isEmpty())
+		if (plugin.getGroup().isEmpty())
 		{
-			//return null;
+			return null;
 		}
 
 		synchronized (plugin.getPendingTilePings())
