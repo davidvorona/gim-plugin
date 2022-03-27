@@ -364,7 +364,7 @@ public class Group
 	public CompletableFuture<HiscoreResult> getHiscores(String name)
 	{
 		CompletableFuture<HiscoreResult> hiscoreResult = new CompletableFuture<>();
-		clientThread.invokeLater(() ->
+		clientThread.invoke(() ->
 		{
 			try
 			{
