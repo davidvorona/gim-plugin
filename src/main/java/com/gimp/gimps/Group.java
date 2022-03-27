@@ -384,7 +384,10 @@ public class Group
 		return hiscoreResult;
 	}
 
-	public boolean isEmpty() { return gimps.isEmpty(); }
+	public boolean isEmpty()
+	{
+		return gimps.isEmpty();
+	}
 
 	private static String sanitize(String lookup)
 	{

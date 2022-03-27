@@ -356,6 +356,7 @@ public class GimPlugin extends Plugin
 			updateGhostMode(config.ghostMode());
 		}
 	}
+
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{

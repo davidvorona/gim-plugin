@@ -71,7 +71,10 @@ public interface GimPluginConfig extends Config
 		description = "Enables party pings (shift + left-click)",
 		position = 3
 	)
-	default boolean pings() { return true;	}
+	default boolean pings()
+	{
+		return true;
+	}
 
 	@ConfigItem(
 		keyName = "sounds",
