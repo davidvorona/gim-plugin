@@ -130,11 +130,8 @@ public class GimPlugin extends Plugin
 		@Override
 		public void call(Object... args)
 		{
-			clientThread.invokeLater(() ->
-			{
-				// Set connection status to connected
-				panel.setConnectionStatus(true);
-			});
+			// Set connection status to connected
+			panel.setConnectionStatus(true);
 		}
 	};
 
@@ -143,11 +140,8 @@ public class GimPlugin extends Plugin
 		@Override
 		public void call(Object... args)
 		{
-			clientThread.invokeLater(() ->
-			{
-				// Set connection status to disconnected
-				panel.setConnectionStatus(false);
-			});
+			// Set connection status to disconnected
+			panel.setConnectionStatus(false);
 		}
 	};
 
@@ -156,7 +150,7 @@ public class GimPlugin extends Plugin
 		@Override
 		public void call(Object... args)
 		{
-			clientThread.invokeLater(() ->
+			clientThread.invoke(() ->
 			{
 				// Update panel connection status
 				panel.setConnectionStatus(true);

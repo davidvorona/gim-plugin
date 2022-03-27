@@ -199,10 +199,10 @@ public class SocketClient extends RequestClient
 			public void call(Object... args)
 			{
 				JSONObject data = (JSONObject) args[0];
+				log.debug(data.toString());
 				socketResponse.complete(data.toString());
 			}
 		});
-		String data = socketResponse.get(2, TimeUnit.SECONDS);
-		log.debug(data);
+//		String data = socketResponse.get(2, TimeUnit.SECONDS);
 	}
 }
