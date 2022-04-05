@@ -68,7 +68,7 @@ public interface GimPluginConfig extends Config
 	@ConfigItem(
 		keyName = "pings",
 		name = "Pings",
-		description = "Enables party pings (shift + left-click)",
+		description = "Enable group pings (shift + left-click)",
 		position = 3
 	)
 	default boolean pings()
@@ -77,12 +77,12 @@ public interface GimPluginConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "sounds",
-		name = "Sound on ping",
-		description = "Enables sound notification on party ping",
+		keyName = "pingSound",
+		name = "Ping Sound",
+		description = "Enable sound notification on group ping",
 		position = 4
 	)
-	default boolean sounds()
+	default boolean pingSound()
 	{
 		return true;
 	}

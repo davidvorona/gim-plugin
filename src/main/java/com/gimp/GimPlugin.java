@@ -404,7 +404,7 @@ public class GimPlugin extends Plugin
 			pendingTilePings.add(new PartyTilePingData(tilePing.getPoint(), color));
 		}
 
-		if (config.sounds())
+		if (config.pingSound())
 		{
 			WorldPoint point = tilePing.getPoint();
 
