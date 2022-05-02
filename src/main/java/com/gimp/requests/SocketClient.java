@@ -27,7 +27,6 @@ package com.gimp.requests;
 import com.gimp.GimPluginConfig;
 import io.socket.client.Ack;
 import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 import io.socket.engineio.client.transports.Polling;
 import io.socket.engineio.client.transports.WebSocket;
 import java.net.URI;
@@ -98,34 +97,22 @@ public class SocketClient extends RequestClient
 		client = IO.socket(uri, options);
 		client.connect();
 
-		client.on(Socket.EVENT_CONNECT, new Emitter.Listener()
+		client.on(Socket.EVENT_CONNECT, args ->
 		{
-			@Override
-			public void call(Object... args)
-			{
-				log.debug("Socket connected");
-				String roomId = namespace;
-				client.emit(EVENT_CONNECTION_ACK, roomId);
-			}
+			log.debug("Socket connected");
+			String roomId = namespace;
+			client.emit(EVENT_CONNECTION_ACK, roomId);
 		});
 
-		client.on(Socket.EVENT_DISCONNECT, new Emitter.Listener()
+		client.on(Socket.EVENT_DISCONNECT, args ->
 		{
-			@Override
-			public void call(Object... args)
-			{
-				log.debug("Socket disconnected");
-			}
+			log.debug("Socket disconnected");
 		});
 
-		client.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener()
+		client.on(Socket.EVENT_CONNECT_ERROR, args ->
 		{
-			@Override
-			public void call(Object... args)
-			{
-				log.warn("Failed to connect to socket server, closing");
-				client.close();
-			}
+			log.warn("Failed to connect to socket server, closing");
+			client.close();
 		});
 	}
 
@@ -165,14 +152,10 @@ public class SocketClient extends RequestClient
 	{
 		String EVENT_PING = "ping";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
-		client.emit(EVENT_PING, new Ack()
+		client.emit(EVENT_PING, (Ack) args ->
 		{
-			@Override
-			public void call(Object... args)
-			{
-				JSONObject data = (JSONObject) args[0];
-				socketResponse.complete(data.toString());
-			}
+			JSONObject data = (JSONObject) args[0];
+			socketResponse.complete(data.toString());
 		});
 		String data = socketResponse.get(2, TimeUnit.SECONDS);
 		log.debug(data);
@@ -193,16 +176,12 @@ public class SocketClient extends RequestClient
 	{
 		String EVENT_BROADCAST = "broadcast";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
-		client.emit(EVENT_BROADCAST, dataJson, new Ack()
+		client.emit(EVENT_BROADCAST, dataJson, (Ack) args ->
 		{
-			@Override
-			public void call(Object... args)
-			{
-				JSONObject data = (JSONObject) args[0];
-				log.debug(data.toString());
-				socketResponse.complete(data.toString());
-			}
+			JSONObject data = (JSONObject) args[0];
+			socketResponse.complete(data.toString());
 		});
-//		String data = socketResponse.get(2, TimeUnit.SECONDS);
+		String data = socketResponse.get(2, TimeUnit.SECONDS);
+		log.debug(data);
 	}
 }
