@@ -622,14 +622,21 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Broadcasts any gimp data to the server, invoking the request in a thread
+	 * separate from the client thread.
+	 *
+	 * @param gimpData gimp data
+	 */
 	private void broadcastUpdate(Map<String, Object> gimpData)
 	{
 		executor.execute(() -> gimBroadcastManager.broadcast(gimpData));
 	}
 
 	/**
-	 * Sends a ping via HTTP or socket for all server gimp data. Sent
-	 * when the broadcast starts and as a fallback if the socket disconnects.
+	 * Sends a ping via HTTP or socket for all server gimp data, invoking the
+	 * request in a thread separate from the client thread. Sent when the
+	 * broadcast starts and as a fallback if the socket disconnects.
 	 */
 	private void pingForUpdate()
 	{

@@ -182,6 +182,8 @@ public class GimBroadcastManager
 
 	/**
 	 * Sends broadcast request to the server via HTTP or socket.
+	 *
+	 * @param data gimp data
 	 */
 	public void broadcast(Map<String, Object> data)
 	{
