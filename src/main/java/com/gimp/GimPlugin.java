@@ -41,6 +41,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -103,10 +107,12 @@ public class GimPlugin extends Plugin
 	private Gson gson;
 
 	@Inject
-	private GimPingOverlay partyPingOverlay;
+	private GimPingOverlay gimPingOverlay;
 
 	@Getter
 	private final List<PartyTilePingData> pendingTilePings = Collections.synchronizedList(new ArrayList<>());
+
+	private ExecutorService executor;
 
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
@@ -157,7 +163,7 @@ public class GimPlugin extends Plugin
 				// Update local gimp
 				group.localUpdate();
 				// Send out broadcast
-				gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
+				broadcastUpdate(group.getLocalGimp().getGimpData());
 				// Ping for initial gimp data
 				pingForUpdate();
 			});
@@ -168,9 +174,12 @@ public class GimPlugin extends Plugin
 	protected void startUp()
 	{
 		log.debug("GIMP started!");
+		// Instantiate a thread for executing requests
+		executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+		// Add the panel to the sidebar
 		addPanel();
-		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
 		// If logged into ironman account, load gimp data and start broadcasting
+		ClanChannel gimClanChannel = client.getClanChannel(ClanID.GROUP_IRONMAN);
 		if (gimClanChannel != null && client.getGameState() == GameState.LOGGED_IN)
 		{
 			load();
@@ -180,15 +189,16 @@ public class GimPlugin extends Plugin
 		{
 			panel.unload();
 		}
-
-		overlayManager.add(partyPingOverlay);
+		// Add the overlay for pings
+		overlayManager.add(gimPingOverlay);
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		log.debug("GIMP stopped!");
-		overlayManager.remove(partyPingOverlay);
+		executor.shutdown();
+		overlayManager.remove(gimPingOverlay);
 		unload();
 		removePanel();
 	}
@@ -354,19 +364,17 @@ public class GimPlugin extends Plugin
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		// Handle event
 		if (!client.isKeyPressed(KeyCode.KC_SHIFT) || client.isMenuOpen() || group.getGimps().isEmpty() || !config.pings())
 		{
 			return;
 		}
-
 		Tile selectedSceneTile = client.getSelectedSceneTile();
 		if (selectedSceneTile == null)
 		{
 			return;
 		}
-
 		boolean isOnCanvas = false;
-
 		for (MenuEntry menuEntry : client.getMenuEntries())
 		{
 			if (menuEntry == null)
@@ -379,40 +387,40 @@ public class GimPlugin extends Plugin
 				isOnCanvas = true;
 			}
 		}
-
 		if (!isOnCanvas)
 		{
 			return;
 		}
-
 		event.consume();
+
+		// Get tile ping data and update gimp
 		final TilePing tilePing = new TilePing(selectedSceneTile.getWorldLocation());
 		tilePing.setMemberId(group.getLocalGimp().getUuid());
 		Map<String, Object> tilePingData = group.getLocalGimp().getData();
 		tilePingData.put("tilePing", tilePing);
-		gimBroadcastManager.broadcast(tilePingData);
+		broadcastUpdate(tilePingData);
+
+		// Handle tile ping on client
 		onTilePing(tilePing);
 	}
 
-	@Subscribe
 	public void onTilePing(TilePing tilePing)
 	{
+		// If pings are enabled, show the ping on canvas
 		if (config.pings())
 		{
 			final GimPlayer playerData = group.getGimp(tilePing.getMemberId());
 			final Color color = playerData != null ? playerData.getColor() : Color.RED;
 			pendingTilePings.add(new PartyTilePingData(tilePing.getPoint(), color));
 		}
-
+		// If ping sounds are enabled, and it's local to the player, play it
 		if (config.pingSound())
 		{
 			WorldPoint point = tilePing.getPoint();
-
 			if (point.getPlane() != client.getPlane() || !WorldPoint.isInScene(client, point.getX(), point.getY()))
 			{
 				return;
 			}
-
 			clientThread.invoke(() -> client.playSoundEffect(SoundEffectID.SMITH_ANVIL_TINK));
 		}
 	}
@@ -455,7 +463,7 @@ public class GimPlugin extends Plugin
 		gimBroadcastManager.connectSocketClient();
 		setConnectionListeners(false);
 		// Send out initial broadcast
-		gimBroadcastManager.broadcast(group.getLocalGimp().getGimpData());
+		broadcastUpdate(group.getLocalGimp().getGimpData());
 		// Ping for initial gimp data
 		pingForUpdate();
 		// Start listening for server broadcast
@@ -614,27 +622,35 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	private void broadcastUpdate(Map<String, Object> gimpData)
+	{
+		executor.execute(() -> gimBroadcastManager.broadcast(gimpData));
+	}
+
 	/**
 	 * Sends a ping via HTTP or socket for all server gimp data. Sent
 	 * when the broadcast starts and as a fallback if the socket disconnects.
 	 */
 	private void pingForUpdate()
 	{
-		Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
-		if (gimData != null)
+		executor.execute(() ->
 		{
-			for (GimPlayer gimp : group.getGimps())
+			Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
+			if (gimData != null)
 			{
-				GimPlayer gimpData = gimData.get(gimp.getName());
-				// TODO: Some data for the local gimp needs to come from the server, so
-				// we comment out this condition. Instead, we need to implement a method
-				// that hydrates empty data on a GimPlayer but does not overwrite existing.
-				if (gimpData != null/*  && gimp != group.getLocalGimp()*/)
+				for (GimPlayer gimp : group.getGimps())
 				{
-					handleUpdate(gimpData);
+					GimPlayer gimpData = gimData.get(gimp.getName());
+					// TODO: Some data for the local gimp needs to come from the server, so
+					// we comment out this condition. Instead, we need to implement a method
+					// that hydrates empty data on a GimPlayer but does not overwrite existing.
+					if (gimpData != null/*  && gimp != group.getLocalGimp()*/)
+					{
+						handleUpdate(gimpData);
+					}
 				}
 			}
-		}
+		});
 	}
 
 	/**
@@ -687,7 +703,7 @@ public class GimPlugin extends Plugin
 			// Broadcast new HP value
 			Map<String, Object> hpData = localGimp.getData();
 			hpData.put("hp", hp);
-			gimBroadcastManager.broadcast(hpData);
+			broadcastUpdate(hpData);
 		}
 	}
 
@@ -708,7 +724,7 @@ public class GimPlugin extends Plugin
 			// Broadcast new max HP value
 			Map<String, Object> hpData = localGimp.getData();
 			hpData.put("maxHp", maxHp);
-			gimBroadcastManager.broadcast(hpData);
+			broadcastUpdate(hpData);
 		}
 	}
 
@@ -729,7 +745,7 @@ public class GimPlugin extends Plugin
 			// Broadcast new prayer value
 			Map<String, Object> prayerData = localGimp.getData();
 			prayerData.put("prayer", prayer);
-			gimBroadcastManager.broadcast(prayerData);
+			broadcastUpdate(prayerData);
 		}
 	}
 
@@ -750,7 +766,7 @@ public class GimPlugin extends Plugin
 			// Broadcast new max prayer value
 			Map<String, Object> prayerData = localGimp.getData();
 			prayerData.put("maxPrayer", maxPrayer);
-			gimBroadcastManager.broadcast(prayerData);
+			broadcastUpdate(prayerData);
 		}
 	}
 
@@ -783,7 +799,7 @@ public class GimPlugin extends Plugin
 				? localGimp.getData()
 				: localGimp.getGimpData(); // if ghostMode off, broadcast all data
 			ghostModeData.put("ghostMode", ghostMode);
-			gimBroadcastManager.broadcast(ghostModeData);
+			broadcastUpdate(ghostModeData);
 		}
 	}
 
@@ -806,7 +822,7 @@ public class GimPlugin extends Plugin
 			{
 				Map<String, Object> data = localGimp.getData();
 				data.put("location", gimLocation.getLocation());
-				gimBroadcastManager.broadcast(data);
+				broadcastUpdate(data);
 			}
 		}
 	}
@@ -821,7 +837,7 @@ public class GimPlugin extends Plugin
 			panel.updateGimpData(localGimp);
 			Map<String, Object> activityData = localGimp.getData();
 			activityData.put("lastActivity", activity);
-			gimBroadcastManager.broadcast(activityData);
+			broadcastUpdate(activityData);
 		}
 	}
 
