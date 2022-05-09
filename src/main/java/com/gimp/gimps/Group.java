@@ -39,11 +39,9 @@ import net.runelite.client.hiscore.HiscoreEndpoint;
 import net.runelite.client.hiscore.HiscoreManager;
 import net.runelite.client.hiscore.HiscoreResult;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
-
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -205,18 +203,6 @@ public class Group
 		for (GimPlayer gimp : gimps)
 		{
 			if (gimp.getName().equals(name))
-			{
-				return gimp;
-			}
-		}
-		return null;
-	}
-
-	public GimPlayer getGimp(UUID uuid)
-	{
-		for (GimPlayer gimp : gimps)
-		{
-			if (gimp.getUuid().equals(uuid))
 			{
 				return gimp;
 			}
