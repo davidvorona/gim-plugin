@@ -385,22 +385,20 @@ public class GimPlugin extends Plugin
 
 		// Get tile ping data and update gimp
 		final TilePing tilePing = new TilePing(selectedSceneTile.getWorldLocation());
-		tilePing.setMemberId(group.getLocalGimp().getUuid());
 		Map<String, Object> tilePingData = group.getLocalGimp().getData();
 		tilePingData.put("tilePing", tilePing);
 		broadcastUpdate(tilePingData);
 
 		// Handle tile ping on client
-		onTilePing(tilePing);
+		onTilePing(group.getLocalGimp(), tilePing);
 	}
 
-	public void onTilePing(TilePing tilePing)
+	public void onTilePing(GimPlayer gimp, TilePing tilePing)
 	{
 		// If pings are enabled, show the ping on canvas
 		if (config.pings())
 		{
-			final GimPlayer playerData = group.getGimp(tilePing.getMemberId());
-			final Color color = playerData != null ? playerData.getColor() : Color.RED;
+			final Color color = gimp.getColor() != null ? gimp.getColor() : Color.RED;
 			pendingTilePings.add(new PartyTilePingData(tilePing.getPoint(), color));
 		}
 		// If ping sounds are enabled, and it's local to the player, play it
@@ -678,7 +676,8 @@ public class GimPlugin extends Plugin
 		panel.updateGimpData(gimpData);
 		if (gimpData.getTilePing() != null)
 		{
-			onTilePing(gimpData.getTilePing());
+			GimPlayer gimp = group.getGimp(gimpData.getName());
+			onTilePing(gimp, gimpData.getTilePing());
 		}
 	}
 

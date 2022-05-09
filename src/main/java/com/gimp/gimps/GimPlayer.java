@@ -30,21 +30,16 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.hiscore.HiscoreResult;
 import net.runelite.client.plugins.party.messages.TilePing;
-
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 public class GimPlayer
 {
 	@Getter
 	final private String name;
-
-	@Getter
-	final private UUID uuid;
 
 	@Setter
 	@Getter
@@ -113,7 +108,6 @@ public class GimPlayer
 		this.name = name;
 		this.world = world;
 		this.color = color;
-		this.uuid = UUID.randomUUID();
 	}
 
 	public void setLocation(GimLocation location)
