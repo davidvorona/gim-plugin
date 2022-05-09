@@ -31,7 +31,6 @@ import com.google.gson.reflect.TypeToken;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
