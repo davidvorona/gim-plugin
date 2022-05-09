@@ -37,4 +37,4 @@ Be sure to set the server address in the plugin config to wherever you've decide
 | :-------------: | :-------------: |
 | ![Map Point](https://i.imgur.com/vaD8z90.png)  | Icons on the map will follow your companions around, with the option to enable our patented Marauder's Map<sup>TM</sup> technology!  |
 | ![Panel](https://i.imgur.com/wp1WrOm.png)  | The side panel shows real-time info about your fellow gimps.  |
-| ![Ping] ()  | Your fellow gimps can ping certain tiles  using shift left-click! |
+| ![Ping](https://i.imgur.com/tqvLTUh.png)  | Your fellow gimps can ping any tile using shift left-click! |
