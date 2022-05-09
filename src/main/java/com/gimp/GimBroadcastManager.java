@@ -210,10 +210,10 @@ public class GimBroadcastManager
 		try
 		{
 			return requestClient.ping().thenApply((result) ->
-				{
-					log.debug("Ping data: " + result);
-					return parsePingData(result);
-				});
+			{
+				log.debug("Ping data: " + result);
+				return parsePingData(result);
+			});
 		}
 		catch (Exception e)
 		{
