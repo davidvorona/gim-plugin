@@ -26,6 +26,7 @@ package com.gimp.requests;
 
 import com.gimp.GimPluginConfig;
 import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -85,12 +86,12 @@ public abstract class RequestClient
 	 *
 	 * @return response data in JSON
 	 */
-	abstract public String ping() throws Exception;
+	abstract public CompletableFuture<String> ping();
 
 	/**
 	 * Send a /broadcast request or emits "broadcast" to the server.
 	 *
 	 * @param dataJson request data in JSON
 	 */
-	abstract public void broadcast(String dataJson) throws Exception;
+	abstract public CompletableFuture<String> broadcast(String dataJson);
 }

@@ -32,6 +32,7 @@ import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
@@ -191,7 +192,7 @@ public class GimBroadcastManager
 		{
 			RequestClient requestClient = getRequestClient();
 			String dataJson = gson.toJson(data);
-			requestClient.broadcast(dataJson);
+			requestClient.broadcast(dataJson).thenAccept((result) -> log.debug("Broadcast data: " + result));
 		}
 		catch (Exception e)
 		{
@@ -204,18 +205,21 @@ public class GimBroadcastManager
 	 *
 	 * @return map: name => GimPlayer
 	 */
-	public Map<String, GimPlayer> ping()
+	public CompletableFuture<Map<String, GimPlayer>> ping()
 	{
+		RequestClient requestClient = getRequestClient();
 		try
 		{
-			RequestClient requestClient = getRequestClient();
-			String dataJson = requestClient.ping();
-			return parsePingData(dataJson);
+			return requestClient.ping().thenApply((result) ->
+				{
+					log.debug("Ping data: " + result);
+					return parsePingData(result);
+				});
 		}
 		catch (Exception e)
 		{
 			log.error("Ping error: " + e);
-			return new HashMap<>();
+			return null;
 		}
 	}
 }

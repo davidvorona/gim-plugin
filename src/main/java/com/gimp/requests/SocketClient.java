@@ -140,15 +140,11 @@ public class SocketClient extends RequestClient
 
 	/**
 	 * Sends a socket message to the ping listener. Expects an acknowledgement
-	 * from the server, and returns the JSON data in that acknowledgement. Times
-	 * out after 2 seconds.
+	 * from the server, and returns the JSON data in that acknowledgement.
 	 *
 	 * @return acknowledgement data in JSON
-	 * @throws ExecutionException   for unexpected socket error
-	 * @throws InterruptedException if acknowledgement is interrupted
-	 * @throws TimeoutException     if acknowledgement times out
 	 */
-	public String ping() throws ExecutionException, InterruptedException, TimeoutException
+	public CompletableFuture<String> ping()
 	{
 		String EVENT_PING = "ping";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
@@ -157,22 +153,16 @@ public class SocketClient extends RequestClient
 			JSONObject data = (JSONObject) args[0];
 			socketResponse.complete(data.toString());
 		});
-		String data = socketResponse.get(2, TimeUnit.SECONDS);
-		log.debug(data);
-		return data;
+		return socketResponse;
 	}
 
 	/**
 	 * Sends a socket message to the broadcast listener. Passes the JSON data
 	 * as the data parameter and expects an acknowledgement from the server.
-	 * Times out after 2 seconds.
 	 *
 	 * @param dataJson emit data in JSON
-	 * @throws ExecutionException   for unexpected socket error
-	 * @throws InterruptedException if acknowledgement is interrupted
-	 * @throws TimeoutException     if acknowledgement times out
 	 */
-	public void broadcast(String dataJson) throws ExecutionException, InterruptedException, TimeoutException
+	public CompletableFuture<String> broadcast(String dataJson)
 	{
 		String EVENT_BROADCAST = "broadcast";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
@@ -181,7 +171,6 @@ public class SocketClient extends RequestClient
 			JSONObject data = (JSONObject) args[0];
 			socketResponse.complete(data.toString());
 		});
-		String data = socketResponse.get(2, TimeUnit.SECONDS);
-		log.debug(data);
+		return socketResponse;
 	}
 }

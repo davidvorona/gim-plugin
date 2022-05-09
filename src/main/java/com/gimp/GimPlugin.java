@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -112,8 +111,6 @@ public class GimPlugin extends Plugin
 	@Getter
 	private final List<PartyTilePingData> pendingTilePings = Collections.synchronizedList(new ArrayList<>());
 
-	private ExecutorService executor;
-
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
 
@@ -174,8 +171,6 @@ public class GimPlugin extends Plugin
 	protected void startUp()
 	{
 		log.debug("GIMP started!");
-		// Instantiate a thread for executing requests
-		executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 		// Add the panel to the sidebar
 		addPanel();
 		// If logged into ironman account, load gimp data and start broadcasting
@@ -197,7 +192,6 @@ public class GimPlugin extends Plugin
 	protected void shutDown()
 	{
 		log.debug("GIMP stopped!");
-		executor.shutdown();
 		overlayManager.remove(gimPingOverlay);
 		unload();
 		removePanel();
@@ -630,24 +624,23 @@ public class GimPlugin extends Plugin
 	 */
 	private void broadcastUpdate(Map<String, Object> gimpData)
 	{
-		executor.execute(() -> gimBroadcastManager.broadcast(gimpData));
+		gimBroadcastManager.broadcast(gimpData);
 	}
 
 	/**
-	 * Sends a ping via HTTP or socket for all server gimp data, invoking the
-	 * request in a thread separate from the client thread. Sent when the
-	 * broadcast starts and as a fallback if the socket disconnects.
+	 * Sends a ping via HTTP or socket for all server gimp data, handling the
+	 * result asynchronously. Sent when the broadcast starts and as a fallback
+	 * if the socket disconnects.
 	 */
 	private void pingForUpdate()
 	{
-		executor.execute(() ->
+		gimBroadcastManager.ping().whenCompleteAsync((result, ex) ->
 		{
-			Map<String, GimPlayer> gimData = gimBroadcastManager.ping();
-			if (gimData != null)
+			if (result != null)
 			{
 				for (GimPlayer gimp : group.getGimps())
 				{
-					GimPlayer gimpData = gimData.get(gimp.getName());
+					GimPlayer gimpData = result.get(gimp.getName());
 					// TODO: Some data for the local gimp needs to come from the server, so
 					// we comment out this condition. Instead, we need to implement a method
 					// that hydrates empty data on a GimPlayer but does not overwrite existing.
