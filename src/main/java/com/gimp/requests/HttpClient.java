@@ -26,7 +26,11 @@ package com.gimp.requests;
 
 import com.gimp.GimPluginConfig;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -59,46 +63,58 @@ public class HttpClient extends RequestClient
 	}
 
 	/**
-	 * Logs the HTTP response, specifying the status code if it's not 200.
+	 * Makes an HTTP request with the given method to the URI at the client's
+	 * base URL. Accepts on optional body argument for appropriate request methods.
 	 *
-	 * @param statusCode HTTP status code
-	 * @param body       body of the HTTP response
+	 * @param method HTTP method
+	 * @param uri    URI path following base URL
+	 * @param body   request body data
+	 * @return future of response data in JSON
 	 */
-	private void logHttpResponse(int statusCode, String body)
+	private CompletableFuture<String> request(String method, String uri, RequestBody body)
 	{
-		if (statusCode == OK)
+		CompletableFuture<String> result = new CompletableFuture<>();
+		Request request = new Request.Builder()
+			.url(getBaseUrl() + uri)
+			.method(method, body)
+			.build();
+		client.newCall(request).enqueue(new Callback()
 		{
-			log.debug(body);
-		}
-		else
-		{
-			log.error(statusCode + ": " + body);
-		}
+			@Override
+			public void onFailure(@NonNull Call call, @NonNull IOException e)
+			{
+				log.error("Request failed: " + e);
+			}
+
+			@Override
+			public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException
+			{
+				try (ResponseBody bodyJson = response.body())
+				{
+					if (!response.isSuccessful())
+					{
+						throw new IOException(response.code() + ": " + bodyJson);
+					}
+					if (bodyJson == null)
+					{
+						throw new RuntimeException("Response body is null: " + response);
+					}
+					result.complete(bodyJson.string());
+				}
+			}
+		});
+		return result;
 	}
 
 	/**
 	 * Makes an HTTP GET request to the ping endpoint at the URL injected
-	 * from the plugin config. The JSON response body is returned. Times
-	 * out after 5 seconds.
+	 * from the plugin config. A future of the JSON response body is returned.
 	 *
-	 * @return response data in JSON
-	 * @throws IOException if request fails
+	 * @return future of response data in JSON
 	 */
-	public String ping() throws IOException
+	public CompletableFuture<String> ping()
 	{
-		Request request = new Request.Builder()
-			.url(getBaseUrl() + "/ping/" + namespace)
-			.get()
-			.build();
-		Response response = client.newCall(request).execute();
-		ResponseBody body = response.body();
-		if (body != null)
-		{
-			String bodyJson = body.string();
-			logHttpResponse(response.code(), bodyJson);
-			return bodyJson;
-		}
-		return EMPTY_BODY;
+		return request("GET", "/ping/" + namespace, null);
 	}
 
 	/**
@@ -107,20 +123,10 @@ public class HttpClient extends RequestClient
 	 * in the request body. Times out after 5 seconds.
 	 *
 	 * @param dataJson request data in JSON
-	 * @throws IOException if request fails
 	 */
-	public void broadcast(String dataJson) throws IOException
+	public CompletableFuture<String> broadcast(String dataJson)
 	{
 		RequestBody body = RequestBody.create(JSON, dataJson);
-		Request request = new Request.Builder()
-			.url(getBaseUrl() + "/broadcast/" + namespace)
-			.post(body)
-			.build();
-		Response response = client.newCall(request).execute();
-		ResponseBody bodyJson = response.body();
-		if (bodyJson != null)
-		{
-			logHttpResponse(response.code(), bodyJson.string());
-		}
+		return request("POST", "/broadcast/" + namespace, body);
 	}
 }
