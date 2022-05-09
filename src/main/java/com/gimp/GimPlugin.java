@@ -34,16 +34,12 @@ import com.gimp.tasks.TaskManager;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import io.socket.emitter.Emitter;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

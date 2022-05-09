@@ -139,7 +139,7 @@ public class SocketClient extends RequestClient
 	 * Sends a socket message to the ping listener. Expects an acknowledgement
 	 * from the server, and returns the JSON data in that acknowledgement.
 	 *
-	 * @return acknowledgement data in JSON
+	 * @return future of ack data in JSON
 	 */
 	public CompletableFuture<String> ping()
 	{
@@ -157,7 +157,8 @@ public class SocketClient extends RequestClient
 	 * Sends a socket message to the broadcast listener. Passes the JSON data
 	 * as the data parameter and expects an acknowledgement from the server.
 	 *
-	 * @param dataJson emit data in JSON
+	 * @param dataJson future of ack data in JSON
+	 * @return future of ack data in JSON
 	 */
 	public CompletableFuture<String> broadcast(String dataJson)
 	{

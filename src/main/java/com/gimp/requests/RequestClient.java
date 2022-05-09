@@ -84,7 +84,7 @@ public abstract class RequestClient
 	/**
 	 * Sends a /ping request or emits "ping" to the server.
 	 *
-	 * @return response data in JSON
+	 * @return future of response data in JSON
 	 */
 	abstract public CompletableFuture<String> ping();
 
@@ -92,6 +92,7 @@ public abstract class RequestClient
 	 * Send a /broadcast request or emits "broadcast" to the server.
 	 *
 	 * @param dataJson request data in JSON
+	 * @return future of response data in JSON
 	 */
 	abstract public CompletableFuture<String> broadcast(String dataJson);
 }

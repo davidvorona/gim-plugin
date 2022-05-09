@@ -202,7 +202,7 @@ public class GimBroadcastManager
 	/**
 	 * Sends ping request to the server via HTTP or socket.
 	 *
-	 * @return map: name => GimPlayer
+	 * @return future of map: name => GimPlayer
 	 */
 	public CompletableFuture<Map<String, GimPlayer>> ping()
 	{
