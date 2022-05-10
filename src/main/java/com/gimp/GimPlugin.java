@@ -446,6 +446,11 @@ public class GimPlugin extends Plugin
 	 */
 	private void startBroadcast()
 	{
+		// Failsafe so we don't have clients with multiple ongoing socket connections
+		if (gimBroadcastManager != null && gimBroadcastManager.isSocketConnected())
+		{
+			gimBroadcastManager.disconnectSocketClient();
+		}
 		log.debug("Starting broadcast...");
 		gimBroadcastManager = new GimBroadcastManager(group.getName(), config, gson);
 		gimBroadcastManager.connectSocketClient();
