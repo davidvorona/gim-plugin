@@ -1,13 +1,13 @@
 # GIMP (Group Ironman Plugin)
 
-A plugin for a better group ironman experience.
+A plugin for the ultimate group ironman experience.
 
 ## Description
 
-GIMP, or Group Ironman Plugin, provides a feature set for group ironmen to improve the experience
-and make it easier to track the progress of your fellow gimps. Currently, it includes a map tracking
-feature for showing your companions' locations on the map as well as a side panel with real-time stats
-and other info!
+GIMP, or Group Ironman Plugin, provides a feature set for group ironmen to improve the experience and make
+it easier to track the progress of your fellow gimps. GIMP is interacted with completely in the RuneLite
+client, and includes a map tracking feature for showing your companions' locations on the map, a side panel
+with real-time stats about your fellow gimps, and a feature allowing players to ping tiles for their group!
 
 ## Usage
 
@@ -16,11 +16,13 @@ GIMP has two parts: a client-side plugin, and a basic server. A simple Node serv
 
 ### Public server
 
-There is now a public server that any group can connect to! Performance *may* be affected
-because anyone can connect to it, but it should be good enough for most users.
+There is now a public server that any group can connect to! Performance *may* be affected if lots of groups
+are using it at the same time, but it should be good enough for 99% of users.
 
 **The address for the public server is https://gimp-server.herokuapp.com; simply copy it into the server address config
 field, and you're all set!**
+
+![Server Address](https://i.imgur.com/AgTk4uY.png)
 
 *DISCLAIMER: using our public server involves submitting your IP address to a 3rd party server maintained by myself.
 The server keeps a copy of relevant character data and that's it--if this is unacceptable to you, the server is open-source,
