@@ -45,11 +45,9 @@ public abstract class RequestClient
 	public String getBaseUrl()
 	{
 		String configServerAddress = config.serverAddress();
-		// Remove trailing slash if exists
-		if (configServerAddress.endsWith("/"))
-		{
-			configServerAddress = configServerAddress.substring(0, configServerAddress.length() - 1);
-		}
+		// Remove trailing slash(es) if exists
+		String trailingSlashes = "/+$";
+		configServerAddress = configServerAddress.replaceAll(trailingSlashes, "");
 		if (!configServerAddress.contains("http"))
 		{
 			return "http://" + configServerAddress;
