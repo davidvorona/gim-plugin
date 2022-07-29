@@ -67,9 +67,7 @@ import net.runelite.client.util.ImageUtil;
 import org.json.JSONObject;
 
 @Slf4j
-@PluginDescriptor(
-	name = "GIMP"
-)
+@PluginDescriptor(name = "GIMP")
 public class GimPlugin extends Plugin
 {
 	public final static int OFFLINE_WORLD = 0;
@@ -149,8 +147,7 @@ public class GimPlugin extends Plugin
 		@Override
 		public void call(Object... args)
 		{
-			clientThread.invoke(() ->
-			{
+			clientThread.invoke(() -> {
 				// Update panel connection status
 				panel.setConnectionStatus(true);
 				// Update local gimp
@@ -195,8 +192,7 @@ public class GimPlugin extends Plugin
 
 	private void load()
 	{
-		group.load().whenCompleteAsync((result, ex) ->
-		{
+		group.load().whenCompleteAsync((result, ex) -> {
 			panel.load();
 			startBroadcast();
 		});
@@ -217,11 +213,7 @@ public class GimPlugin extends Plugin
 	{
 		// If game state changes to the login screen or hopping, or connection is lost, stop the broadcast
 		GameState gameState = gameStateChanged.getGameState();
-		if (
-			gameState == GameState.LOGIN_SCREEN
-				|| gameState == GameState.HOPPING
-				|| gameState == GameState.CONNECTION_LOST
-		)
+		if (gameState == GameState.LOGIN_SCREEN || gameState == GameState.HOPPING || gameState == GameState.CONNECTION_LOST)
 		{
 			unload();
 		}
@@ -298,8 +290,7 @@ public class GimPlugin extends Plugin
 				// Except if the gimp's HP is going up/down
 				!(statChanged.getSkill() == Skill.HITPOINTS && currentHp != localGimp.getHp())
 					// or if the gimp's prayer is going up/down
-					&& !(statChanged.getSkill() == Skill.PRAYER && currentPrayer != localGimp.getPrayer())
-			)
+					&& !(statChanged.getSkill() == Skill.PRAYER && currentPrayer != localGimp.getPrayer()))
 			{
 				// If max (real) HP value has changed, broadcast
 				if (statChanged.getSkill() == Skill.HITPOINTS && currentMaxHp != localGimp.getMaxHp())
@@ -312,10 +303,7 @@ public class GimPlugin extends Plugin
 					updateMaxPrayer(currentMaxPrayer);
 				}
 				// Process XP changed for last activity update, except never Hitpoints
-				else if (
-					(localGimp.getLastActivity() == null || !activity.equals(localGimp.getLastActivity()))
-						&& statChanged.getSkill() != Skill.HITPOINTS
-				)
+				else if ((localGimp.getLastActivity() == null || !activity.equals(localGimp.getLastActivity())) && statChanged.getSkill() != Skill.HITPOINTS)
 				{
 					updateLastActivity(activity);
 				}
@@ -330,10 +318,7 @@ public class GimPlugin extends Plugin
 		String SERVER_ADDRESS_KEY = "serverAddress";
 		String GHOST_MODE = "ghostMode";
 		// Check if one of GIMP's server address config value has changed
-		if (
-			configChanged.getGroup().equals(CONFIG_GROUP)
-				&& configChanged.getKey().equals(SERVER_ADDRESS_KEY)
-		)
+		if (configChanged.getGroup().equals(CONFIG_GROUP) && configChanged.getKey().equals(SERVER_ADDRESS_KEY))
 		{
 			if (gimBroadcastManager != null && gimBroadcastManager.isSocketConnected())
 			{
@@ -342,10 +327,7 @@ public class GimPlugin extends Plugin
 				gimBroadcastManager.disconnectSocketClient();
 			}
 		}
-		else if (
-			configChanged.getGroup().equals(CONFIG_GROUP)
-				&& configChanged.getKey().equals(GHOST_MODE)
-		)
+		else if (configChanged.getGroup().equals(CONFIG_GROUP) && configChanged.getKey().equals(GHOST_MODE))
 		{
 			updateGhostMode(config.ghostMode());
 		}
@@ -423,12 +405,7 @@ public class GimPlugin extends Plugin
 		// This is pretty arbitrary, but currently places the nav button at
 		// the bottom of the list if there are no third-party plugin panels
 		int lowPriority = 15;
-		navButton = NavigationButton.builder()
-			.tooltip("GIMP")
-			.icon(icon)
-			.priority(lowPriority)
-			.panel(panel)
-			.build();
+		navButton = NavigationButton.builder().tooltip("GIMP").icon(icon).priority(lowPriority).panel(panel).build();
 		clientToolbar.addNavigation(navButton);
 	}
 
@@ -633,8 +610,7 @@ public class GimPlugin extends Plugin
 	 */
 	private void pingForUpdate()
 	{
-		gimBroadcastManager.ping().whenCompleteAsync((result, ex) ->
-		{
+		gimBroadcastManager.ping().whenCompleteAsync((result, ex) -> {
 			if (result != null)
 			{
 				for (GimPlayer gimp : group.getGimps())
@@ -795,9 +771,7 @@ public class GimPlugin extends Plugin
 		{
 			// Set new ghost mode locally before broadcast
 			group.setGhostMode(localGimp.getName(), ghostMode);
-			Map<String, Object> ghostModeData = ghostMode
-				? localGimp.getData()
-				: localGimp.getGimpData(); // if ghostMode off, broadcast all data
+			Map<String, Object> ghostModeData = ghostMode ? localGimp.getData() : localGimp.getGimpData(); // if ghostMode off, broadcast all data
 			ghostModeData.put("ghostMode", ghostMode);
 			broadcastUpdate(ghostModeData);
 		}
