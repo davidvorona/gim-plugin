@@ -105,7 +105,10 @@ public class GimBroadcastManager
 	public void onBroadcastConnect(Emitter.Listener handleConnect)
 	{
 		Socket client = socketClient.getClient();
-		client.on(Socket.EVENT_CONNECT, handleConnect);
+		if (client != null)
+		{
+			client.on(Socket.EVENT_CONNECT, handleConnect);
+		}
 	}
 
 	/**
@@ -116,7 +119,10 @@ public class GimBroadcastManager
 	public void onBroadcastDisconnect(Emitter.Listener handleDisconnect)
 	{
 		Socket client = socketClient.getClient();
-		client.on(Socket.EVENT_DISCONNECT, handleDisconnect);
+		if (client != null)
+		{
+			client.on(Socket.EVENT_DISCONNECT, handleDisconnect);
+		}
 	}
 
 	/**
@@ -127,7 +133,10 @@ public class GimBroadcastManager
 	public void onBroadcastConnectError(Emitter.Listener handleError)
 	{
 		Socket client = socketClient.getClient();
-		client.on(Socket.EVENT_CONNECT_ERROR, handleError);
+		if (client != null)
+		{
+			client.on(Socket.EVENT_CONNECT_ERROR, handleError);
+		}
 	}
 
 	/**
@@ -165,7 +174,10 @@ public class GimBroadcastManager
 	public void listen(Emitter.Listener handleBroadcast)
 	{
 		Socket client = socketClient.getClient();
-		client.on(EVENT_BROADCAST, handleBroadcast);
+		if (client != null)
+		{
+			client.on(EVENT_BROADCAST, handleBroadcast);
+		}
 	}
 
 	/**
@@ -209,8 +221,7 @@ public class GimBroadcastManager
 		RequestClient requestClient = getRequestClient();
 		try
 		{
-			return requestClient.ping().thenApply((result) ->
-			{
+			return requestClient.ping().thenApply((result) -> {
 				log.debug("Ping data: " + result);
 				return parsePingData(result);
 			});

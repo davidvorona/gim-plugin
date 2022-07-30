@@ -65,28 +65,16 @@ public class SocketClient extends RequestClient
 		URI uri = URI.create(getBaseUrl());
 		IO.Options options = IO.Options.builder()
 			// IO factory options
-			.setForceNew(false)
-			.setMultiplex(true)
+			.setForceNew(false).setMultiplex(true)
 
 			// low-level engine options
-			.setTransports(new String[]{Polling.NAME, WebSocket.NAME})
-			.setUpgrade(true)
-			.setRememberUpgrade(false)
-			.setPath("/socket.io/")
-			.setQuery(null)
-			.setExtraHeaders(null)
+			.setTransports(new String[]{Polling.NAME, WebSocket.NAME}).setUpgrade(true).setRememberUpgrade(false).setPath("/socket.io/").setQuery(null).setExtraHeaders(null)
 
 			// Manager options
-			.setReconnection(true)
-			.setReconnectionAttempts(Integer.MAX_VALUE)
-			.setReconnectionDelay(1_000)
-			.setReconnectionDelayMax(5_000)
-			.setRandomizationFactor(0.5)
-			.setTimeout(20_000)
+			.setReconnection(true).setReconnectionAttempts(Integer.MAX_VALUE).setReconnectionDelay(1_000).setReconnectionDelayMax(5_000).setRandomizationFactor(0.5).setTimeout(20_000)
 
 			// Socket options
-			.setAuth(null)
-			.build();
+			.setAuth(null).build();
 		if (client != null)
 		{
 			client.close();
@@ -94,20 +82,17 @@ public class SocketClient extends RequestClient
 		client = IO.socket(uri, options);
 		client.connect();
 
-		client.on(Socket.EVENT_CONNECT, args ->
-		{
+		client.on(Socket.EVENT_CONNECT, args -> {
 			log.debug("Socket connected");
 			String roomId = namespace;
 			client.emit(EVENT_CONNECTION_ACK, roomId);
 		});
 
-		client.on(Socket.EVENT_DISCONNECT, args ->
-		{
+		client.on(Socket.EVENT_DISCONNECT, args -> {
 			log.debug("Socket disconnected");
 		});
 
-		client.on(Socket.EVENT_CONNECT_ERROR, args ->
-		{
+		client.on(Socket.EVENT_CONNECT_ERROR, args -> {
 			log.warn("Failed to connect to socket server, closing");
 			client.close();
 		});
@@ -118,7 +103,10 @@ public class SocketClient extends RequestClient
 	 */
 	public void disconnect()
 	{
-		client.disconnect();
+		if (client != null)
+		{
+			client.disconnect();
+		}
 	}
 
 	/**
@@ -128,11 +116,11 @@ public class SocketClient extends RequestClient
 	 */
 	public boolean isConnected()
 	{
-		if (client == null)
+		if (client != null)
 		{
-			return false;
+			return client.connected();
 		}
-		return client.connected();
+		return false;
 	}
 
 	/**
@@ -145,8 +133,7 @@ public class SocketClient extends RequestClient
 	{
 		String EVENT_PING = "ping";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
-		client.emit(EVENT_PING, (Ack) args ->
-		{
+		client.emit(EVENT_PING, (Ack) args -> {
 			JSONObject data = (JSONObject) args[0];
 			socketResponse.complete(data.toString());
 		});
@@ -164,8 +151,7 @@ public class SocketClient extends RequestClient
 	{
 		String EVENT_BROADCAST = "broadcast";
 		CompletableFuture<String> socketResponse = new CompletableFuture<>();
-		client.emit(EVENT_BROADCAST, dataJson, (Ack) args ->
-		{
+		client.emit(EVENT_BROADCAST, dataJson, (Ack) args -> {
 			JSONObject data = (JSONObject) args[0];
 			socketResponse.complete(data.toString());
 		});
