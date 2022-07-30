@@ -25,6 +25,8 @@
 package com.gimp;
 
 import com.gimp.gimps.*;
+import com.gimp.ui.GimpTab;
+import com.gimp.ui.GimpTabGroup;
 import com.google.common.collect.ImmutableList;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -58,8 +60,6 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.materialtabs.MaterialTab;
-import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 import net.runelite.client.ui.components.ProgressBar;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
@@ -79,19 +79,9 @@ public class GimPluginPanel extends PluginPanel
 	/**
 	 * Real skills, ordered in the way they should be displayed in the panel.
 	 */
-	private static final List<HiscoreSkill> SKILLS = ImmutableList.of(
-		ATTACK, HITPOINTS, MINING,
-		STRENGTH, AGILITY, SMITHING,
-		DEFENCE, HERBLORE, FISHING,
-		RANGED, THIEVING, COOKING,
-		PRAYER, CRAFTING, FIREMAKING,
-		MAGIC, FLETCHING, WOODCUTTING,
-		RUNECRAFT, SLAYER, FARMING,
-		CONSTRUCTION, HUNTER
-	);
+	private static final List<HiscoreSkill> SKILLS = ImmutableList.of(ATTACK, HITPOINTS, MINING, STRENGTH, AGILITY, SMITHING, DEFENCE, HERBLORE, FISHING, RANGED, THIEVING, COOKING, PRAYER, CRAFTING, FIREMAKING, MAGIC, FLETCHING, WOODCUTTING, RUNECRAFT, SLAYER, FARMING, CONSTRUCTION, HUNTER);
 
-	private static final String HTML_LABEL_TEMPLATE =
-		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
+	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
 	private final Group group;
 
@@ -118,7 +108,7 @@ public class GimPluginPanel extends PluginPanel
 	private final JLabel activityLabel = new JLabel();
 
 	/* Container of all the selectable gimp tabs */
-	private MaterialTabGroup tabGroup;
+	private GimpTabGroup tabGroup;
 
 	/* Index of the local gimp's tab or 0 */
 	private int defaultTab;
@@ -151,8 +141,7 @@ public class GimPluginPanel extends PluginPanel
 		List<String> gimps = group.getNames();
 		try
 		{
-			SwingUtilities.invokeLater(() ->
-			{
+			SwingUtilities.invokeLater(() -> {
 				// Remove noData text
 				removeAll();
 				// Create panel that will hold gimp data
@@ -176,16 +165,21 @@ public class GimPluginPanel extends PluginPanel
 
 				// Add tabs for each gimp
 				int gimpCount = gimps.size();
-				tabGroup = new MaterialTabGroup();
+				tabGroup = new GimpTabGroup();
 				tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
 
 				int tabIdx = 0;
+
 				for (String username : gimps)
 				{
-					MaterialTab tab = new MaterialTab(GIMP_ICON_SMALL, tabGroup, null);
-					tab.setToolTipText(username);
-					tab.setOnSelectEvent(() ->
+					GimpTab tab = new GimpTab(GIMP_ICON_SMALL, tabGroup, username);
+					// If gimp is online, set status dot color to green
+					if (group.getCurrentWorld(username) != 0)
 					{
+						tab.setStatus(true);
+					}
+					tab.setToolTipText(username);
+					tab.setOnSelectEvent(() -> {
 						if (loading)
 						{
 							return false;
@@ -247,8 +241,7 @@ public class GimPluginPanel extends PluginPanel
 				c.gridy++;
 
 				// Create button to refresh gimp data
-				refreshButton.addActionListener((e) ->
-				{
+				refreshButton.addActionListener((e) -> {
 					loadGimpData();
 				});
 				container.add(refreshButton, c);
@@ -272,8 +265,7 @@ public class GimPluginPanel extends PluginPanel
 
 	public void unload()
 	{
-		SwingUtilities.invokeLater(() ->
-		{
+		SwingUtilities.invokeLater(() -> {
 			// Remove GIMP data
 			removeAll();
 			// Create noData panel
@@ -321,10 +313,7 @@ public class GimPluginPanel extends PluginPanel
 
 		// Create panel that will contain overall data
 		JPanel overallPanel = new JPanel();
-		overallPanel.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
-			BorderFactory.createEmptyBorder(8, 10, 8, 10)
-		));
+		overallPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR), BorderFactory.createEmptyBorder(8, 10, 8, 10)));
 		overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		overallPanel.setLayout(new BorderLayout());
 
@@ -460,8 +449,7 @@ public class GimPluginPanel extends PluginPanel
 
 		// Display gimp data
 		GimPlayer gimp = group.getGimp(gimpName);
-		SwingUtilities.invokeLater(() ->
-		{
+		SwingUtilities.invokeLater(() -> {
 			applyGimpData(gimp);
 
 			// Apply hiscore date separately
@@ -476,32 +464,29 @@ public class GimPluginPanel extends PluginPanel
 			}
 		});
 
-		group.getHiscores(gimpName).whenCompleteAsync((result, ex) ->
-			SwingUtilities.invokeLater(() ->
+		group.getHiscores(gimpName).whenCompleteAsync((result, ex) -> SwingUtilities.invokeLater(() -> {
+			if (!gimpName.equals(selectedGimp))
 			{
-				if (!gimpName.equals(selectedGimp))
-				{
-					// Selected gimp has changed in the meantime
-					return;
-				}
+				// Selected gimp has changed in the meantime
+				return;
+			}
 
-				if (result == null)
-				{
-					loading = false;
-					return;
-				}
-
-				// Successful player lookup
+			if (result == null)
+			{
 				loading = false;
-				fillGimpStatusData(gimp, result);
-				applyHiscoreResult(result);
-			}));
+				return;
+			}
+
+			// Successful player lookup
+			loading = false;
+			fillGimpStatusData(gimp, result);
+			applyHiscoreResult(result);
+		}));
 	}
 
 	public void updateGimpData(GimPlayer gimpData)
 	{
-		SwingUtilities.invokeLater(() ->
-		{
+		SwingUtilities.invokeLater(() -> {
 			if (selectedGimp != null && selectedGimp.equals(gimpData.getName()))
 			{
 				GimPlayer gimp = group.getGimp(selectedGimp);
@@ -531,10 +516,8 @@ public class GimPluginPanel extends PluginPanel
 		String statusText = status ? "Connected" : "Disconnected";
 		String openingTags = "<html><body style = 'padding: 5px;color:#989898'>";
 		String closingTags = "</body></html>";
-		String tooltipText = "<p><span style = 'color:white'>" + "You are currently "
-			+ statusText.toLowerCase(Locale.ROOT) + "." + "</span></p>";
-		String helpText = "<p><span style = 'color:white'>" + "To connect, please follow "
-			+ "the instructions on the plugin help page." + "</span></p>";
+		String tooltipText = "<p><span style = 'color:white'>" + "You are currently " + statusText.toLowerCase(Locale.ROOT) + "." + "</span></p>";
+		String helpText = "<p><span style = 'color:white'>" + "To connect, please follow " + "the instructions on the plugin help page." + "</span></p>";
 		connectionLabel.setText(statusText);
 		connectionLabel.setForeground(status ? Color.CYAN : ColorScheme.LIGHT_GRAY_COLOR);
 		connectionLabel.setToolTipText(openingTags + tooltipText + (status ? "" : " " + helpText) + closingTags);
@@ -588,8 +571,11 @@ public class GimPluginPanel extends PluginPanel
 	{
 		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
-			worldLabel.setText(world != 0 ? "W" + world : "Offline");
-			worldLabel.setForeground(world != 0 ? Color.GREEN : Color.RED);
+			GimpTab tab = tabGroup.getTab(gimpName);
+			boolean isOnline = world != 0;
+			tab.setStatus(isOnline);
+			worldLabel.setText(isOnline ? "W" + world : "Offline");
+			worldLabel.setForeground(isOnline ? Color.GREEN : Color.RED);
 		}
 	}
 
@@ -639,15 +625,7 @@ public class GimPluginPanel extends PluginPanel
 			{
 				if (result.getPlayer() != null)
 				{
-					int combatLevel = Experience.getCombatLevel(
-						result.getAttack().getLevel(),
-						result.getStrength().getLevel(),
-						result.getDefence().getLevel(),
-						result.getHitpoints().getLevel(),
-						result.getMagic().getLevel(),
-						result.getRanged().getLevel(),
-						result.getPrayer().getLevel()
-					);
+					int combatLevel = Experience.getCombatLevel(result.getAttack().getLevel(), result.getStrength().getLevel(), result.getDefence().getLevel(), result.getHitpoints().getLevel(), result.getMagic().getLevel(), result.getRanged().getLevel(), result.getPrayer().getLevel());
 					label.setText(Integer.toString(combatLevel));
 				}
 			}
@@ -685,20 +663,9 @@ public class GimPluginPanel extends PluginPanel
 
 		if (skill == null)
 		{
-			double combatLevel = Experience.getCombatLevelPrecise(
-				result.getAttack().getLevel(),
-				result.getStrength().getLevel(),
-				result.getDefence().getLevel(),
-				result.getHitpoints().getLevel(),
-				result.getMagic().getLevel(),
-				result.getRanged().getLevel(),
-				result.getPrayer().getLevel()
-			);
+			double combatLevel = Experience.getCombatLevelPrecise(result.getAttack().getLevel(), result.getStrength().getLevel(), result.getDefence().getLevel(), result.getHitpoints().getLevel(), result.getMagic().getLevel(), result.getRanged().getLevel(), result.getPrayer().getLevel());
 
-			double combatExperience = result.getAttack().getExperience()
-				+ result.getStrength().getExperience() + result.getDefence().getExperience()
-				+ result.getHitpoints().getExperience() + result.getMagic().getExperience()
-				+ result.getRanged().getExperience() + result.getPrayer().getExperience();
+			double combatExperience = result.getAttack().getExperience() + result.getStrength().getExperience() + result.getDefence().getExperience() + result.getHitpoints().getExperience() + result.getMagic().getExperience() + result.getRanged().getExperience() + result.getPrayer().getExperience();
 
 			content += "<p><span style = 'color:white'>Combat</span></p>";
 			content += "<p><span style = 'color:white'>Exact Combat Level:</span> " + QuantityFormatter.formatNumber(combatLevel) + "</p>";
@@ -874,12 +841,7 @@ public class GimPluginPanel extends PluginPanel
 				int progress = (int) ((xpGained / xpGoal) * 100f);
 
 				// Had to wrap the bar with an empty div, adding the margin directly to the bar causes issues
-				content += "<div style = 'margin-top:3px'>"
-					+ "<div style = 'background: #070707; border: 1px solid #070707; height: 6px; width: 100%;'>"
-					+ "<div style = 'height: 6px; width: " + progress + "%; background: #dc8a00;'>"
-					+ "</div>"
-					+ "</div>"
-					+ "</div>";
+				content += "<div style = 'margin-top:3px'>" + "<div style = 'background: #070707; border: 1px solid #070707; height: 6px; width: 100%;'>" + "<div style = 'height: 6px; width: " + progress + "%; background: #dc8a00;'>" + "</div>" + "</div>" + "</div>";
 			}
 		}
 
@@ -895,8 +857,7 @@ public class GimPluginPanel extends PluginPanel
 	private static String htmlLabelStr(String key, String value)
 	{
 		String SPACE_CHAR = " ";
-		return "<html><body style = 'color:#a5a5a5'>" + key + SPACE_CHAR
-			+ "<span style = 'color:white'>" + value + "</span></body></html>";
+		return "<html><body style = 'color:#a5a5a5'>" + key + SPACE_CHAR + "<span style = 'color:white'>" + value + "</span></body></html>";
 	}
 
 	private void resetSelectedTab()
