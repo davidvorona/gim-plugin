@@ -464,7 +464,7 @@ public class GimPluginPanel extends PluginPanel
 			}
 		});
 
-		group.getHiscores(gimpName).whenCompleteAsync((result, ex) -> SwingUtilities.invokeLater(() -> {
+		group.getHiscores(gimpName).whenCompleteAsync((result, ex) -> {
 			if (!gimpName.equals(selectedGimp))
 			{
 				// Selected gimp has changed in the meantime
@@ -479,9 +479,11 @@ public class GimPluginPanel extends PluginPanel
 
 			// Successful player lookup
 			loading = false;
-			fillGimpStatusData(gimp, result);
-			applyHiscoreResult(result);
-		}));
+			SwingUtilities.invokeLater(() -> {
+				fillGimpStatusData(gimp, result);
+				applyHiscoreResult(result);
+			});
+		});
 	}
 
 	public void updateGimpData(GimPlayer gimpData)

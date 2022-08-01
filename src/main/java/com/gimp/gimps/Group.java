@@ -48,13 +48,7 @@ import java.util.concurrent.CompletableFuture;
 public class Group
 {
 	// TODO: Let the player choose their own color?
-	private final static Color[] GIMP_COLORS = new Color[]{
-		new Color(48, 227, 192),
-		new Color(241, 120, 68),
-		new Color(78, 54, 236),
-		new Color(239, 208, 21),
-		new Color(201, 21, 217)
-	};
+	private final static Color[] GIMP_COLORS = new Color[]{new Color(48, 227, 192), new Color(241, 120, 68), new Color(78, 54, 236), new Color(239, 208, 21), new Color(201, 21, 217)};
 
 	@Getter
 	final private List<GimPlayer> gimps = new ArrayList<>();
@@ -89,8 +83,7 @@ public class Group
 	public CompletableFuture<Void> load()
 	{
 		CompletableFuture<Void> loadingResult = new CompletableFuture<>();
-		clientThread.invokeLater(() ->
-		{
+		clientThread.invokeLater(() -> {
 			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
 			if (gimClanSettings == null)
 			{
@@ -109,8 +102,7 @@ public class Group
 				gimps.add(new GimPlayer(name, world, GIMP_COLORS[i]));
 			}
 			// Load local gimp data, including hiscores
-			localLoad().whenCompleteAsync((result, ex) ->
-			{
+			localLoad().whenCompleteAsync((result, ex) -> {
 				loaded = true;
 				loadingResult.complete(null);
 			});
@@ -136,8 +128,7 @@ public class Group
 			return loadingResult;
 		}
 		localUpdate();
-		setHiscores(localGimp.getName()).whenCompleteAsync((result, ext) ->
-		{
+		setHiscores(localGimp.getName()).whenCompleteAsync((result, ext) -> {
 			loadingResult.complete(null);
 		});
 		return loadingResult;
@@ -266,11 +257,7 @@ public class Group
 			return;
 		}
 		// Create new GimLocation from raw data
-		GimLocation newGimLocation = new GimLocation(
-			location.getX(),
-			location.getY(),
-			location.getPlane()
-		);
+		GimLocation newGimLocation = new GimLocation(location.getX(), location.getY(), location.getPlane());
 		// Set GimPlayer location to new location
 		gimp.setLocation(newGimLocation);
 	}
@@ -334,8 +321,7 @@ public class Group
 	public CompletableFuture<HiscoreResult> setHiscores(String name)
 	{
 		GimPlayer gimp = getGimp(name);
-		return getHiscores(name).whenCompleteAsync((result, ext) ->
-		{
+		return getHiscores(name).whenCompleteAsync((result, ext) -> {
 			gimp.setHiscores(result);
 		});
 	}
@@ -350,23 +336,20 @@ public class Group
 	public CompletableFuture<HiscoreResult> getHiscores(String name)
 	{
 		CompletableFuture<HiscoreResult> hiscoreResult = new CompletableFuture<>();
-		clientThread.invoke(() ->
+		try
 		{
-			try
+			HiscoreResult result = hiscoreManager.lookup(name, HiscoreEndpoint.NORMAL);
+			if (result == null)
 			{
-				HiscoreResult result = hiscoreManager.lookup(name, HiscoreEndpoint.NORMAL);
-				if (result == null)
-				{
-					log.warn("Could not find hiscore data for " + name);
-				}
-				hiscoreResult.complete(result);
+				log.warn("Could not find hiscore data for " + name);
 			}
-			catch (IOException e)
-			{
-				log.error("Error fetching hiscores: " + e);
-				hiscoreResult.completeExceptionally(e);
-			}
-		});
+			hiscoreResult.complete(result);
+		}
+		catch (IOException e)
+		{
+			log.error("Error fetching hiscores: " + e);
+			hiscoreResult.completeExceptionally(e);
+		}
 		return hiscoreResult;
 	}
 
