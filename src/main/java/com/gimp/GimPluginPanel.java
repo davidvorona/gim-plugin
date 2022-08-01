@@ -25,8 +25,8 @@
 package com.gimp;
 
 import com.gimp.gimps.*;
-import com.gimp.ui.GimpTab;
-import com.gimp.ui.GimpTabGroup;
+import com.gimp.ui.GimTab;
+import com.gimp.ui.GimTabGroup;
 import com.google.common.collect.ImmutableList;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -108,7 +108,7 @@ public class GimPluginPanel extends PluginPanel
 	private final JLabel activityLabel = new JLabel();
 
 	/* Container of all the selectable gimp tabs */
-	private GimpTabGroup tabGroup;
+	private GimTabGroup tabGroup;
 
 	/* Index of the local gimp's tab or 0 */
 	private int defaultTab;
@@ -165,14 +165,14 @@ public class GimPluginPanel extends PluginPanel
 
 				// Add tabs for each gimp
 				int gimpCount = gimps.size();
-				tabGroup = new GimpTabGroup();
+				tabGroup = new GimTabGroup();
 				tabGroup.setLayout(new GridLayout(1, gimpCount, 7, 7));
 
 				int tabIdx = 0;
 
 				for (String username : gimps)
 				{
-					GimpTab tab = new GimpTab(GIMP_ICON_SMALL, tabGroup, username);
+					GimTab tab = new GimTab(GIMP_ICON_SMALL, tabGroup, username);
 					// If gimp is online, set status dot color to green
 					if (group.getCurrentWorld(username) != 0)
 					{
@@ -571,7 +571,7 @@ public class GimPluginPanel extends PluginPanel
 	{
 		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
-			GimpTab tab = tabGroup.getTab(gimpName);
+			GimTab tab = tabGroup.getTab(gimpName);
 			boolean isOnline = world != 0;
 			tab.setStatus(isOnline);
 			worldLabel.setText(isOnline ? "W" + world : "Offline");

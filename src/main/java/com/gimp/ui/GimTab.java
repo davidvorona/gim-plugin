@@ -42,7 +42,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.runelite.client.ui.ColorScheme;
 
-public class GimpTab extends JLayeredPane
+public class GimTab extends JLayeredPane
 {
 	private static final Border SELECTED_BORDER = new CompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.BRAND_ORANGE), BorderFactory.createEmptyBorder(5, 10, 4, 10));
 
@@ -68,7 +68,7 @@ public class GimpTab extends JLayeredPane
 	@Getter
 	private boolean selected;
 
-	public GimpTab(String string, GimpTabGroup group, String gimp)
+	public GimTab(String string, GimTabGroup group, String gimp)
 	{
 		super();
 
@@ -94,7 +94,7 @@ public class GimpTab extends JLayeredPane
 			@Override
 			public void mousePressed(MouseEvent mouseEvent)
 			{
-				group.select(GimpTab.this);
+				group.select(GimTab.this);
 			}
 		});
 
@@ -105,14 +105,14 @@ public class GimpTab extends JLayeredPane
 				@Override
 				public void mouseEntered(MouseEvent e)
 				{
-					GimpTab tab = (GimpTab) e.getSource();
+					GimTab tab = (GimTab) e.getSource();
 					tab.setForeground(Color.WHITE);
 				}
 
 				@Override
 				public void mouseExited(MouseEvent e)
 				{
-					GimpTab tab = (GimpTab) e.getSource();
+					GimTab tab = (GimTab) e.getSource();
 					if (!tab.isSelected())
 					{
 						tab.setForeground(Color.GRAY);
@@ -122,7 +122,7 @@ public class GimpTab extends JLayeredPane
 		}
 	}
 
-	public GimpTab(ImageIcon icon, GimpTabGroup group, String gimp)
+	public GimTab(ImageIcon icon, GimTabGroup group, String gimp)
 	{
 		this("", group, gimp);
 		setOpaque(true);
@@ -134,14 +134,14 @@ public class GimpTab extends JLayeredPane
 			@Override
 			public void mouseEntered(MouseEvent e)
 			{
-				GimpTab tab = (GimpTab) e.getSource();
+				GimTab tab = (GimTab) e.getSource();
 				tab.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
 			}
 
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				GimpTab tab = (GimpTab) e.getSource();
+				GimTab tab = (GimTab) e.getSource();
 				tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			}
 		});

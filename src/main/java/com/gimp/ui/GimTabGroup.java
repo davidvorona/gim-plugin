@@ -30,14 +30,14 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
 
-public class GimpTabGroup extends JPanel
+public class GimTabGroup extends JPanel
 {
 	/* The panel on which the content tab's content will be displayed on. */
 	private final JPanel display;
 	/* A list of all the tabs contained in this group. */
-	private final List<GimpTab> tabs = new ArrayList<>();
+	private final List<GimTab> tabs = new ArrayList<>();
 
-	public GimpTabGroup(JPanel display)
+	public GimTabGroup(JPanel display)
 	{
 		this.display = display;
 		if (display != null)
@@ -48,13 +48,13 @@ public class GimpTabGroup extends JPanel
 		setOpaque(false);
 	}
 
-	public GimpTabGroup()
+	public GimTabGroup()
 	{
 		this(null);
 	}
 
 	/* Returns the tab on a certain index. */
-	public GimpTab getTab(int index)
+	public GimTab getTab(int index)
 	{
 
 		if (tabs == null || tabs.isEmpty())
@@ -65,14 +65,14 @@ public class GimpTabGroup extends JPanel
 		return tabs.get(index);
 	}
 
-	public GimpTab getTab(String gimp)
+	public GimTab getTab(String gimp)
 	{
 		if (tabs == null || tabs.isEmpty())
 		{
 			return null;
 		}
 		// Get a tab by the associated gimp
-		for (GimpTab tab : tabs)
+		for (GimTab tab : tabs)
 		{
 			if (tab.getGimp().equals(gimp))
 			{
@@ -82,7 +82,7 @@ public class GimpTabGroup extends JPanel
 		return null;
 	}
 
-	public void addTab(GimpTab tab)
+	public void addTab(GimTab tab)
 	{
 		tabs.add(tab);
 		add(tab, BorderLayout.NORTH);
@@ -93,7 +93,7 @@ public class GimpTabGroup extends JPanel
 	 * tab's associated content.
 	 * @param selectedTab - The tab to select
 	 */
-	public void select(GimpTab selectedTab)
+	public void select(GimTab selectedTab)
 	{
 		if (!tabs.contains(selectedTab))
 		{
@@ -115,7 +115,7 @@ public class GimpTabGroup extends JPanel
 		}
 
 		// Unselected all other tabs
-		for (GimpTab tab : tabs)
+		for (GimTab tab : tabs)
 		{
 			if (!tab.equals(selectedTab))
 			{
