@@ -82,7 +82,6 @@ public class GimTab extends JLayeredPane
 		add(this.label, BorderLayout.CENTER);
 		setLayer(this.label, DEFAULT_LAYER);
 
-
 		this.statusDot = new FilledCircle(STATUS_DOT_SIZE, STATUS_DOT_SIZE, OFFLINE_COLOR);
 		add(this.statusDot, BorderLayout.EAST);
 		setLayer(this.statusDot, PALETTE_LAYER);
