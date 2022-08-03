@@ -28,6 +28,10 @@ import com.gimp.GimPlugin;
 import com.gimp.GimPluginConfig;
 import java.awt.Color;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -74,6 +78,28 @@ public class Group
 	@Getter
 	private String name;
 
+	final private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+	/**
+	 * Poll for completion of future containing result of loaded clan settings.
+	 *
+	 * @return future of result of loaded clan settings
+	 */
+	private CompletableFuture<Void> waitForClan()
+	{
+		CompletableFuture<Void> completionFuture = new CompletableFuture<>();
+		final ScheduledFuture<?> checkFuture = executor.scheduleAtFixedRate(() -> {
+			if (client.getClanSettings(ClanID.GROUP_IRONMAN) != null)
+			{
+				completionFuture.complete(null);
+			}
+		}, 0, 1, TimeUnit.SECONDS);
+		completionFuture.whenComplete((result, ex) -> {
+			checkFuture.cancel(true);
+		});
+		return completionFuture;
+	}
+
 	/**
 	 * Loads player data to the Group once the client has finished loading clan
 	 * data. Initializes data for the local gimp.
@@ -83,13 +109,10 @@ public class Group
 	public CompletableFuture<Void> load()
 	{
 		CompletableFuture<Void> loadingResult = new CompletableFuture<>();
-		clientThread.invokeLater(() -> {
+		// Call executor to poll for clan settings
+		waitForClan().whenCompleteAsync((result, ex) -> {
 			ClanSettings gimClanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
-			if (gimClanSettings == null)
-			{
-				// ClanSettings not loaded yet, retry
-				return false;
-			}
+			assert gimClanSettings != null;
 			name = gimClanSettings.getName();
 			List<ClanMember> clanMembers = gimClanSettings.getMembers();
 			for (int i = 0; i < clanMembers.size(); i++)
@@ -102,11 +125,10 @@ public class Group
 				gimps.add(new GimPlayer(name, world, GIMP_COLORS[i]));
 			}
 			// Load local gimp data, including hiscores
-			localLoad().whenCompleteAsync((result, ex) -> {
+			localLoad().whenCompleteAsync((r, e) -> {
 				loaded = true;
 				loadingResult.complete(null);
 			});
-			return true;
 		});
 		return loadingResult;
 	}
