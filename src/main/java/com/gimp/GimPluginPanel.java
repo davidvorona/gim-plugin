@@ -605,11 +605,11 @@ public class GimPluginPanel extends PluginPanel
 
 		if (gimp.getMaxHp() == null)
 		{
-			setHpBar(gimp.getName(), gimp.getHp(), result.getHitpoints().getLevel());
+			setHpBar(gimp.getName(), gimp.getHp(), result.getSkill(HITPOINTS).getLevel());
 		}
 		if (gimp.getMaxPrayer() == null)
 		{
-			setPrayerBar(gimp.getName(), gimp.getPrayer(), result.getPrayer().getLevel());
+			setPrayerBar(gimp.getName(), gimp.getPrayer(), result.getSkill(PRAYER).getLevel());
 		}
 	}
 
@@ -627,7 +627,7 @@ public class GimPluginPanel extends PluginPanel
 			{
 				if (result.getPlayer() != null)
 				{
-					int combatLevel = Experience.getCombatLevel(result.getAttack().getLevel(), result.getStrength().getLevel(), result.getDefence().getLevel(), result.getHitpoints().getLevel(), result.getMagic().getLevel(), result.getRanged().getLevel(), result.getPrayer().getLevel());
+					int combatLevel = Experience.getCombatLevel(result.getSkill(ATTACK).getLevel(), result.getSkill(STRENGTH).getLevel(), result.getSkill(DEFENCE).getLevel(), result.getSkill(HITPOINTS).getLevel(), result.getSkill(MAGIC).getLevel(), result.getSkill(RANGED).getLevel(), result.getSkill(PRAYER).getLevel());
 					label.setText(Integer.toString(combatLevel));
 				}
 			}
@@ -665,9 +665,9 @@ public class GimPluginPanel extends PluginPanel
 
 		if (skill == null)
 		{
-			double combatLevel = Experience.getCombatLevelPrecise(result.getAttack().getLevel(), result.getStrength().getLevel(), result.getDefence().getLevel(), result.getHitpoints().getLevel(), result.getMagic().getLevel(), result.getRanged().getLevel(), result.getPrayer().getLevel());
+			double combatLevel = Experience.getCombatLevelPrecise(result.getSkill(ATTACK).getLevel(), result.getSkill(STRENGTH).getLevel(), result.getSkill(DEFENCE).getLevel(), result.getSkill(HITPOINTS).getLevel(), result.getSkill(MAGIC).getLevel(), result.getSkill(RANGED).getLevel(), result.getSkill(PRAYER).getLevel());
 
-			double combatExperience = result.getAttack().getExperience() + result.getStrength().getExperience() + result.getDefence().getExperience() + result.getHitpoints().getExperience() + result.getMagic().getExperience() + result.getRanged().getExperience() + result.getPrayer().getExperience();
+			double combatExperience = result.getSkill(ATTACK).getExperience() + result.getSkill(STRENGTH).getExperience() + result.getSkill(DEFENCE).getExperience() + result.getSkill(HITPOINTS).getExperience() + result.getSkill(MAGIC).getExperience() + result.getSkill(RANGED).getExperience() + result.getSkill(PRAYER).getExperience();
 
 			content += "<p><span style = 'color:white'>Combat</span></p>";
 			content += "<p><span style = 'color:white'>Exact Combat Level:</span> " + QuantityFormatter.formatNumber(combatLevel) + "</p>";
@@ -679,20 +679,20 @@ public class GimPluginPanel extends PluginPanel
 			{
 				case CLUE_SCROLL_ALL:
 				{
-					String allRank = (result.getClueScrollAll().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollAll().getRank());
-					String beginnerRank = (result.getClueScrollBeginner().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollBeginner().getRank());
-					String easyRank = (result.getClueScrollEasy().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollEasy().getRank());
-					String mediumRank = (result.getClueScrollMedium().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollMedium().getRank());
-					String hardRank = (result.getClueScrollHard().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollHard().getRank());
-					String eliteRank = (result.getClueScrollElite().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollElite().getRank());
-					String masterRank = (result.getClueScrollMaster().getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getClueScrollMaster().getRank());
-					String all = (result.getClueScrollAll().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollAll().getLevel()));
-					String beginner = (result.getClueScrollBeginner().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollBeginner().getLevel()));
-					String easy = (result.getClueScrollEasy().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollEasy().getLevel()));
-					String medium = (result.getClueScrollMedium().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollMedium().getLevel()));
-					String hard = (result.getClueScrollHard().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollHard().getLevel()));
-					String elite = (result.getClueScrollElite().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollElite().getLevel()));
-					String master = (result.getClueScrollMaster().getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getClueScrollMaster().getLevel()));
+					String allRank = (result.getSkill(CLUE_SCROLL_ALL).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_ALL).getRank());
+					String beginnerRank = (result.getSkill(CLUE_SCROLL_BEGINNER).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_BEGINNER).getRank());
+					String easyRank = (result.getSkill(CLUE_SCROLL_BEGINNER).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_EASY).getRank());
+					String mediumRank = (result.getSkill(CLUE_SCROLL_MEDIUM).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_MEDIUM).getRank());
+					String hardRank = (result.getSkill(CLUE_SCROLL_HARD).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_HARD).getRank());
+					String eliteRank = (result.getSkill(CLUE_SCROLL_ELITE).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_ELITE).getRank());
+					String masterRank = (result.getSkill(CLUE_SCROLL_MASTER).getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_MASTER).getRank());
+					String all = (result.getSkill(CLUE_SCROLL_ALL).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_ALL).getLevel()));
+					String beginner = (result.getSkill(CLUE_SCROLL_BEGINNER).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_BEGINNER).getLevel()));
+					String easy = (result.getSkill(CLUE_SCROLL_EASY).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_EASY).getLevel()));
+					String medium = (result.getSkill(CLUE_SCROLL_MEDIUM).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_MEDIUM).getLevel()));
+					String hard = (result.getSkill(CLUE_SCROLL_HARD).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_HARD).getLevel()));
+					String elite = (result.getSkill(CLUE_SCROLL_ELITE).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_ELITE).getLevel()));
+					String master = (result.getSkill(CLUE_SCROLL_MASTER).getLevel() == -1 ? "0" : QuantityFormatter.formatNumber(result.getSkill(CLUE_SCROLL_MASTER).getLevel()));
 					content += "<p><span style = 'color:white'>Clues</span></p>";
 					content += "<p><span style = 'color:white'>All:</span> " + all + " <span style = 'color:white'>Rank:</span> " + allRank + "</p>";
 					content += "<p><span style = 'color:white'>Beginner:</span> " + beginner + " <span style = 'color:white'>Rank:</span> " + beginnerRank + "</p>";
@@ -705,7 +705,7 @@ public class GimPluginPanel extends PluginPanel
 				}
 				case BOUNTY_HUNTER_ROGUE:
 				{
-					Skill bountyHunterRogue = result.getBountyHunterRogue();
+					Skill bountyHunterRogue = result.getSkill(BOUNTY_HUNTER_ROGUE);
 					String rank = (bountyHunterRogue.getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(bountyHunterRogue.getRank());
 					content += "<p><span style = 'color:white'>Bounty Hunter - Rogue</span></p>";
 					content += "<p><span style = 'color:white'>Rank:</span> " + rank + "</p>";
@@ -717,7 +717,7 @@ public class GimPluginPanel extends PluginPanel
 				}
 				case BOUNTY_HUNTER_HUNTER:
 				{
-					Skill bountyHunterHunter = result.getBountyHunterHunter();
+					Skill bountyHunterHunter = result.getSkill(BOUNTY_HUNTER_HUNTER);
 					String rank = (bountyHunterHunter.getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(bountyHunterHunter.getRank());
 					content += "<p><span style = 'color:white'>Bounty Hunter - Hunter</span></p>";
 					content += "<p><span style = 'color:white'>Rank:</span> " + rank + "</p>";
@@ -729,7 +729,7 @@ public class GimPluginPanel extends PluginPanel
 				}
 				case LAST_MAN_STANDING:
 				{
-					Skill lastManStanding = result.getLastManStanding();
+					Skill lastManStanding = result.getSkill(LAST_MAN_STANDING);
 					String rank = (lastManStanding.getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(lastManStanding.getRank());
 					content += "<p><span style = 'color:white'>Last Man Standing</span></p>";
 					content += "<p><span style = 'color:white'>Rank:</span> " + rank + "</p>";
@@ -741,7 +741,7 @@ public class GimPluginPanel extends PluginPanel
 				}
 				case SOUL_WARS_ZEAL:
 				{
-					Skill soulWarsZeal = result.getSoulWarsZeal();
+					Skill soulWarsZeal = result.getSkill(SOUL_WARS_ZEAL);
 					String rank = (soulWarsZeal.getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(soulWarsZeal.getRank());
 					content += "<p><span style = 'color:white'>Soul Wars Zeal</span></p>";
 					content += "<p><span style = 'color:white'>Rank:</span> " + rank + "</p>";
@@ -753,7 +753,7 @@ public class GimPluginPanel extends PluginPanel
 				}
 				case LEAGUE_POINTS:
 				{
-					Skill leaguePoints = result.getLeaguePoints();
+					Skill leaguePoints = result.getSkill(LEAGUE_POINTS);
 					String rank = (leaguePoints.getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(leaguePoints.getRank());
 					content += "<p><span style = 'color:white'>League Points</span></p>";
 					content += "<p><span style = 'color:white'>Rank:</span> " + rank + "</p>";

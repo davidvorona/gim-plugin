@@ -11,7 +11,7 @@ repositories {
     mavenCentral()
 }
 
-def runeLiteVersion = '1.8.29'
+def runeLiteVersion = '1.8.33'
 
 // Test locally via Gradle: "./gradlew run -DgimpDev=true"
 final boolean isGimpDev = Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("gimpDev"));
@@ -36,7 +36,7 @@ dependencies {
 }
 
 group = 'com.gimp'
-version = '2.5.1'
+version = '2.5.2'
 sourceCompatibility = isGimpDev ? '11' : '1.8';
 
 tasks.withType(JavaCompile) {
