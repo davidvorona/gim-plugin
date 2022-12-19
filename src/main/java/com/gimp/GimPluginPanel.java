@@ -571,11 +571,11 @@ public class GimPluginPanel extends PluginPanel
 
 	public void setWorld(String gimpName, int world)
 	{
+		GimTab tab = tabGroup.getTab(gimpName);
+		boolean isOnline = world != 0;
+		tab.setStatus(isOnline);
 		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
-			GimTab tab = tabGroup.getTab(gimpName);
-			boolean isOnline = world != 0;
-			tab.setStatus(isOnline);
 			worldLabel.setText(isOnline ? "W" + world : "Offline");
 			worldLabel.setForeground(isOnline ? Color.GREEN : Color.RED);
 		}
