@@ -105,4 +105,22 @@ public interface GimPluginConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+		keyName = "notesData",
+		name = "",
+		description = "",
+		hidden = true
+	)
+	default String notesData()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "notesData",
+		name = "",
+		description = ""
+	)
+	void notesData(String str);
 }

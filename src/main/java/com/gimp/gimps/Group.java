@@ -253,6 +253,34 @@ public class Group
 		}
 	}
 
+	/**
+	 * Hydrates specific data on local GimPlayer, meant to be invoked after
+	 * player has received a local update. These properties might depend on
+	 * data from server before falling back on a local source.
+	 *
+	 * @param gimpData GimPlayer data
+	 */
+	public void localHydrate(GimPlayer gimpData)
+	{
+		Player localPlayer = client.getLocalPlayer();
+		GimPlayer localGimp = getLocalGimp();
+		if (localPlayer != null && localGimp != null)
+		{
+			// Notes must come from the server if they exist
+			String gimpNotes;
+			if (gimpData.getNotes() != null)
+			{
+				gimpNotes = gimpData.getNotes();
+			}
+			// Otherwise, fall back on notes data saved to config
+			else
+			{
+				gimpNotes = config.notesData();
+			}
+			localGimp.setNotes(gimpNotes);
+		}
+	}
+
 	public List<String> getNames()
 	{
 		List<String> names = new ArrayList<>();
