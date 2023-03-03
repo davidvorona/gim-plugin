@@ -64,6 +64,7 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.OkHttpClient;
 import org.json.JSONObject;
 
 @Slf4j
@@ -85,6 +86,9 @@ public class GimPlugin extends Plugin
 
 	@Inject
 	private ClientToolbar clientToolbar;
+
+	@Inject
+	private OkHttpClient okHttpClient;
 
 	@Inject
 	@Getter
@@ -430,7 +434,7 @@ public class GimPlugin extends Plugin
 			gimBroadcastManager.disconnectSocketClient();
 		}
 		log.debug("Starting broadcast...");
-		gimBroadcastManager = new GimBroadcastManager(group.getName(), config, gson);
+		gimBroadcastManager = new GimBroadcastManager(group.getName(), okHttpClient, config, gson);
 		gimBroadcastManager.connectSocketClient();
 		setConnectionListeners(false);
 		// Send out initial broadcast

@@ -34,6 +34,7 @@ import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
+import okhttp3.OkHttpClient;
 
 @Slf4j
 public class GimBroadcastManager
@@ -50,10 +51,10 @@ public class GimBroadcastManager
 
 	private final Gson gson;
 
-	public GimBroadcastManager(String groupName, GimPluginConfig config, Gson gson)
+	public GimBroadcastManager(String groupName, OkHttpClient okHttpClient, GimPluginConfig config, Gson gson)
 	{
 		this.gson = gson;
-		httpClient = new HttpClient(groupName, config);
+		httpClient = new HttpClient(groupName, okHttpClient, config);
 		socketClient = new SocketClient(groupName, config);
 	}
 

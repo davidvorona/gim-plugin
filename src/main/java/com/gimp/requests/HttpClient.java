@@ -27,7 +27,6 @@ package com.gimp.requests;
 import com.gimp.GimPluginConfig;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -53,13 +52,11 @@ public class HttpClient extends RequestClient
 
 	public static final String EMPTY_BODY = "";
 
-	public HttpClient(String namespace, GimPluginConfig config)
+	public HttpClient(String namespace, OkHttpClient client, GimPluginConfig config)
 	{
 		this.config = config;
 		this.namespace = namespace;
-		client = new OkHttpClient.Builder()
-			.readTimeout(5000, TimeUnit.MILLISECONDS)
-			.build();
+		this.client = client;
 	}
 
 	/**
