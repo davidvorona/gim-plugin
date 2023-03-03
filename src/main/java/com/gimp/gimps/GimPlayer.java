@@ -63,7 +63,7 @@ public class GimPlayer
 
 	@Setter
 	@Getter
-	private String customStatus;
+	private String notes;
 
 	@Setter
 	@Getter
@@ -160,7 +160,7 @@ public class GimPlayer
 		gimpData.put("maxHp", maxHp);
 		gimpData.put("prayer", prayer);
 		gimpData.put("maxPrayer", maxPrayer);
-		gimpData.put("customStatus", customStatus);
+		gimpData.put("notes", notes);
 		gimpData.put("ghostMode", ghostMode);
 		// Don't get location if ghostMode is active
 		if (location != null && this.shouldIncludeLocation())
