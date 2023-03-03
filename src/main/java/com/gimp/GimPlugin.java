@@ -91,6 +91,7 @@ public class GimPlugin extends Plugin
 	private ClientToolbar clientToolbar;
 
 	@Inject
+	@Getter
 	private GimPluginConfig config;
 
 	@Inject
@@ -159,7 +160,7 @@ public class GimPlugin extends Plugin
 				// Send out broadcast
 				broadcastUpdate(group.getLocalGimp().getGimpData());
 				// Ping for initial gimp data
-				pingForUpdate();
+				pingForUpdate(false);
 			});
 		}
 	};
@@ -439,7 +440,7 @@ public class GimPlugin extends Plugin
 		// Send out initial broadcast
 		broadcastUpdate(group.getLocalGimp().getGimpData());
 		// Ping for initial gimp data
-		pingForUpdate();
+		pingForUpdate(true);
 		// Start listening for server broadcast
 		listenForBroadcast();
 		// Start interval-based broadcast tasks
@@ -542,7 +543,7 @@ public class GimPlugin extends Plugin
 					// If socket is not connected, fetch data (instead of waiting for broadcast)
 					if (!gimBroadcastManager.isSocketConnected())
 					{
-						pingForUpdate();
+						pingForUpdate(false);
 					}
 				}
 
@@ -612,7 +613,7 @@ public class GimPlugin extends Plugin
 	 * result asynchronously. Sent when the broadcast starts and as a fallback
 	 * if the socket disconnects.
 	 */
-	private void pingForUpdate()
+	private void pingForUpdate(boolean initial)
 	{
 		gimBroadcastManager.ping().whenCompleteAsync((result, ex) -> {
 			if (result != null)
@@ -620,12 +621,17 @@ public class GimPlugin extends Plugin
 				for (GimPlayer gimp : group.getGimps())
 				{
 					GimPlayer gimpData = result.get(gimp.getName());
-					// TODO: Some data for the local gimp needs to come from the server, so
-					// we comment out this condition. Instead, we need to implement a method
-					// that hydrates empty data on a GimPlayer but does not overwrite existing.
-					if (gimpData != null/*  && gimp != group.getLocalGimp()*/)
+					if (gimpData != null)
 					{
-						handleUpdate(gimpData);
+						// We need to be smart about which data we keep when initially loading local player
+						if (gimp == group.getLocalGimp() && initial)
+						{
+							handleInitialLocalUpdate(gimpData);
+						}
+						else
+						{
+							handleUpdate(gimpData);
+						}
 					}
 				}
 			}
@@ -650,14 +656,35 @@ public class GimPlugin extends Plugin
 	/* UPDATE FUNCTIONS */
 
 	/**
-	 * Handles an update from the server, maps gimp data to the
-	 * corresponding gimp and updates the panel.
+	 * Handles an initial update to the local player, hydrating specific
+	 * gimp data and calling other update functionality.
+	 *
+	 * @param gimpData GimPlayer data
+	 */
+	private void handleInitialLocalUpdate(GimPlayer gimpData)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			group.localHydrate(gimpData);
+			onUpdate(gimpData);
+		}
+	}
+
+	/**
+	 * Handles a normal update from the server, mapping gimp data to the
+	 * corresponding gimp and calling other update functionality.
 	 *
 	 * @param gimpData GimPlayer data
 	 */
 	private void handleUpdate(GimPlayer gimpData)
 	{
 		group.update(gimpData);
+		onUpdate(gimpData);
+	}
+
+	private void onUpdate(GimPlayer gimpData)
+	{
 		panel.updateGimpData(gimpData);
 		if (gimpData.getTilePing() != null)
 		{
@@ -819,12 +846,20 @@ public class GimPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Updates the notes data in the client config and broadcasts
+	 * the change.
+	 *
+	 * @param notes notes text string
+	 */
 	public void updateNotes(String notes)
 	{
 		GimPlayer localGimp = group.getLocalGimp();
 		if (localGimp != null)
 		{
 			localGimp.setNotes(notes);
+			// Set the notes data in the config as a fallback
+			config.notesData(notes);
 			Map<String, Object> notesData = localGimp.getData();
 			notesData.put("notes", notes);
 			broadcastUpdate(notesData);
