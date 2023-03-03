@@ -619,10 +619,14 @@ public class GimPlugin extends Plugin
 					GimPlayer gimpData = result.get(gimp.getName());
 					if (gimpData != null)
 					{
-						// We need to be smart about which data we keep when initially loading local player
-						if (gimp == group.getLocalGimp() && initial)
+						// We can ignore all incoming updates to the local player except for the
+						// initial one, which might be necessary for hydrating certain properties
+						if (gimp == group.getLocalGimp())
 						{
-							handleInitialLocalUpdate(gimpData);
+							if (initial)
+							{
+								handleInitialLocalUpdate(gimpData);
+							}
 						}
 						else
 						{
@@ -682,6 +686,10 @@ public class GimPlugin extends Plugin
 	private void onUpdate(GimPlayer gimpData)
 	{
 		panel.updateGimpData(gimpData);
+		if (gimpData.getNotes() != null)
+		{
+			panel.setNotes(gimpData.getName(), gimpData.getNotes());
+		}
 		if (gimpData.getTilePing() != null)
 		{
 			GimPlayer gimp = group.getGimp(gimpData.getName());

@@ -538,10 +538,6 @@ public class GimPluginPanel extends PluginPanel
 				{
 					setLastActivity(selectedGimp, gimpData.getLastActivity(), gimp.getWorld());
 				}
-				if (gimpData.getNotes() != null)
-				{
-					setNotes(selectedGimp, gimpData.getNotes());
-				}
 				// Update more gimp data...
 			}
 		});
@@ -618,7 +614,7 @@ public class GimPluginPanel extends PluginPanel
 		}
 	}
 
-	private void setNotes(String gimpName, String notes)
+	public void setNotes(String gimpName, String notes)
 	{
 		if (selectedGimp != null && selectedGimp.equals(gimpName))
 		{
