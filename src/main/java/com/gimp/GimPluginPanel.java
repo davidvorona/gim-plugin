@@ -25,6 +25,7 @@
 package com.gimp;
 
 import com.gimp.gimps.*;
+import com.gimp.ui.GimNotes;
 import com.gimp.ui.GimTab;
 import com.gimp.ui.GimTabGroup;
 import com.google.common.collect.ImmutableList;
@@ -107,6 +108,8 @@ public class GimPluginPanel extends PluginPanel
 	private final JButton refreshButton = new JButton("Refresh");
 	private final JLabel activityLabel = new JLabel();
 
+	private final GimNotes gimNotes = new GimNotes();
+
 	/* Container of all the selectable gimp tabs */
 	private GimTabGroup tabGroup;
 
@@ -129,6 +132,7 @@ public class GimPluginPanel extends PluginPanel
 	public GimPluginPanel(GimPlugin plugin)
 	{
 		this.group = plugin.getGroup();
+		this.gimNotes.init(plugin);
 
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -245,6 +249,10 @@ public class GimPluginPanel extends PluginPanel
 					loadGimpData();
 				});
 				container.add(refreshButton, c);
+				c.gridy++;
+
+				JPanel notesPanel = makeNotesPanel();
+				container.add(notesPanel, c);
 				c.gridy++;
 
 				// Add data container to panel
@@ -427,6 +435,26 @@ public class GimPluginPanel extends PluginPanel
 		return skillPanel;
 	}
 
+	private JPanel makeNotesPanel()
+	{
+		assert SwingUtilities.isEventDispatchThread();
+
+		JPanel notesPanel = new JPanel();
+		notesPanel.setLayout(new DynamicGridLayout(2, 1, 0, 2));
+		notesPanel.setBorder(new EmptyBorder(2, 0, 2, 0));
+
+		JLabel notesLabel = new JLabel();
+		notesLabel.setText("Notes");
+		notesLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		notesLabel.setFont(FontManager.getRunescapeBoldFont());
+		notesLabel.setForeground(ColorScheme.BRAND_ORANGE);
+		notesPanel.add(notesLabel);
+
+		notesPanel.add(this.gimNotes);
+
+		return notesPanel;
+	}
+
 	private void loadGimpData()
 	{
 		// If for some reason no tab was selected, default to normal
@@ -450,9 +478,10 @@ public class GimPluginPanel extends PluginPanel
 		// Display gimp data
 		GimPlayer gimp = group.getGimp(gimpName);
 		SwingUtilities.invokeLater(() -> {
+			// Apply gimp data to panel
 			applyGimpData(gimp);
 
-			// Apply hiscore date separately
+			// Reinitialize hiscore data table
 			for (Map.Entry<HiscoreSkill, JLabel> entry : skillLabels.entrySet())
 			{
 				HiscoreSkill skill = entry.getKey();
@@ -464,6 +493,7 @@ public class GimPluginPanel extends PluginPanel
 			}
 		});
 
+		// Fetch gimp hiscores and apply to empty table
 		group.getHiscores(gimpName).whenCompleteAsync((result, ex) -> {
 			if (!gimpName.equals(selectedGimp))
 			{
@@ -507,6 +537,10 @@ public class GimPluginPanel extends PluginPanel
 				if (gimpData.getLastActivity() != null)
 				{
 					setLastActivity(selectedGimp, gimpData.getLastActivity(), gimp.getWorld());
+				}
+				if (gimpData.getNotes() != null)
+				{
+					setNotes(selectedGimp, gimpData.getNotes());
 				}
 				// Update more gimp data...
 			}
@@ -581,6 +615,22 @@ public class GimPluginPanel extends PluginPanel
 		}
 	}
 
+	private void setNotes(String gimpName, String notes)
+	{
+		if (selectedGimp != null && selectedGimp.equals(gimpName))
+		{
+			// First we check if we need to enable/disable the text area
+			final Player localPlayer = client.getLocalPlayer();
+			boolean isLocal = gimpName.equals(localPlayer.getName());
+			gimNotes.setEnabled(isLocal);
+			// Set the tooltip text depending on local player or not
+			String toolTipText = isLocal ? "Share notes with the group!" : gimpName + "'s notes";
+			gimNotes.setToolTipText(toolTipText);
+			// Set the actual note text
+			gimNotes.setNotes(notes);
+		}
+	}
+
 	private void applyGimpData(GimPlayer gimp)
 	{
 		assert SwingUtilities.isEventDispatchThread();
@@ -592,6 +642,7 @@ public class GimPluginPanel extends PluginPanel
 		setHpBar(gimpName, gimp.getHp(), gimp.getMaxHp());
 		setPrayerBar(gimpName, gimp.getPrayer(), gimp.getMaxPrayer());
 		setLastActivity(gimpName, gimp.getLastActivity(), gimp.getWorld());
+		setNotes(gimpName, gimp.getNotes());
 	}
 
 	/**

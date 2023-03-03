@@ -184,9 +184,9 @@ public class Group
 				{
 					gimp.setMaxPrayer(gimpData.getMaxPrayer());
 				}
-				if (gimpData.getCustomStatus() != null)
+				if (gimpData.getNotes() != null)
 				{
-					gimp.setCustomStatus(gimpData.getCustomStatus());
+					gimp.setNotes(gimpData.getNotes());
 				}
 				// Must set ghost mode before location!
 				if (gimpData.getGhostMode() != null)

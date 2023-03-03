@@ -35,12 +35,16 @@ import com.google.gson.Gson;
 import com.google.inject.Provides;
 import io.socket.emitter.Emitter;
 import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -812,6 +816,18 @@ public class GimPlugin extends Plugin
 			Map<String, Object> activityData = localGimp.getData();
 			activityData.put("lastActivity", activity);
 			broadcastUpdate(activityData);
+		}
+	}
+
+	public void updateNotes(String notes)
+	{
+		GimPlayer localGimp = group.getLocalGimp();
+		if (localGimp != null)
+		{
+			localGimp.setNotes(notes);
+			Map<String, Object> notesData = localGimp.getData();
+			notesData.put("notes", notes);
+			broadcastUpdate(notesData);
 		}
 	}
 
