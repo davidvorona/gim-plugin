@@ -11,10 +11,10 @@ repositories {
     mavenCentral()
 }
 
-def runeLiteVersion = '1.9.11.2'
+def runeLiteVersion = 'latest.release'
 
 // Test locally via Gradle: "./gradlew run -DgimpDev=true"
-final boolean isGimpDev = Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("gimpDev"));
+final boolean isGimpDev = Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("gimpDev"))
 
 dependencies {
     if (isGimpDev) {
@@ -37,10 +37,11 @@ dependencies {
 
 group = 'com.gimp'
 version = '2.6.0'
-sourceCompatibility = isGimpDev ? '11' : '1.8';
+sourceCompatibility = isGimpDev ? '11' : '1.8'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+    options.release.set(11)
 }
 
 // Allows us to use the plugin via the Gradle "run" task

@@ -80,7 +80,42 @@ public class GimPluginPanel extends PluginPanel
 	/**
 	 * Real skills, ordered in the way they should be displayed in the panel.
 	 */
-	private static final List<HiscoreSkill> SKILLS = ImmutableList.of(ATTACK, HITPOINTS, MINING, STRENGTH, AGILITY, SMITHING, DEFENCE, HERBLORE, FISHING, RANGED, THIEVING, COOKING, PRAYER, CRAFTING, FIREMAKING, MAGIC, FLETCHING, WOODCUTTING, RUNECRAFT, SLAYER, FARMING, CONSTRUCTION, HUNTER);
+	private static final List<HiscoreSkill> SKILLS = ImmutableList.of(
+		ATTACK, HITPOINTS, MINING,
+		STRENGTH, AGILITY, SMITHING,
+		DEFENCE, HERBLORE, FISHING,
+		RANGED, THIEVING, COOKING,
+		PRAYER, CRAFTING, FIREMAKING,
+		MAGIC, FLETCHING, WOODCUTTING,
+		RUNECRAFT, SLAYER, FARMING,
+		CONSTRUCTION, HUNTER
+	);
+
+	/**
+	 * Bosses, ordered in the way they should be displayed in the panel.
+	 */
+	private static final List<HiscoreSkill> BOSSES = ImmutableList.of(
+		ABYSSAL_SIRE, ALCHEMICAL_HYDRA, ARTIO,
+		BARROWS_CHESTS, BRYOPHYTA, CALLISTO,
+		CALVARION, CERBERUS, CHAMBERS_OF_XERIC,
+		CHAMBERS_OF_XERIC_CHALLENGE_MODE, CHAOS_ELEMENTAL, CHAOS_FANATIC,
+		COMMANDER_ZILYANA, CORPOREAL_BEAST, CRAZY_ARCHAEOLOGIST,
+		DAGANNOTH_PRIME, DAGANNOTH_REX, DAGANNOTH_SUPREME,
+		DERANGED_ARCHAEOLOGIST, DUKE_SUCELLUS, GENERAL_GRAARDOR,
+		GIANT_MOLE, GROTESQUE_GUARDIANS, HESPORI,
+		KALPHITE_QUEEN, KING_BLACK_DRAGON, KRAKEN,
+		KREEARRA, KRIL_TSUTSAROTH, MIMIC,
+		NEX, NIGHTMARE, PHOSANIS_NIGHTMARE,
+		OBOR, PHANTOM_MUSPAH, SARACHNIS,
+		SCORPIA, SKOTIZO, SPINDEL,
+		TEMPOROSS, THE_GAUNTLET, THE_CORRUPTED_GAUNTLET,
+		THE_LEVIATHAN, THE_WHISPERER, THEATRE_OF_BLOOD,
+		THEATRE_OF_BLOOD_HARD_MODE, THERMONUCLEAR_SMOKE_DEVIL, TOMBS_OF_AMASCUT,
+		TOMBS_OF_AMASCUT_EXPERT, TZKAL_ZUK, TZTOK_JAD,
+		VARDORVIS, VENENATIS, VETION,
+		VORKATH, WINTERTODT, ZALCANO,
+		ZULRAH
+	);
 
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
@@ -232,7 +267,7 @@ public class GimPluginPanel extends PluginPanel
 				JPanel statsPanel = new JPanel();
 				statsPanel.setLayout(new GridLayout(8, 3));
 				statsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				statsPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
+				statsPanel.setBorder(new EmptyBorder(5, 0, 2, 0));
 
 				// For each skill on the in-game panel, create a Label and add it to the UI
 				for (HiscoreSkill skill : SKILLS)
@@ -242,6 +277,21 @@ public class GimPluginPanel extends PluginPanel
 				}
 
 				container.add(statsPanel, c);
+				c.gridy++;
+
+				JPanel bossPanel = new JPanel();
+				bossPanel.setLayout(new GridLayout(0, 3));
+				bossPanel.setBackground((ColorScheme.DARKER_GRAY_COLOR));
+				bossPanel.setBorder(new EmptyBorder(2, 0, 5, 0));
+
+				// For each boss on the HiScores, create a Label and add it to the UI
+				for (HiscoreSkill skill : BOSSES)
+				{
+					JPanel panel = makeHiscorePanel(skill);
+					bossPanel.add(panel);
+				}
+
+				container.add(bossPanel, c);
 				c.gridy++;
 
 				// Create button to refresh gimp data
@@ -410,7 +460,9 @@ public class GimPluginPanel extends PluginPanel
 		}
 		else if (skill.getType() == HiscoreSkillType.BOSS)
 		{
-			directory = "bosses/";
+			// Boss icons are kept in the hiscores plugin resources folder - this should be
+			// okay since hiscores is an official RuneLite plugin.
+			directory = "/net/runelite/client/plugins/hiscore/bosses/";
 		}
 		else
 		{
@@ -421,7 +473,16 @@ public class GimPluginPanel extends PluginPanel
 		String skillIcon = directory + skillName + ".png";
 		log.debug("Loading skill icon from {}", skillIcon);
 
-		label.setIcon(new ImageIcon(ImageUtil.loadImageResource(getClass(), skillIcon)));
+		// Because the path to the boss icons is less reliable, we want to catch the exception
+		// if boss icons are not found due to that path changing.
+		try
+		{
+			label.setIcon(new ImageIcon(ImageUtil.loadImageResource(getClass(), skillIcon)));
+		}
+		catch (Exception e)
+		{
+			log.debug(e.toString());
+		}
 
 		boolean totalLabel = skill == OVERALL || skill == null; // overall or combat
 		label.setIconTextGap(totalLabel ? 10 : 4);
@@ -677,7 +738,15 @@ public class GimPluginPanel extends PluginPanel
 			{
 				if (result.getPlayer() != null)
 				{
-					int combatLevel = Experience.getCombatLevel(result.getSkill(ATTACK).getLevel(), result.getSkill(STRENGTH).getLevel(), result.getSkill(DEFENCE).getLevel(), result.getSkill(HITPOINTS).getLevel(), result.getSkill(MAGIC).getLevel(), result.getSkill(RANGED).getLevel(), result.getSkill(PRAYER).getLevel());
+					int combatLevel = Experience.getCombatLevel(
+						result.getSkill(ATTACK).getLevel(),
+						result.getSkill(STRENGTH).getLevel(),
+						result.getSkill(DEFENCE).getLevel(),
+						result.getSkill(HITPOINTS).getLevel(),
+						result.getSkill(MAGIC).getLevel(),
+						result.getSkill(RANGED).getLevel(),
+						result.getSkill(PRAYER).getLevel()
+					);
 					label.setText(Integer.toString(combatLevel));
 				}
 			}
