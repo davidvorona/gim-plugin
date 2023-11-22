@@ -48,8 +48,8 @@ import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -552,7 +552,7 @@ public class GimPlugin extends Plugin
 				{
 					// Start with default period
 					long nextDelay = period;
-					final Widget worldMapView = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
+					final Widget worldMapView = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
 					// Quarter delay to 2.5 secs if world map is open
 					if (worldMapView != null)
 					{
