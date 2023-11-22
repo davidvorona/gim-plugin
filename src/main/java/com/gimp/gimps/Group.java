@@ -360,10 +360,13 @@ public class Group
 		if (validateGimpName(name) && gimClanChannel != null)
 		{
 			ClanChannelMember onlineMember = gimClanChannel.findMember(name);
-			if (onlineMember != null)
+			GimPlayer gimp = getGimp(name);
+			// If you cannot find member in clan, or GimPlayer is in ghost mode
+			if (onlineMember == null || (gimp != null && gimp.getGhostMode()))
 			{
-				return onlineMember.getWorld();
+				return GimPlugin.OFFLINE_WORLD;
 			}
+			return onlineMember.getWorld();
 		}
 		return GimPlugin.OFFLINE_WORLD;
 	}

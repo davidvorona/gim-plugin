@@ -699,6 +699,11 @@ public class GimPlugin extends Plugin
 			GimPlayer gimp = group.getGimp(gimpData.getName());
 			onTilePing(gimp, gimpData.getTilePing());
 		}
+		if (gimpData.getGhostMode() != null && gimpData.getGhostMode())
+		{
+			GimPlayer gimp = group.getGimp(gimpData.getName());
+			updateWorld(gimp, OFFLINE_WORLD);
+		}
 	}
 
 	/**
@@ -786,7 +791,8 @@ public class GimPlugin extends Plugin
 	}
 
 	/**
-	 * Updates the world of provided GimPlayer.
+	 * Updates the world of provided GimPlayer, and sets the last activity
+	 * since it is dependent on online status (world == 0).
 	 *
 	 * @param world world number of GimPlayer
 	 */
@@ -794,6 +800,7 @@ public class GimPlugin extends Plugin
 	{
 		group.setWorld(gimp.getName(), world);
 		panel.setWorld(gimp.getName(), world);
+		panel.setLastActivity(gimp.getName(), gimp.getLastActivity(), world);
 	}
 
 	/**
