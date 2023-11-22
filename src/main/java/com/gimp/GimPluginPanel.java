@@ -50,7 +50,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicButtonUI;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Experience;
@@ -65,6 +67,8 @@ import net.runelite.client.ui.components.ProgressBar;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
+import net.runelite.client.util.LinkBrowser;
+import net.runelite.client.util.SwingUtil;
 import net.runelite.client.hiscore.HiscoreSkill;
 import static net.runelite.client.hiscore.HiscoreSkill.*;
 import net.runelite.client.hiscore.HiscoreResult;
@@ -76,6 +80,8 @@ import org.apache.commons.lang3.StringUtils;
 public class GimPluginPanel extends PluginPanel
 {
 	private static final ImageIcon GIMP_ICON_SMALL;
+
+	private static final ImageIcon GITHUB_ICON;
 
 	/**
 	 * Real skills, ordered in the way they should be displayed in the panel.
@@ -161,6 +167,8 @@ public class GimPluginPanel extends PluginPanel
 	{
 		final BufferedImage gimpIconSmallImg = ImageUtil.loadImageResource(GimPluginPanel.class, "gimpoint-small.png");
 		GIMP_ICON_SMALL = new ImageIcon(gimpIconSmallImg);
+		final BufferedImage githubIcon = ImageUtil.loadImageResource(GimPluginPanel.class, "github.png");
+		GITHUB_ICON = new ImageIcon(ImageUtil.resizeImage(githubIcon, 16, 16));
 	}
 
 	@Inject
@@ -353,16 +361,47 @@ public class GimPluginPanel extends PluginPanel
 
 		// Create a panel to hold plugin status info
 		final JPanel statusPanel = new JPanel();
-		statusPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		statusPanel.setLayout(new DynamicGridLayout(1, 1, 0, 0));
+		statusPanel.setLayout(new BorderLayout(4, 0));
 		statusPanel.setBorder(new EmptyBorder(2, 8, 2, 8));
+		// Create a panel to hold connection label
+		final JPanel connectionPanel = new JPanel();
+		connectionPanel.setLayout(new BorderLayout());
+		connectionPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		// Add connection status
 		connectionLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		connectionLabel.setFont(FontManager.getRunescapeFont());
 		connectionLabel.setText(CONNECTING_TEXT);
-		statusPanel.add(connectionLabel);
+		connectionPanel.add(connectionLabel);
+		statusPanel.add(connectionPanel);
+		// Add GitHub button
+		JButton githubBtn = makeGithubButton();
+		statusPanel.add(githubBtn, BorderLayout.LINE_END);
 
 		return statusPanel;
+	}
+
+	private JButton makeGithubButton()
+	{
+		JButton githubBtn = new JButton();
+		SwingUtil.removeButtonDecorations(githubBtn);
+		githubBtn.setIcon(GITHUB_ICON);
+		githubBtn.setToolTipText("Report issues or contribute on GitHub");
+		githubBtn.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		githubBtn.setUI(new BasicButtonUI());
+		githubBtn.addActionListener((ev) -> LinkBrowser.browse("https://github.com/davidvorona/gim-plugin"));
+		githubBtn.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			public void mouseEntered(java.awt.event.MouseEvent evt)
+			{
+				githubBtn.setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
+			}
+
+			public void mouseExited(java.awt.event.MouseEvent evt)
+			{
+				githubBtn.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			}
+		});
+		return githubBtn;
 	}
 
 	private JPanel makeInfoPanel()
