@@ -47,7 +47,7 @@ public interface GimPluginConfig extends Config
 		position = 1,
 		keyName = "ghostMode",
 		name = "Ghost Mode",
-		description = "Hide your location from your fellow gimps"
+		description = "Hide your status and location from your fellow gimps"
 	)
 	default boolean ghostMode()
 	{

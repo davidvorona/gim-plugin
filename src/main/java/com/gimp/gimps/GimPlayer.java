@@ -79,7 +79,7 @@ public class GimPlayer
 
 	@Setter
 	@Getter
-	private Boolean ghostMode;
+	private Boolean ghostMode = false;
 
 	@Setter
 	@Getter
