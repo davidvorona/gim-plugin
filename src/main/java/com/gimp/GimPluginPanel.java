@@ -287,6 +287,17 @@ public class GimPluginPanel extends PluginPanel
 				container.add(statsPanel, c);
 				c.gridy++;
 
+				JPanel totalPanel = new JPanel();
+				totalPanel.setLayout(new GridLayout(1, 2));
+				totalPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+				statsPanel.setBorder(new EmptyBorder(5, 0, 2, 0));
+
+				totalPanel.add(makeHiscorePanel(null)); // Combat has no hiscore skill, referred to as null
+				totalPanel.add(makeHiscorePanel(OVERALL));
+
+				container.add(totalPanel, c);
+				c.gridy++;
+
 				JPanel bossPanel = new JPanel();
 				bossPanel.setLayout(new GridLayout(0, 3));
 				bossPanel.setBackground((ColorScheme.DARKER_GRAY_COLOR));
