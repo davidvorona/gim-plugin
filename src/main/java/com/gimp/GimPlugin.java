@@ -48,6 +48,7 @@ import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.client.input.KeyManager;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.RuneLite;
@@ -60,6 +61,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.party.data.PartyTilePingData;
 import net.runelite.client.plugins.party.messages.TilePing;
+import net.runelite.client.util.HotkeyListener;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -88,6 +90,9 @@ public class GimPlugin extends Plugin
 	private ClientToolbar clientToolbar;
 
 	@Inject
+	private KeyManager keyManager;
+
+	@Inject
 	private OkHttpClient okHttpClient;
 
 	@Inject
@@ -109,6 +114,8 @@ public class GimPlugin extends Plugin
 
 	@Getter
 	private final List<PartyTilePingData> pendingTilePings = Collections.synchronizedList(new ArrayList<>());
+
+	private boolean pingHotkeyPressed = false;
 
 	@Inject
 	private GimWorldMapPointManager gimWorldMapPointManager;
@@ -165,6 +172,21 @@ public class GimPlugin extends Plugin
 		}
 	};
 
+	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.pingHotkey())
+	{
+		@Override
+		public void hotkeyPressed()
+		{
+			pingHotkeyPressed = true;
+		}
+
+		@Override
+		public void hotkeyReleased()
+		{
+			pingHotkeyPressed = false;
+		}
+	};
+
 	@Override
 	protected void startUp()
 	{
@@ -182,7 +204,8 @@ public class GimPlugin extends Plugin
 		{
 			panel.unload();
 		}
-		// Add the overlay for pings
+		// Set up listener and overlay for pings
+		keyManager.registerKeyListener(hotkeyListener);
 		overlayManager.add(gimPingOverlay);
 	}
 
@@ -190,6 +213,7 @@ public class GimPlugin extends Plugin
 	protected void shutDown()
 	{
 		log.debug("GIMP stopped!");
+		keyManager.unregisterKeyListener(hotkeyListener);
 		overlayManager.remove(gimPingOverlay);
 		unload();
 		removePanel();
@@ -341,8 +365,8 @@ public class GimPlugin extends Plugin
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		// Handle event
-		if (!client.isKeyPressed(KeyCode.KC_SHIFT) || client.isMenuOpen() || group.getGimps().isEmpty() || !config.pings())
+		// Handle ping event
+		if (!pingHotkeyPressed || client.isMenuOpen() || group.getGimps().isEmpty() || !config.pings())
 		{
 			return;
 		}

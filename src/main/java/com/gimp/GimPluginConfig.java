@@ -28,6 +28,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Keybind;
 
 @ConfigGroup("gimp")
 public interface GimPluginConfig extends Config
@@ -68,7 +69,8 @@ public interface GimPluginConfig extends Config
 	@ConfigItem(
 		keyName = "pings",
 		name = "Pings",
-		description = "Enable group pings (shift + left-click)",
+		description = "Enable group pings.<br>"
+			+ "To ping, hold the ping hotkey down and click on the tile you want to ping.",
 		position = 3
 	)
 	default boolean pings()
@@ -87,15 +89,27 @@ public interface GimPluginConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "pingHotkey",
+		name = "Ping hotkey",
+		description = "Key to hold to send a tile ping.<br>"
+			+ "To ping, hold the ping hotkey down and click on the tile you want to ping.",
+		position = 5
+	)
+	default Keybind pingHotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
 	@ConfigSection(
-		position = 5,
+		position = 6,
 		name = "Developer",
 		description = "Developer settings"
 	)
 	String developerSection = "developerSection";
 
 	@ConfigItem(
-		position = 6,
+		position = 7,
 		section = developerSection,
 		keyName = "showSelf",
 		name = "Show Self",
