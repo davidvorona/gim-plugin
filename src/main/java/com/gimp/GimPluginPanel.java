@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import javax.inject.Inject;
+import com.google.inject.Inject;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -50,13 +50,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicButtonUI;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Experience;
 import net.runelite.api.Player;
+import static net.runelite.api.SpriteID.TAB_COMBAT;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
 import net.runelite.client.ui.ColorScheme;
@@ -117,12 +118,12 @@ public class GimPluginPanel extends PluginPanel
 		SCORPIA, SCURRIUS, SKOTIZO,
 		SOL_HEREDIT, SPINDEL, TEMPOROSS,
 		THE_GAUNTLET, THE_CORRUPTED_GAUNTLET, THE_HUEYCOATL,
-		THE_LEVIATHAN, THE_WHISPERER, THEATRE_OF_BLOOD,
-		THEATRE_OF_BLOOD_HARD_MODE, THERMONUCLEAR_SMOKE_DEVIL, TOMBS_OF_AMASCUT,
-		TOMBS_OF_AMASCUT_EXPERT, TZKAL_ZUK, TZTOK_JAD,
-		VARDORVIS, VENENATIS, VETION,
-		VORKATH, WINTERTODT, ZALCANO,
-		ZULRAH
+		THE_LEVIATHAN, THE_ROYAL_TITANS, THE_WHISPERER,
+		THEATRE_OF_BLOOD, THEATRE_OF_BLOOD_HARD_MODE, THERMONUCLEAR_SMOKE_DEVIL,
+		TOMBS_OF_AMASCUT, TOMBS_OF_AMASCUT_EXPERT, TZKAL_ZUK,
+		TZTOK_JAD, VARDORVIS, VENENATIS,
+		VETION, VORKATH, WINTERTODT,
+		ZALCANO, ZULRAH
 	);
 
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
@@ -131,6 +132,9 @@ public class GimPluginPanel extends PluginPanel
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private final SpriteManager spriteManager;
 
 	// Not an EnumMap because we need null keys for combat
 	private final Map<HiscoreSkill, JLabel> skillLabels = new HashMap<>();
@@ -174,10 +178,11 @@ public class GimPluginPanel extends PluginPanel
 	}
 
 	@Inject
-	public GimPluginPanel(GimPlugin plugin)
+	public GimPluginPanel(GimPlugin plugin, SpriteManager spriteManager)
 	{
 		this.group = plugin.getGroup();
 		this.gimNotes.init(plugin);
+		this.spriteManager = spriteManager;
 
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -505,36 +510,14 @@ public class GimPluginPanel extends PluginPanel
 		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setText(pad("--", skillType));
 
-		String directory;
-		if (skill == null || skill == OVERALL)
-		{
-			directory = "/skill_icons/";
-		}
-		else if (skill.getType() == HiscoreSkillType.BOSS)
-		{
-			// Boss icons are kept in the hiscores plugin resources folder - this should be
-			// okay since hiscores is an official RuneLite plugin.
-			directory = "/net/runelite/client/plugins/hiscore/bosses/";
-		}
-		else
-		{
-			directory = "/skill_icons_small/";
-		}
-
-		String skillName = (skill == null ? "combat" : skill.name().toLowerCase());
-		String skillIcon = directory + skillName + ".png";
-		log.debug("Loading skill icon from {}", skillIcon);
-
-		// Because the path to the boss icons is less reliable, we want to catch the exception
-		// if boss icons are not found due to that path changing.
-		try
-		{
-			label.setIcon(new ImageIcon(ImageUtil.loadImageResource(getClass(), skillIcon)));
-		}
-		catch (Exception e)
-		{
-			log.debug(e.toString());
-		}
+		spriteManager.getSpriteAsync(skill == null ? TAB_COMBAT : skill.getSpriteId(), 0, (sprite) ->
+			SwingUtilities.invokeLater(() ->
+			{
+				// Icons are all 25x25 or smaller, so they're fit into a 25x25 canvas to give them a consistent size for
+				// better alignment. Further, they are then scaled down to 20x20 to not be overly large in the panel.
+				final BufferedImage scaledSprite = ImageUtil.resizeImage(ImageUtil.resizeCanvas(sprite, 25, 25), 20, 20);
+				label.setIcon(new ImageIcon(scaledSprite));
+			}));
 
 		boolean totalLabel = skill == OVERALL || skill == null; // overall or combat
 		label.setIconTextGap(totalLabel ? 10 : 4);
