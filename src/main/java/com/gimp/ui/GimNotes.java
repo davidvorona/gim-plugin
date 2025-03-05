@@ -87,7 +87,7 @@ public class GimNotes extends JPanel
 				}
 				catch (CannotUndoException ex)
 				{
-					log.warn("Notes Document Unable To Undo: " + ex);
+					log.warn("Notes Document Unable To Undo: {}", String.valueOf(ex));
 				}
 			}
 		});
@@ -106,7 +106,7 @@ public class GimNotes extends JPanel
 				}
 				catch (CannotUndoException ex)
 				{
-					log.warn("Notes Document Unable To Redo: " + ex);
+					log.warn("Notes Document Unable To Redo: {}", String.valueOf(ex));
 				}
 			}
 		});
@@ -135,7 +135,7 @@ public class GimNotes extends JPanel
 				}
 				catch (BadLocationException ex)
 				{
-					log.warn("Notes Document Bad Location: " + ex);
+					log.warn("Notes Document Bad Location: {}", String.valueOf(ex));
 				}
 			}
 		});

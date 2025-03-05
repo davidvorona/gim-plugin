@@ -84,7 +84,7 @@ public class GimWorldMapPointManager
 			points.put(gimpName, worldMapPoint);
 			associatedPoints.put(gimpName, new LinkedList<>());
 			_worldMapPointManager.add(worldMapPoint.getWorldMapPoint());
-			log.debug("Add world map point for " + gimpName);
+			log.debug("Add world map point for {}", gimpName);
 		}
 		else
 		{
@@ -134,7 +134,7 @@ public class GimWorldMapPointManager
 			}
 			associatedPoints.remove(gimpName);
 
-			log.debug("Remove map point for " + gimpName);
+			log.debug("Remove map point for {}", gimpName);
 		}
 		else
 		{

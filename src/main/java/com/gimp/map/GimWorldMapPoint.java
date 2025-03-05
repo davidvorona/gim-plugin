@@ -30,6 +30,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.Queue;
+import lombok.Getter;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 
@@ -43,6 +44,7 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 public class GimWorldMapPoint
 {
 	private final GimPlayer gimp;
+	@Getter
 	private final WorldMapPoint worldMapPoint;
 	private double x;
 	private double y;
@@ -96,11 +98,6 @@ public class GimWorldMapPoint
 	public WorldPoint getWorldPoint()
 	{
 		return worldMapPoint.getWorldPoint();
-	}
-
-	public WorldMapPoint getWorldMapPoint()
-	{
-		return worldMapPoint;
 	}
 
 	private void refreshWorldPoint()

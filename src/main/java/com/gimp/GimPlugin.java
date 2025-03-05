@@ -259,7 +259,7 @@ public class GimPlugin extends Plugin
 			if (changedClanChannel == gimClanChannel)
 			{
 				String gimClanChannelName = gimClanChannel.getName();
-				log.debug("GIM clan joined: " + gimClanChannelName);
+				log.debug("GIM clan joined: {}", gimClanChannelName);
 				// Once group is loaded, we can display panel and start the broadcast
 				load();
 			}
@@ -370,13 +370,14 @@ public class GimPlugin extends Plugin
 		{
 			return;
 		}
-		Tile selectedSceneTile = client.getSelectedSceneTile();
+		WorldView worldView = client.getLocalPlayer().getWorldView();
+		Tile selectedSceneTile = worldView.getSelectedSceneTile();
 		if (selectedSceneTile == null)
 		{
 			return;
 		}
 		boolean isOnCanvas = false;
-		for (MenuEntry menuEntry : client.getMenuEntries())
+		for (MenuEntry menuEntry : client.getMenu().getMenuEntries())
 		{
 			if (menuEntry == null)
 			{
@@ -416,7 +417,8 @@ public class GimPlugin extends Plugin
 		if (config.pingSound())
 		{
 			WorldPoint point = tilePing.getPoint();
-			if (point.getPlane() != client.getPlane() || !WorldPoint.isInScene(client, point.getX(), point.getY()))
+			WorldView worldView = client.getLocalPlayer().getWorldView();
+			if (point.getPlane() != client.getLocalPlayer().getWorldLocation().getPlane() || !WorldPoint.isInScene(worldView, point.getX(), point.getY()))
 			{
 				return;
 			}

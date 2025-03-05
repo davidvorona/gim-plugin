@@ -80,7 +80,7 @@ public class HttpClient extends RequestClient
 			@Override
 			public void onFailure(@NonNull Call call, @NonNull IOException e)
 			{
-				log.error("Request failed: " + e);
+				log.error("Request failed: {}", String.valueOf(e));
 			}
 
 			@Override

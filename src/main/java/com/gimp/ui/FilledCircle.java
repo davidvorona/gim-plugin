@@ -28,15 +28,13 @@ import javax.swing.*;
 import java.awt.*;
 import lombok.Setter;
 
+@Setter
 public class FilledCircle extends JPanel
 {
-	@Setter
 	private int width;
 
-	@Setter
 	private int height;
 
-	@Setter
 	private Color color;
 
 	public FilledCircle(int width, int height, Color color)

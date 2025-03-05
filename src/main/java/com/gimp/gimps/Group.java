@@ -394,13 +394,13 @@ public class Group
 			HiscoreResult result = hiscoreManager.lookup(name, HiscoreEndpoint.NORMAL);
 			if (result == null)
 			{
-				log.warn("Could not find hiscore data for " + name);
+				log.warn("Could not find hiscore data for {}", name);
 			}
 			hiscoreResult.complete(result);
 		}
 		catch (IOException e)
 		{
-			log.error("Error fetching hiscores: " + e);
+			log.error("Error fetching hiscores: {}", String.valueOf(e));
 			hiscoreResult.completeExceptionally(e);
 		}
 		return hiscoreResult;

@@ -36,10 +36,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 
+@Getter
 @Slf4j
 public class SocketClient extends RequestClient
 {
-	@Getter
 	public Socket client;
 
 	private static final String EVENT_CONNECTION_ACK = "connection-ack";

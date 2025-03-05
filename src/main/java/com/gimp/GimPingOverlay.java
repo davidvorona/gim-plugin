@@ -81,7 +81,7 @@ class GimPingOverlay extends Overlay
 
 	private void renderPing(final Graphics2D graphics, final PartyTilePingData ping)
 	{
-		final LocalPoint localPoint = LocalPoint.fromWorld(client, ping.getPoint());
+		final LocalPoint localPoint = LocalPoint.fromWorld(client.getLocalPlayer().getWorldView(), ping.getPoint());
 
 		if (localPoint == null)
 		{

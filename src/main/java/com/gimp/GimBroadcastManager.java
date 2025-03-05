@@ -204,11 +204,11 @@ public class GimBroadcastManager
 		{
 			RequestClient requestClient = getRequestClient();
 			String dataJson = gson.toJson(data);
-			requestClient.broadcast(dataJson).thenAccept((result) -> log.debug("Broadcast data: " + result));
+			requestClient.broadcast(dataJson).thenAccept((result) -> log.debug("Broadcast data: {}", result));
 		}
 		catch (Exception e)
 		{
-			log.error("Broadcast error: " + e);
+			log.error("Broadcast error: {}", String.valueOf(e));
 		}
 	}
 
@@ -223,13 +223,13 @@ public class GimBroadcastManager
 		try
 		{
 			return requestClient.ping().thenApply((result) -> {
-				log.debug("Ping data: " + result);
+				log.debug("Ping data: {}", result);
 				return parsePingData(result);
 			});
 		}
 		catch (Exception e)
 		{
-			log.error("Ping error: " + e);
+			log.error("Ping error: {}", String.valueOf(e));
 			return null;
 		}
 	}

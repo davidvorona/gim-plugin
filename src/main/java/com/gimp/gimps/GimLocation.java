@@ -31,6 +31,7 @@ import net.runelite.api.coords.WorldPoint;
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 @Slf4j
 public class GimLocation
 {
@@ -41,13 +42,10 @@ public class GimLocation
 		y
 	}
 
-	@Getter
 	final int x;
 
-	@Getter
 	final int y;
 
-	@Getter
 	final int plane;
 
 	public GimLocation(WorldPoint worldPoint)
