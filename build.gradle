@@ -36,7 +36,7 @@ dependencies {
 }
 
 group = 'com.gimp'
-version = '2.9.2'
+version = '2.9.3'
 sourceCompatibility = isGimpDev ? '11' : '1.8'
 
 tasks.withType(JavaCompile) {
