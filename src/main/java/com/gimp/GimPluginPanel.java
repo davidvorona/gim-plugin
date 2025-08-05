@@ -38,11 +38,15 @@ import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import com.google.inject.Inject;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -56,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Experience;
 import net.runelite.api.Player;
-import static net.runelite.api.SpriteID.TAB_COMBAT;
+import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
@@ -109,7 +113,7 @@ public class GimPluginPanel extends PluginPanel
 		CHAOS_ELEMENTAL, CHAOS_FANATIC, COMMANDER_ZILYANA,
 		CORPOREAL_BEAST, CRAZY_ARCHAEOLOGIST, DAGANNOTH_PRIME,
 		DAGANNOTH_REX, DAGANNOTH_SUPREME, DERANGED_ARCHAEOLOGIST,
-		DUKE_SUCELLUS, GENERAL_GRAARDOR, GIANT_MOLE,
+		DOOM_OF_MOKHAIOTL, DUKE_SUCELLUS, GENERAL_GRAARDOR, GIANT_MOLE,
 		GROTESQUE_GUARDIANS, HESPORI, KALPHITE_QUEEN,
 		KING_BLACK_DRAGON, KRAKEN, KREEARRA,
 		KRIL_TSUTSAROTH, LUNAR_CHESTS, MIMIC,
@@ -510,7 +514,7 @@ public class GimPluginPanel extends PluginPanel
 		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setText(pad("--", skillType));
 
-		spriteManager.getSpriteAsync(skill == null ? TAB_COMBAT : skill.getSpriteId(), 0, (sprite) ->
+		spriteManager.getSpriteAsync(skill == null ? SpriteID.SideIcons.COMBAT : skill.getSpriteId(), 0, (sprite) ->
 			SwingUtilities.invokeLater(() ->
 			{
 				// Icons are all 25x25 or smaller, so they're fit into a 25x25 canvas to give them a consistent size for
