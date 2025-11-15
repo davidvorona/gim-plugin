@@ -95,7 +95,7 @@ public class GimPluginPanel extends PluginPanel
 		PRAYER, CRAFTING, FIREMAKING,
 		MAGIC, FLETCHING, WOODCUTTING,
 		RUNECRAFT, SLAYER, FARMING,
-		CONSTRUCTION, HUNTER
+		CONSTRUCTION, HUNTER, SAILING
 	);
 
 	/**
@@ -109,21 +109,22 @@ public class GimPluginPanel extends PluginPanel
 		CHAOS_ELEMENTAL, CHAOS_FANATIC, COMMANDER_ZILYANA,
 		CORPOREAL_BEAST, CRAZY_ARCHAEOLOGIST, DAGANNOTH_PRIME,
 		DAGANNOTH_REX, DAGANNOTH_SUPREME, DERANGED_ARCHAEOLOGIST,
-		DOOM_OF_MOKHAIOTL, DUKE_SUCELLUS, GENERAL_GRAARDOR, GIANT_MOLE,
-		GROTESQUE_GUARDIANS, HESPORI, KALPHITE_QUEEN,
-		KING_BLACK_DRAGON, KRAKEN, KREEARRA,
-		KRIL_TSUTSAROTH, LUNAR_CHESTS, MIMIC,
-		NEX, NIGHTMARE, PHOSANIS_NIGHTMARE,
-		OBOR, PHANTOM_MUSPAH, SARACHNIS,
-		SCORPIA, SCURRIUS, SKOTIZO,
-		SOL_HEREDIT, SPINDEL, TEMPOROSS,
-		THE_GAUNTLET, THE_CORRUPTED_GAUNTLET, THE_HUEYCOATL,
-		THE_LEVIATHAN, THE_ROYAL_TITANS, THE_WHISPERER,
-		THEATRE_OF_BLOOD, THEATRE_OF_BLOOD_HARD_MODE, THERMONUCLEAR_SMOKE_DEVIL,
-		TOMBS_OF_AMASCUT, TOMBS_OF_AMASCUT_EXPERT, TZKAL_ZUK,
-		TZTOK_JAD, VARDORVIS, VENENATIS,
-		VETION, VORKATH, WINTERTODT,
-		YAMA, ZALCANO, ZULRAH
+		DOOM_OF_MOKHAIOTL, DUKE_SUCELLUS, GENERAL_GRAARDOR,
+		GIANT_MOLE, GROTESQUE_GUARDIANS, HESPORI,
+		KALPHITE_QUEEN, KING_BLACK_DRAGON, KRAKEN,
+		KREEARRA, KRIL_TSUTSAROTH, LUNAR_CHESTS,
+		MIMIC, NEX, NIGHTMARE,
+		PHOSANIS_NIGHTMARE, OBOR, PHANTOM_MUSPAH,
+		SARACHNIS, SCORPIA, SCURRIUS,
+		SHELLBANE_GRYPHON, SKOTIZO, SOL_HEREDIT,
+		SPINDEL, TEMPOROSS, THE_GAUNTLET,
+		THE_CORRUPTED_GAUNTLET, THE_HUEYCOATL, THE_LEVIATHAN,
+		THE_ROYAL_TITANS, THE_WHISPERER, THEATRE_OF_BLOOD,
+		THEATRE_OF_BLOOD_HARD_MODE, THERMONUCLEAR_SMOKE_DEVIL, TOMBS_OF_AMASCUT,
+		TOMBS_OF_AMASCUT_EXPERT, TZKAL_ZUK, TZTOK_JAD,
+		VARDORVIS, VENENATIS, VETION,
+		VORKATH, WINTERTODT, YAMA,
+		ZALCANO, ZULRAH
 	);
 
 	private static final String HTML_LABEL_TEMPLATE = "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
@@ -963,10 +964,17 @@ public class GimPluginPanel extends PluginPanel
 					}
 					else
 					{
-						Skill requestedSkill = result.getSkill(skill);
-						final long experience = requestedSkill.getExperience();
+						int rank = -1;
+						long experience = -1L;
 
-						String rank = (requestedSkill.getRank() == -1) ? "Unranked" : QuantityFormatter.formatNumber(requestedSkill.getRank());
+						Skill requestedSkill = result.getSkill(skill);
+						if (requestedSkill != null)
+						{
+							rank = requestedSkill.getRank();
+							experience = requestedSkill.getExperience();
+						}
+
+						String rankStr = (rank == -1) ? "Unranked" : QuantityFormatter.formatNumber(rank);
 						String exp = (experience == -1L) ? "Unranked" : QuantityFormatter.formatNumber(experience);
 						String remainingXp;
 						if (experience == -1L)
@@ -980,7 +988,7 @@ public class GimPluginPanel extends PluginPanel
 						}
 
 						content += "<p><span style = 'color:white'>Skill:</span> " + skill.getName() + "</p>";
-						content += "<p><span style = 'color:white'>Rank:</span> " + rank + "</p>";
+						content += "<p><span style = 'color:white'>Rank:</span> " + rankStr + "</p>";
 						content += "<p><span style = 'color:white'>Experience:</span> " + exp + "</p>";
 						content += "<p><span style = 'color:white'>Remaining XP:</span> " + remainingXp + "</p>";
 					}
@@ -992,10 +1000,10 @@ public class GimPluginPanel extends PluginPanel
 		// Add a html progress bar to the hover information
 		if (skill != null && skill.getType() == HiscoreSkillType.SKILL)
 		{
-			long experience = result.getSkill(skill).getExperience();
-			if (experience >= 0)
+			Skill hiscoreSkill = result.getSkill(skill);
+			if (hiscoreSkill != null && hiscoreSkill.getExperience() >= 0)
 			{
-				int currentXp = (int) experience;
+				int currentXp = (int) hiscoreSkill.getExperience();
 				int currentLevel = Experience.getLevelForXp(currentXp);
 				int xpForCurrentLevel = Experience.getXpForLevel(currentLevel);
 				int xpForNextLevel = currentLevel + 1 <= Experience.MAX_VIRT_LEVEL ? Experience.getXpForLevel(currentLevel + 1) : -1;
