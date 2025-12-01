@@ -631,7 +631,10 @@ public class GimPlugin extends Plugin
 	 */
 	private void broadcastUpdate(Map<String, Object> gimpData)
 	{
-		gimBroadcastManager.broadcast(gimpData);
+		if (gimBroadcastManager != null)
+		{
+			gimBroadcastManager.broadcast(gimpData);
+		}
 	}
 
 	/**
