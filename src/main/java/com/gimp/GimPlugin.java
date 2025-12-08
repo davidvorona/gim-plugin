@@ -38,6 +38,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
@@ -46,8 +47,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanID;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.input.KeyManager;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
@@ -540,14 +544,21 @@ public class GimPlugin extends Plugin
 					final GimPlayer localGimp = group.getLocalGimp();
 					if (localGimp != null)
 					{
-						GimLocation gimLocation = new GimLocation(localPlayer.getWorldLocation());
-						GimLocation lastLocation = localGimp.getLocation();
-						// Don't update location if it hasn't changed
-						if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
-						{
-							return;
-						}
-						updateLocation(gimLocation);
+						clientThread.invoke(() -> {
+							WorldPoint localLocation = localPlayer.getWorldLocation();
+							if (client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) == 1)
+							{
+								localLocation = fromSailingLocal(localPlayer.getLocalLocation());
+							}
+							GimLocation gimLocation = new GimLocation(localLocation);
+							GimLocation lastLocation = localGimp.getLocation();
+							// Don't update location if it hasn't changed
+							if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
+							{
+								return;
+							}
+							updateLocation(gimLocation);
+						});
 					}
 				}
 
@@ -578,7 +589,7 @@ public class GimPlugin extends Plugin
 				{
 					// Start with default period
 					long nextDelay = period;
-					final Widget worldMapView = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+					final Widget worldMapView = client.getWidget(InterfaceID.Worldmap.MAP_CONTAINER);
 					// Quarter delay to 2.5 secs if world map is open
 					if (worldMapView != null)
 					{
@@ -621,6 +632,26 @@ public class GimPlugin extends Plugin
 			taskManager.schedule(socketConnectTask, FIVE_SECONDS * 2);
 			taskManager.schedule(tickMapPoints, 0);
 		}
+	}
+
+	private WorldPoint fromSailingLocal(LocalPoint point)
+	{
+		Scene scene = client.getTopLevelWorldView().getScene();
+		Iterator<? extends WorldEntity> wei = client.getTopLevelWorldView().worldEntities().iterator();
+		LocalPoint boat_point = point;
+		while (wei.hasNext())
+		{
+			WorldEntity we = wei.next();
+			if (we.getWorldView().contains(point))
+			{
+				boat_point = we.transformToMainWorld(point);
+				break;
+			}
+		}
+		return new WorldPoint(
+			(boat_point.getX() >> Perspective.LOCAL_COORD_BITS) + scene.getBaseX(),
+			(boat_point.getY() >> Perspective.LOCAL_COORD_BITS) + scene.getBaseY(),
+			-1);
 	}
 
 	/**
@@ -863,6 +894,7 @@ public class GimPlugin extends Plugin
 		GimPlayer localGimp = group.getLocalGimp();
 		if (localGimp != null)
 		{
+			log.debug("location{}", gimLocation.toString());
 			// Set location locally before broadcast
 			group.setLocation(localGimp.getName(), gimLocation);
 			panel.updateGimpData(localGimp);
