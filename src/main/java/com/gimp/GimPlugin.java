@@ -894,7 +894,6 @@ public class GimPlugin extends Plugin
 		GimPlayer localGimp = group.getLocalGimp();
 		if (localGimp != null)
 		{
-			log.debug("location{}", gimLocation.toString());
 			// Set location locally before broadcast
 			group.setLocation(localGimp.getName(), gimLocation);
 			panel.updateGimpData(localGimp);
