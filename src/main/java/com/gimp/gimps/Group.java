@@ -38,6 +38,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.clan.*;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.hiscore.HiscoreEndpoint;
 import net.runelite.client.hiscore.HiscoreManager;
@@ -239,9 +240,8 @@ public class Group
 	 */
 	public void localUpdate()
 	{
-		Player localPlayer = client.getLocalPlayer();
 		GimPlayer localGimp = getLocalGimp();
-		if (localPlayer != null && localGimp != null)
+		if (localGimp != null)
 		{
 			localGimp.setHp(client.getBoostedSkillLevel(Skill.HITPOINTS));
 			localGimp.setMaxHp(client.getRealSkillLevel(Skill.HITPOINTS));
@@ -249,7 +249,16 @@ public class Group
 			localGimp.setMaxPrayer(client.getRealSkillLevel(Skill.PRAYER));
 			localGimp.setGhostMode(config.ghostMode());
 			setWorld(localGimp.getName(), client.getWorld());
-			setLocation(localGimp.getName(), new GimLocation(localPlayer.getWorldLocation()));
+		}
+	}
+
+	public void localUpdate(WorldPoint playerLocation)
+	{
+		localUpdate();
+		GimPlayer localGimp = getLocalGimp();
+		if (localGimp != null)
+		{
+			setLocation(localGimp.getName(), new GimLocation(playerLocation));
 		}
 	}
 

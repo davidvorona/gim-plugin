@@ -110,6 +110,8 @@ public class GimPlugin extends Plugin
 	@Getter
 	private Group group;
 
+	private WorldPoint playerLocationCache = null;
+
 	@Inject
 	private Gson gson;
 
@@ -167,7 +169,7 @@ public class GimPlugin extends Plugin
 				// Update panel connection status
 				panel.setConnectionStatus(true);
 				// Update local gimp
-				group.localUpdate();
+				group.localUpdate(playerLocationCache);
 				// Send out broadcast
 				broadcastUpdate(group.getLocalGimp().getGimpData());
 				// Ping for initial gimp data
@@ -288,6 +290,13 @@ public class GimPlugin extends Plugin
 			if (currentPrayer != localGimp.getPrayer())
 			{
 				updatePrayer(currentPrayer);
+			}
+			// Cache player location on game tick (we update on another thread)
+			Player lp = client.getLocalPlayer();
+			playerLocationCache = lp.getWorldLocation();
+			if (client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) == 1)
+			{
+				playerLocationCache = fromSailingLocal(lp.getLocalLocation());
 			}
 			// If any gimp world / online status has changed, update
 			for (GimPlayer gimp : group.getGimps())
@@ -545,18 +554,14 @@ public class GimPlugin extends Plugin
 					if (localGimp != null)
 					{
 						clientThread.invoke(() -> {
-							WorldPoint localLocation = localPlayer.getWorldLocation();
-							if (client.getVarbitValue(VarbitID.SAILING_BOARDED_BOAT) == 1)
-							{
-								localLocation = fromSailingLocal(localPlayer.getLocalLocation());
-							}
-							GimLocation gimLocation = new GimLocation(localLocation);
+							GimLocation gimLocation = new GimLocation(playerLocationCache);
 							GimLocation lastLocation = localGimp.getLocation();
 							// Don't update location if it hasn't changed
 							if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
 							{
 								return;
 							}
+							log.debug("new location: {}", gimLocation.getLocation());
 							updateLocation(gimLocation);
 						});
 					}
@@ -634,7 +639,7 @@ public class GimPlugin extends Plugin
 		}
 	}
 
-	private WorldPoint fromSailingLocal(LocalPoint point)
+	public WorldPoint fromSailingLocal(LocalPoint point)
 	{
 		Scene scene = client.getTopLevelWorldView().getScene();
 		Iterator<? extends WorldEntity> wei = client.getTopLevelWorldView().worldEntities().iterator();
