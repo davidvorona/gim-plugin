@@ -553,17 +553,14 @@ public class GimPlugin extends Plugin
 					final GimPlayer localGimp = group.getLocalGimp();
 					if (localGimp != null)
 					{
-						clientThread.invoke(() -> {
-							GimLocation gimLocation = new GimLocation(playerLocationCache);
-							GimLocation lastLocation = localGimp.getLocation();
-							// Don't update location if it hasn't changed
-							if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
-							{
-								return;
-							}
-							log.debug("new location: {}", gimLocation.getLocation());
-							updateLocation(gimLocation);
-						});
+						GimLocation gimLocation = new GimLocation(playerLocationCache);
+						GimLocation lastLocation = localGimp.getLocation();
+						// Don't update location if it hasn't changed
+						if (lastLocation != null && GimLocation.compare(lastLocation, gimLocation))
+						{
+							return;
+						}
+						updateLocation(gimLocation);
 					}
 				}
 
@@ -639,7 +636,7 @@ public class GimPlugin extends Plugin
 		}
 	}
 
-	public WorldPoint fromSailingLocal(LocalPoint point)
+	private WorldPoint fromSailingLocal(LocalPoint point)
 	{
 		Scene scene = client.getTopLevelWorldView().getScene();
 		Iterator<? extends WorldEntity> wei = client.getTopLevelWorldView().worldEntities().iterator();
